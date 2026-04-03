@@ -1,0 +1,20 @@
+# Environment Variables
+# These should never be checked into version control.
+.env
+.env.*
+!.env.example
+
+# OS system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Common Ignore (Node/Python temp examples till language is chosen)
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+dist/
+build/
+.vscode/
+.idea/
