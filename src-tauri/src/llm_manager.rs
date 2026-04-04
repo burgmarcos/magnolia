@@ -1,7 +1,7 @@
+use log::{error, info, warn};
 use std::sync::Arc;
-use tokio::sync::{Mutex, oneshot};
 use tokio::process::Command;
-use log::{info, error, warn};
+use tokio::sync::{oneshot, Mutex};
 
 pub struct LlmEngineState {
     pub abort_tx: Arc<Mutex<Option<oneshot::Sender<()>>>>,
@@ -15,7 +15,10 @@ impl LlmEngineState {
     }
 }
 
-pub async fn start_llama_server_loop(model_path: String, state: tauri::State<'_, LlmEngineState>) -> Result<(), String> {
+pub async fn start_llama_server_loop(
+    model_path: String,
+    state: tauri::State<'_, LlmEngineState>,
+) -> Result<(), String> {
     let mut abort_tx_lock = state.abort_tx.lock().await;
 
     if abort_tx_lock.is_some() {
@@ -29,7 +32,10 @@ pub async fn start_llama_server_loop(model_path: String, state: tauri::State<'_,
     let tx_state = state.abort_tx.clone();
 
     tauri::async_runtime::spawn(async move {
-        info!("Starting llama-server background loop with model: {}", model_path);
+        info!(
+            "Starting llama-server background loop with model: {}",
+            model_path
+        );
 
         loop {
             // Assume llama-server is in PATH or current dir
@@ -38,7 +44,8 @@ pub async fn start_llama_server_loop(model_path: String, state: tauri::State<'_,
                 .arg(&model_path)
                 .arg("--port")
                 .arg("8080")
-                .spawn() {
+                .spawn()
+            {
                 Ok(c) => c,
                 Err(e) => {
                     error!("Failed to spawn llama-server: {}. Retrying in 5s...", e);
@@ -55,7 +62,10 @@ pub async fn start_llama_server_loop(model_path: String, state: tauri::State<'_,
                 }
             };
 
-            info!("llama-server spawned successfully with PID: {:?}", child.id());
+            info!(
+                "llama-server spawned successfully with PID: {:?}",
+                child.id()
+            );
 
             tokio::select! {
                 status = child.wait() => {
@@ -85,9 +95,9 @@ pub async fn start_llama_server_loop(model_path: String, state: tauri::State<'_,
                 }
             }
         }
-        
+
         info!("llama-server background loop terminated.");
-        
+
         // Clean up state
         let mut cleanup_lock = tx_state.lock().await;
         *cleanup_lock = None;
@@ -98,7 +108,7 @@ pub async fn start_llama_server_loop(model_path: String, state: tauri::State<'_,
 
 pub async fn stop_llama_server(state: tauri::State<'_, LlmEngineState>) -> Result<(), String> {
     let mut abort_tx_lock = state.abort_tx.lock().await;
-    
+
     if let Some(tx) = abort_tx_lock.take() {
         let _ = tx.send(());
         Ok(())
@@ -115,7 +125,7 @@ mod tests {
     async fn test_stop_server_when_not_running_safe_failure() {
         let state = LlmEngineState::new();
         let mut abort_tx_lock = state.abort_tx.lock().await;
-        
+
         let result: Result<(), String> = if let Some(tx) = abort_tx_lock.take() {
             let _ = tx.send(());
             Ok(())

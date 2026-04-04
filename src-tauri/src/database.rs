@@ -4,13 +4,13 @@ use std::path::PathBuf;
 pub fn initialize_database(app_data_dir: &PathBuf) -> Result<Connection> {
     unsafe {
         rusqlite::ffi::sqlite3_auto_extension(Some(std::mem::transmute(
-            sqlite_vec::sqlite3_vec_init as *const ()
+            sqlite_vec::sqlite3_vec_init as *const (),
         )));
     }
 
     let db_path = app_data_dir.join("slai_core.db");
     let mut conn = Connection::open(&db_path)?;
-    
+
     // Enable WAL mode for better concurrency and performance
     conn.execute_batch("PRAGMA journal_mode=WAL;")?;
 
@@ -68,7 +68,7 @@ fn run_migrations(conn: &mut Connection) -> Result<()> {
             FOREIGN KEY(source_node_id) REFERENCES nodes(rowid),
             FOREIGN KEY(target_node_id) REFERENCES nodes(rowid)
         );
-        "
+        ",
     )?;
 
     tx.commit()?;

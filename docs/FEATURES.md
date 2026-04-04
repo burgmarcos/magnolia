@@ -88,3 +88,7 @@ To spin up multiple conversational agents simultaneously without them stepping o
 - [x] **Agent 2 (Core):** Perform definitive error handling passes on all Tauri commands (e.g. broken SQLite migrations, missing keys, timeout handling for HuggingFace downloads).
 - [x] **Agent 3 (Architect / Manager):** Coordinate final integration tests between the React frontend UI boundaries and Tauri backend logic.
 - [x] **Agent 3 (Architect / Manager):** Complete the release packaging configuration (`tauri.conf.json`) and prepare the GitHub Actions workflow to publish the `0.0.1` Desktop application build executable.
+### 11. Platform Validation & Linux Environment
+- [x] **Agent 3 (Architect):** Create `docs/LINUX_DEV_SETUP.md` documentation for WSL2/Ubuntu testing.
+- [ ] **Agent 3 (Architect):** Perform a full build verify (`npm run tauri build`) inside the WSL2 Linux environment for the `0.0.1` release.
+- [ ] **Agent 2 (Core):** Verify GPU-accelerated inference with `llama.cpp` using the NVIDIA WSL2 kernel drivers.

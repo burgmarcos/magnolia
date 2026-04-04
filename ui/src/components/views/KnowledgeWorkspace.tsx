@@ -16,7 +16,7 @@ export function KnowledgeWorkspace() {
   // MOCK DATA for Agent 2 to wire up:
   // Once the backend indexer is built, querying the database or local directory
   // should return the state of parsing files.
-  const [mockFiles, setMockFiles] = useState<IngestionItem[]>([
+  const [mockFiles] = useState<IngestionItem[]>([
     { id: '1', filename: 'architecture.md', path: '/docs/architecture.md', status: 'indexed' },
     { id: '2', filename: 'meeting-notes-june.md', path: '/notes/meeting-notes-june.md', status: 'scanning' },
     { id: '3', filename: 'project-ideas.md', path: '/ideas/project-ideas.md', status: 'pending' },

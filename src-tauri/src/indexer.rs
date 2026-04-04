@@ -1,9 +1,9 @@
 use rusqlite::{params, Connection};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
-use walkdir::WalkDir;
 use uuid::Uuid;
+use walkdir::WalkDir;
 
 pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, String> {
     let path = Path::new(dir_path);
@@ -14,12 +14,18 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
     let mut indexed_count = 0;
 
     // We'll wrap insertions in a transaction for massive speed improvements
-    let tx = conn.transaction().map_err(|e| format!("Transaction error: {}", e))?;
+    let tx = conn
+        .transaction()
+        .map_err(|e| format!("Transaction error: {}", e))?;
 
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
-            let extension = entry.path().extension().and_then(|s| s.to_str()).unwrap_or("");
-            
+            let extension = entry
+                .path()
+                .extension()
+                .and_then(|s| s.to_str())
+                .unwrap_or("");
+
             // For now, specifically targeting markdown/text files for RAG
             if extension == "md" || extension == "txt" {
                 if let Ok(content) = fs::read(entry.path()) {
@@ -34,7 +40,7 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
                     let existing_hash: rusqlite::Result<String> = tx.query_row(
                         "SELECT file_hash FROM documents WHERE path = ?1",
                         params![file_path],
-                        |row| row.get(0)
+                        |row| row.get(0),
                     );
 
                     match existing_hash {
@@ -66,7 +72,8 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
         }
     }
 
-    tx.commit().map_err(|e| format!("Failed to commit index: {}", e))?;
+    tx.commit()
+        .map_err(|e| format!("Failed to commit index: {}", e))?;
 
     Ok(indexed_count)
 }

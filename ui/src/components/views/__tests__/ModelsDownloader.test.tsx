@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { ModelsDownloader } from '../ModelsDownloader.tsx';
 
 // Mock the Tauri api
@@ -16,12 +16,12 @@ vi.mock('react-hot-toast', () => ({
 }));
 
 describe('ModelsDownloader', () => {
-  let invokeMock: any;
+  let invokeMock: Mock;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     const tauriApi = await import('@tauri-apps/api/core');
-    // @ts-ignore
+    // @ts-expect-error - Mocking Tauri invoke
     invokeMock = tauriApi.invoke;
     
     // Default mock implementation for mount
