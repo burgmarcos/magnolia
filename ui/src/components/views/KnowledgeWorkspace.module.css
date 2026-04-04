@@ -1,0 +1,129 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  background-color: var(--schemes-surface, #FBF8FF);
+  color: var(--schemes-on-surface, #1D1B20);
+  gap: 16px;
+}
+
+.header {
+  font-family: var(--static-title-large-font, 'Roboto', sans-serif);
+  font-size: 22px;
+  font-weight: 400;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.searchContainer {
+  display: flex;
+  align-items: center;
+  background-color: var(--schemes-surface-container-high, #ECE6F0);
+  border-radius: 100px;
+  padding: 4px 16px;
+  height: 56px;
+  gap: 12px;
+}
+
+.pathInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: var(--schemes-on-surface);
+  outline: none;
+  margin-left: 8px;
+  font-family: monospace;
+}
+
+.pathInput::placeholder {
+  color: var(--schemes-on-surface-variant);
+  font-family: var(--static-body-medium-font, 'Roboto', sans-serif);
+}
+
+.browseButton {
+  background-color: var(--schemes-secondary-container, #E8DEF8);
+  color: var(--schemes-on-secondary-container, #1D192B);
+  border: none;
+  border-radius: 100px;
+  padding: 8px 16px;
+  font-family: var(--static-label-large-font, 'Roboto', sans-serif);
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.browseButton:hover {
+  opacity: 0.8;
+}
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.horizontalCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--schemes-surface-container-lowest, #FFFFFF);
+  border: 1px solid var(--schemes-outline-variant, #CAC4D0);
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 80px;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardTitle {
+  font-family: var(--static-title-medium-font, 'Roboto', sans-serif);
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.cardDescription {
+  font-family: var(--static-body-medium-font, 'Roboto', sans-serif);
+  font-size: 14px;
+  color: var(--schemes-on-surface-variant);
+  margin: 0;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--static-label-medium-font, 'Roboto', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusPending {
+  color: var(--schemes-on-surface-variant);
+}
+
+.statusIndexed {
+  color: #2e7d32; /* Example success color until design tokens exist */
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: var(--schemes-on-surface-variant);
+}

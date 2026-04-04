@@ -7,7 +7,10 @@ This file tracks the current features, tasks, and future implementations.
 - [x] Initialize Git (main branch)
 - [x] Setting up structured `.md` files for humans & AI usage
 - [x] Environment variable isolation setup
-- [ ] Determine core programming language and scaffolding
+- [x] Determine core programming language and scaffolding (React, Vite, Tauri, Rust)
+
+## Phase 2: Feature Development
+- Details tracked in `docs/FEATURES.md`.
 
 ## Ongoing Directives
 - Any new features must be described here before implementation.

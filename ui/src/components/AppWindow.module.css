@@ -1,0 +1,95 @@
+.appWindow {
+  position: absolute;
+  bottom: 215px;
+  left: 530px;
+  width: 524px;
+  height: 670px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 30px;
+  box-shadow: var(--elevation-light-3);
+  z-index: 10;
+}
+
+.appBar {
+  background-color: var(--schemes-on-primary);
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  height: 64px;
+  /* Visual separator to match Figma */
+  box-shadow: inset 0 -1px 0 0 var(--schemes-outline-variant); 
+}
+
+.controlsLeft {
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  width: 120px;
+}
+
+.iconContainerBg {
+  width: 36px;
+  height: 36px;
+  border-radius: 30px;
+  background-color: var(--schemes-secondary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16px;
+}
+
+.titleContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.titleText {
+  font-family: var(--title-large-font);
+  font-size: var(--title-large-size);
+  font-weight: var(--title-large-weight);
+  color: var(--schemes-on-surface);
+  line-height: var(--title-large-line-height);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.controlsRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  width: 66px;
+}
+
+.iconButtonError {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--schemes-error-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.iconButtonError:active {
+  transform: scale(0.95);
+}
+
+.body {
+  flex: 1;
+  background-color: var(--schemes-surface-container-low);
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  overflow: hidden;
+  position: relative;
+}

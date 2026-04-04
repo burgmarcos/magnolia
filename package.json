@@ -1,0 +1,27 @@
+{
+  "name": "slai",
+  "version": "1.0.0",
+  "description": "SLAI is an open-source project initializing its development phase. The goal is to build a debuggable, modular, and cleanly separated architecture.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/burgmarcos/slai.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/burgmarcos/slai/issues"
+  },
+  "homepage": "https://github.com/burgmarcos/slai#readme",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.10.1"
+  }
+}

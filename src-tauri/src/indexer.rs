@@ -1,0 +1,72 @@
+use rusqlite::{params, Connection};
+use sha2::{Sha256, Digest};
+use std::fs;
+use std::path::Path;
+use walkdir::WalkDir;
+use uuid::Uuid;
+
+pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, String> {
+    let path = Path::new(dir_path);
+    if !path.exists() || !path.is_dir() {
+        return Err("Invalid directory path".into());
+    }
+
+    let mut indexed_count = 0;
+
+    // We'll wrap insertions in a transaction for massive speed improvements
+    let tx = conn.transaction().map_err(|e| format!("Transaction error: {}", e))?;
+
+    for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+        if entry.file_type().is_file() {
+            let extension = entry.path().extension().and_then(|s| s.to_str()).unwrap_or("");
+            
+            // For now, specifically targeting markdown/text files for RAG
+            if extension == "md" || extension == "txt" {
+                if let Ok(content) = fs::read(entry.path()) {
+                    let mut hasher = Sha256::new();
+                    hasher.update(&content);
+                    let file_hash = format!("{:x}", hasher.finalize());
+
+                    let file_path = entry.path().to_string_lossy().to_string();
+                    let filename = entry.file_name().to_string_lossy().to_string();
+
+                    // Check if file already exists with same hash
+                    let existing_hash: rusqlite::Result<String> = tx.query_row(
+                        "SELECT file_hash FROM documents WHERE path = ?1",
+                        params![file_path],
+                        |row| row.get(0)
+                    );
+
+                    match existing_hash {
+                        Ok(hash) if hash == file_hash => {
+                            // File exists and hasn't changed, skip
+                            continue;
+                        }
+                        Ok(_) => {
+                            // Hash changed, we update
+                            tx.execute(
+                                "UPDATE documents SET file_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE path = ?2",
+                                params![file_hash, file_path]
+                            ).map_err(|e| format!("DB Update error: {}", e))?;
+                            indexed_count += 1;
+                            // Optionally, we should invalidate/delete downstream `nodes` for this document_id
+                        }
+                        Err(_) => {
+                            // New file
+                            let new_id = Uuid::new_v4().to_string();
+                            tx.execute(
+                                "INSERT INTO documents (id, filename, path, file_hash) VALUES (?1, ?2, ?3, ?4)",
+                                params![new_id, filename, file_path, file_hash]
+                            ).map_err(|e| format!("DB Insert error: {}", e))?;
+                            indexed_count += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    tx.commit().map_err(|e| format!("Failed to commit index: {}", e))?;
+
+    Ok(indexed_count)
+}
