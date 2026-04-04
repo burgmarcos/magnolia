@@ -1,7 +1,8 @@
 use rusqlite::{Connection, Result};
-use std::path::PathBuf;
+use std::path::Path;
 
-pub fn initialize_database(app_data_dir: &PathBuf) -> Result<Connection> {
+pub fn initialize_database(app_data_dir: &Path) -> Result<Connection> {
+    #[allow(clippy::missing_transmute_annotations)]
     unsafe {
         rusqlite::ffi::sqlite3_auto_extension(Some(std::mem::transmute(
             sqlite_vec::sqlite3_vec_init as *const (),

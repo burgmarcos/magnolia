@@ -41,9 +41,7 @@ async fn process_sse_stream(
             let line = buffer[..newline_idx].trim().to_string();
             buffer = buffer[newline_idx + 1..].to_string(); // Keep the remainder
 
-            if line.starts_with("data: ") {
-                let data = &line[6..];
-
+            if let Some(data) = line.strip_prefix("data: ") {
                 if data == "[DONE]" {
                     let _ = app.emit(
                         "chat-token",

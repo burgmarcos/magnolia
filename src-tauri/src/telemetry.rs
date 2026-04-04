@@ -22,7 +22,7 @@ pub fn get_system_specs() -> HardwareSpecs {
     let mut vendor = "Unknown".to_string();
 
     let output = Command::new("nvidia-smi")
-        .args(&["--query-gpu=memory.total", "--format=csv,noheader,nounits"])
+        .args(["--query-gpu=memory.total", "--format=csv,noheader,nounits"])
         .output();
 
     if let Ok(cmd_out) = output {
