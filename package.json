@@ -7,6 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
+    "tauri": "tauri",
+    "build": "npm run build --prefix ui",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
