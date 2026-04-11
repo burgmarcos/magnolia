@@ -8,19 +8,26 @@
 3. **Open Tools**: Built using fully accessible APIs and logic to ensure everything is debuggable and open-source.
 
 ## Technologies Used
-- **Backend (Core Logic):** Rust working via Tauri (using strictly open-source dependencies like Tokio, Teloxide, etc.)
-- **Frontend (UI):** React and TypeScript built with Vite.
-- **Styling:** Vanilla CSS (Glassmorphism & Custom Elements) via `index.css`.
-- **System Bridge:** Tauri IPC (Inter-Process Communication) and `invoke` commands.
+- **Backend (Core Logic):** Rust via Tauri (Tokio, reqwest, rusqlite, etc.)
+- **Frontend (UI):** React 19 + TypeScript + Vite.
+- **State Management:** React Context (`WindowContext`) for OS-level window lifecycle; Zustand/LocalState for UI-specific reactivity.
+- **Styling:** Vanilla CSS + CSS Modules + M3 Expressive Design tokens.
 
-## Setup & Data Flow (Dashboard)
-- The React Frontend (`/ui`) starts and mounts the main dashboard.
-- Upon mounting, the Frontend invokes a backend command (`get_app_status`) via `@tauri-apps/api`.
-- The Rust Backend (`/src-tauri`) receives the invocation, processes any core application logic, and returns the status payload.
-- The Frontend updates its state and dynamically renders the status via the UI components.
+## Application Lifecycle & Bootstrap
+- **Sovereign Mode Loader:** `App.tsx` acts as a high-level router (`ModeLoader`). It queries the Rust backend (`get_launch_mode`) to decide whether to mount:
+  1. **`SovereignInstallerFlow`**: The custom React-based setup experience for new users.
+  2. **`SovereignUninstallFlow`**: The deep-clean removal utility.
+  3. **`MainDesktop`**: The core production environment.
+- **Sovereign Bootstrap:** We eliminated standard NSIS/MSI installers in favor of a "Portable-First" React bootstrapper that handles executable placement, shortcut creation, and registry registration entirely in-app.
+
+## Frontend Architecture & Window Management
+- **`WindowContext`**: Centralized OS-style window management. All apps (Chat, Browser, Files, etc.) are managed as `WindowInstance` objects. The context exposes `openWindow`, `closeWindow`, and `toggleMinimize` methods across the entire component tree.
+- **`MainDesktop`**: Extracted desktop logic that handles the rendering of the `DesktopEnvironment`, `XRAppBar`, `AppWindow` maps, and the `XRNavigationBar`.
+- **`AppWindow`**: A high-level wrapper component providing draggable/resizable frames, window controls (Minimize/Close), and standard M3 elevation.
 
 ## Local LLM Integration (llama.cpp)
-- **Model Storage:** Local models (`.gguf`) are searched for and stored in the application data directory (`~/.slai/models`). The Rust backend (`tauri-plugin-fs`) provides utility functions to scan and index available models.
+... (keep existing content about llama.cpp)
+- **Model Storage:** Local models (`.gguf`) are searched for and stored in the application data directory (`~/.Magnolia/models`). The Rust backend (`tauri-plugin-fs`) provides utility functions to scan and index available models.
 - **Engine Execution:** The Rust backend wraps `llama.cpp` directly (via sub-process or bindings), managing the lifecycle of the model inference. 
 - **Streaming Tokens:** As the `llama.cpp` engine generates tokens, Rust captures the `stdout`/events over an async stream using `tokio`. These chunks are then emitted as Tauri window events (`emit`) from the Rust layer to the frontend.
 - **Frontend State:** The React UI listens for these specific inference events and appends incoming tokens to the chat interface state in real-time, matching standard chat-bubble typography constraints.

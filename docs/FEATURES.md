@@ -43,7 +43,7 @@ To spin up multiple conversational agents simultaneously without them stepping o
 
 ### 3. LLM Engine Integration (llama.cpp)
 - [x] **Agent 2 (Core):** Integrate `llama.cpp` wrapper/bindings into the Rust backend (`src-tauri`) to allow local model execution.
-- [x] **Agent 2 (Core):** Define the local models directory (`~/.slai/models` or within project `app_data_dir`) and build file system tools to scan it.
+- [x] **Agent 2 (Core):** Define the local models directory (`~/.Magnolia/models` or within project `app_data_dir`) and build file system tools to scan it.
 - [x] **Agent 3 (Architect):** Update `ARCHITECTURE.md` showing how Tauri interfaces with `llama.cpp` and passes streams to the frontend.
 
 ### 4. Settings & Model Downloader
@@ -92,3 +92,9 @@ To spin up multiple conversational agents simultaneously without them stepping o
 - [x] **Agent 3 (Architect):** Create `docs/LINUX_DEV_SETUP.md` documentation for WSL2/Ubuntu testing.
 - [ ] **Agent 3 (Architect):** Perform a full build verify (`npm run tauri build`) inside the WSL2 Linux environment for the `0.0.1` release.
 - [ ] **Agent 2 (Core):** Verify GPU-accelerated inference with `llama.cpp` using the NVIDIA WSL2 kernel drivers.
+
+### 12. Knowledge Management & UX Polish
+- [x] **Agent 2 (Core):** Implement `delete_knowledge_item` Tauri command for atomic SQLite cleanup.
+- [x] **Agent 1 (UI):** Build 'Manage Knowledge' UI in `KnowledgeWorkspace` to allow data deletion.
+- [x] **Agent 1 (UI):** Apply **Expressive Motion** (`cubic-bezier(0.2, 0, 0, 1.0)`) to the Chat Interface and transitions.
+- [x] **Agent 3 (Architect):** Finalize `0.0.1` stable documentation and feature freeze.

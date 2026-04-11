@@ -1,28 +1,29 @@
 {
-  "name": "slai",
+  "name": "magnolia-os",
   "version": "1.0.0",
-  "description": "SLAI is an open-source project initializing its development phase. The goal is to build a debuggable, modular, and cleanly separated architecture.",
+  "description": "Magnolia OS is a sovereign, modular Linux distribution designed for privacy, local-first intelligence, and elegant computing.",
   "main": "index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
     "tauri": "tauri",
+    "dev": "npm run dev --prefix ui",
     "build": "npm run build --prefix ui",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/burgmarcos/slai.git"
+    "url": "git+https://github.com/burgmarcos/magnolia.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Marcos Burglar",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/burgmarcos/slai/issues"
+    "url": "https://github.com/burgmarcos/magnolia/issues"
   },
-  "homepage": "https://github.com/burgmarcos/slai#readme",
+  "homepage": "https://magnol.ia.br",
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.1"
   }
