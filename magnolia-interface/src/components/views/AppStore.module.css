@@ -1,0 +1,180 @@
+.container {
+  padding: 2.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  overflow-y: auto;
+  background: var(--schemes-surface);
+  color: var(--schemes-on-surface);
+  transition: all var(--motion-duration-medium-1) var(--motion-easing-standard);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.header h1 {
+  font-family: var(--title-large-font);
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.header p {
+  font-family: var(--body-large-font);
+  color: var(--schemes-on-surface-variant);
+  font-size: 1.125rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.appCard {
+  background: var(--schemes-surface-container-low);
+  border-radius: 28px;
+  padding: 1.5rem;
+  border: 1px solid var(--schemes-outline-variant);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.appCard:hover {
+  transform: translateY(-4px);
+  background: var(--schemes-surface-container-high);
+  border-color: var(--schemes-primary);
+  box-shadow: var(--elevation-level-2);
+}
+
+.cardHeader {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.iconBox {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--schemes-primary-container);
+  color: var(--schemes-on-primary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.titleBox h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.version {
+  font-size: 0.75rem;
+  font-family: monospace;
+  background: var(--schemes-secondary-container);
+  color: var(--schemes-on-secondary-container);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.description {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--schemes-on-surface-variant);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 4.5rem;
+}
+
+.actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.installBtn {
+  background: var(--schemes-primary);
+  color: var(--schemes-on-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 24px;
+  font-weight: 600;
+  text-align: center;
+  transition: filter 0.2s;
+}
+
+.installBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.installBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.launchBtn {
+  background: var(--accents-green);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 24px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.progressContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progressBar {
+  height: 6px;
+  background: var(--schemes-surface-container-highest);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--schemes-primary);
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--schemes-primary);
+  text-align: right;
+}
+
+/* Glassmorphism Override (Fruit Mode handled by CSS variables) */
+:global(.theme-fruit) .appCard {
+  background: var(--magnolia-glass-bg);
+  backdrop-filter: var(--magnolia-glass-blur);
+  border: 1px solid var(--magnolia-glass-border);
+}
+
+/* High Contrast Override (Brat Mode handled by CSS variables) */
+:global(.theme-brat) .appCard {
+  border-radius: 0px;
+  border: 2px solid var(--accents-green);
+  background: black;
+}
+
+:global(.theme-brat) .installBtn {
+  border-radius: 0px;
+  border: 2px solid var(--accents-green);
+}

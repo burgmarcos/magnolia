@@ -53,7 +53,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "SLAI ${{ github.ref_name }}"
+          releaseName: "Magnolia ${{ github.ref_name }}"
           releaseBody: "Automated unsigned release build for v0.0.1."
           releaseDraft: true
           prerelease: true

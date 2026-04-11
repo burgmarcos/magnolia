@@ -1,0 +1,10 @@
+config BR2_PACKAGE_MAGNOLIA_CORE
+	bool "magnolia-core"
+	depends on BR2_PACKAGE_HOST_RUSTC_ARCH_SUPPORTS
+	select BR2_PACKAGE_HOST_RUSTC
+	select BR2_PACKAGE_OPENSSL # for cloud/reqwest
+	help
+	  The Magnolia OS Supervisor (PID 1) for Magnolia.
+	  Responsible for system initialization, sandboxing, and LLM orchestration.
+
+	  https://github.com/burgmarcos/bos

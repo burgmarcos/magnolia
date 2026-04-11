@@ -1,0 +1,1 @@
+source "$BR2_EXTERNAL_MAGNOLIA_PATH/package/Config.in"

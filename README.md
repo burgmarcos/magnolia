@@ -1,90 +1,110 @@
-<div align="center">
-  <img src="slai.png" alt="SLAI Logo" width="400">
-  <br />
-  <h1>SLAI ✨</h1>
-  <p><b>Seamless Local AI (Slay + AI)</b></p>
-  <p><i>The high-performance, local-first AI engine for Windows.</i></p>
+# 🌸 Magnolia OS: The Sovereign Intelligent Workspace
 
-  <p>
-    <a href="https://github.com/burgmarcos/slai/releases/latest">
-      <img src="https://img.shields.io/github/v/release/burgmarcos/slai?style=flat-square&color=pink" alt="Version" />
-    </a>
-    <a href="LICENSE">
-      <img src="https://img.shields.io/github/license/burgmarcos/slai?style=flat-square&color=pink" alt="License" />
-    </a>
-    <a href="https://buymeacoffee.com/burgmarcos">
-      <img src="https://img.shields.io/badge/Support-Buy%20Me%20A%20Coffee-orange?style=flat-square&logo=buy-me-a-coffee" alt="Buy Me A Coffee" />
-    </a>
-  </p>
-</div>
+![Magnolia Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-ISC-green.svg)
+![Rust](https://img.shields.io/badge/rust-2024-orange.svg)
+![GCP](https://img.shields.io/badge/GCP-magnolia--os-blue.svg)
+![Website](https://img.shields.io/badge/website-magnol.ia.br-purple.svg)
+
+# Magnolia OS: The Sovereign Computing Manifest
+
+Magnolia OS is a high-performance, privacy-first operating system designed for the era of personal autonomy. Built on a hardened Linux 6.12.9 foundation, it decouples the user from centralized surveillance through local-first intelligence and hardware-level isolation.
+
+> *"Computed in Private. Verified by You. Sovereign by Design."*
 
 ---
 
-## ✨ The Vibe
+## 🌸 The Sovereign Pillars
 
-SLAI was **vibecoded** from scratch. 
+### 1. Radical Privacy
+Magnolia operates under a **Zero-Leak Policy**. Every application is sandboxed in an ephemeral Bubblewrap namespace, with strictly audited filesystem and network access. Your telemetry is nonexistent, and your encryption is local.
 
-After more than 9 frustrated attempts to get *OpenClaw* to behave as expected, we realized that fixing something broken often takes more time than building something better. SLAI is the result of that realization—a clean, modular, and satisfyingly fast desktop AI experience that actually works the way you want it to.
+### 2. Native Cloud Fusion
+While we champion local first, we recognize the power of the heavy cloud. **Cloud Fusion** allows sub-millisecond integration with Google Cloud and Vertex AI via secure, Service Account-based authentication, ensuring your AI workloads are powerful but your identity remains sovereign.
 
-It's "Slay" meet "AI"—modern, premium, and built for those who value privacy without sacrificing the "sparkle."
-
-## 🚀 Key Features
-
-### 🧠 Local LLM Engine
-No cloud, no subscriptions, no data leaks. Powered by `llama.cpp`, SLAI runs `.gguf` models directly on your hardware with high-performance streaming.
-
-### 📚 Semantic RAG (Retrieval-Augmented Generation)
-Transform your local `.md` notes into a personal knowledge base. Using `sqlite-vec` and `all-MiniLM-L6-v2`, SLAI indexes your workspace so your AI actually knows what you're talking about.
-
-### ⚡ Hardware Fit Profiling
-Wondering if a 70B model will run on your laptop? SLAI profiles your CPU, GPU, and VRAM in real-time to give you clear indicators: **"Fits Perfectly,"** **"Needs Offload,"** or **"Does Not Run."**
-
-### 📥 One-Click Model Hub
-A curated explorer for the Hugging Face Hub. Search, profile, and download your favorite models with integrated progress tracking.
+### 3. Resilience Architecture (Stage A/B)
+Magnolia uses a dual-root strategy to ensure the system never breaks. System updates target the inactive partition (`Stage A` or `Stage B`), allowing for seamless rollbacks if a kernel update fails.
 
 ---
 
-## 💻 Getting Started
+## 🛠 Project Architecture
 
-### Windows (Primary Support)
-1. Download the latest `.msi` or `.exe` from the [Releases](https://github.com/burgmarcos/slai/releases).
-2. Run the installer.
-3. **Note:** Since the build is currently unsigned, Windows SmartScreen may show a warning. Click **"More Info"** -> **"Run Anyway"** to slay.
+```mermaid
+graph TD
+    A[EFI: GRUB2 Hardened] --> B[Kernel: Linux 6.12.9];
+    B --> C[Supervisor: Rust PID 1];
+    C --> D[Udev / Partition Discovery];
+    D --> E[Cage: Wayland Kiosk];
+    E --> F[Magnolia-Hub: Tauri/React];
+    F --> G[Bubblewrapped WebKit Engine];
+    F --> H[Local AI: llama-server];
+```
 
-### macOS
-Support is coming soon! Check the [Roadmap](#-roadmap) for updates.
-
----
-
-## 🏗️ Architecture
-
-SLAI follows a strictly separated, multi-agent friendly architecture:
-- **Backend (Rust/Tauri):** High-performance systems logic and local-first persistence via SQLite.
-- **Frontend (React/Vite):** A premium, glassmorphic UI built with Vanilla CSS Modules.
-- **Search (sqlite-vec):** Lightning-fast vector embeddings stored right alongside your messages.
-
-For more details, see [ARCHITECTURE.md](docs/ARCHITECTURE.md) and [FEATURES.md](docs/FEATURES.md).
+### Core Components
+- **The Supervisor (PID 1)**: A dedicated Rust binary responsible for mounting decrypted persistent volumes (`vda4`/`vda5`) and initializing the Wayland compositor.
+- **The Hub (Core)**: A Tauri-based system controller managing hardware abstraction, AI inference, and window management.
+- **MemPalace**: An ultra-fast local RAG (Retrieval-Augmented Generation) engine for indexing your files privately.
 
 ---
 
-## 🗺️ Roadmap
-- [ ] **macOS Support**: Bringing the slay to Apple Silicon.
-- [ ] **Knowledge Graphs**: Visualizing how your thoughts connect in SQLite.
-- [ ] **Advanced RAG**: Multi-document support and PDF ingestion.
-- [ ] **Plugin System**: Modular extensions for custom tool-use.
+## 📈 Feature Matrix (v1.0 Baseline)
+
+| Feature | Status | Technology |
+| :--- | :--- | :--- |
+| **Stage A/B Boot** | ✅ Stable | GRUB2 / GPT Mapping |
+| **App Sandboxing** | ✅ Stable | Bubblewrap / namespaces |
+| **Magnolia Assistant** | ✅ Beta | llama.cpp / Local Inference |
+| **Cloud Fusion** | 🛠 Alpha | GCP / Vertex AI Integration |
+| **MemPalace Search** | 🛠 Alpha | Vector DB / Local Indexing |
+| **i18n Support** | ✅ Stable | Hot-swappable JSON locales |
 
 ---
 
-## ☕ Support the Project
+## 🚀 Getting Started
 
-If SLAI helps you slay your daily tasks, consider supporting the development!
+### Windows (WSL2 / Development)
+1. Ensure `WSLg` is active.
+2. Run `scripts/test_wsl_qemu.sh` to launch the Magnolia Simulation.
 
-<a href="https://buymeacoffee.com/burgmarcos">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="160">
-</a>
+### Bare Metal (Target)
+1. Flash `magnolia.img` to a high-speed NVMe or USB 3.0 drive.
+2. Boot via UEFI. Ensure Secure Boot is configured in 'Audit Mode' for the initial flight.
 
 ---
 
-<div align="center">
-  <p>Built with ❤️ and a lot of vibes.</p>
-</div>
+## 💬 Human-Oriented Support
+Magnolia includes an integrated **Sovereign Assistant**. Use the `/help` command or speak naturally to learn about system internals, adjust privacy settings, or troubleshoot network lattice issues.
+
+---
+
+*Magnolia is more than an OS. It is a commitment to digital self-determination.*
+
+### How to Compile
+You can compile the system into a flashable `.img` immediately by executing the overarching build script at the project root:
+
+```cmd
+.\build.bat
+```
+*Note: This streams a real-time, debuggable log of the compilation pipeline straight to your terminal. Once completed, you will find `magnolia.img` in the workspace root.*
+
+---
+
+## 🧪 Testing Environment
+
+Once built, developers can launch the sovereign OS on their host machine for rapid iteration:
+
+```cmd
+.\qemu-test-win.bat
+```
+This script leverages Microsoft's Windows Hypervisor Platform (WHPX) to boot `magnolia.img` with native graphical acceleration.
+
+---
+
+## 🔐 Authentication & Governance
+
+This project maintains absolute data integrity checks, absolute type-safety across its interprocess bindings (IPC), and utilizes secure memory bounds defined by Rust 2024. 
+
+All Pull Requests *(PRs)* must satisfy the internal `npm run lint` configuration across the `magnolia-interface` dashboard framework, and maintain strict `cargo clippy` adherence within the `magnolia-core` subsystem.
+
+**Repository**: [github.com/burgmarcos/magnolia](https://github.com/burgmarcos/magnolia)  
+**Domain**: [magnol.ia.br](https://magnol.ia.br)

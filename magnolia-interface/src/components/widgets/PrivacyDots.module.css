@@ -1,0 +1,76 @@
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  cursor: help;
+}
+
+.dotsWrapper {
+  display: flex;
+  gap: 6px;
+}
+
+.dotRed {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow: 0 0 12px rgba(255, 95, 86, 0.4);
+}
+
+.dotGreen {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #28c840;
+  box-shadow: 0 0 12px rgba(40, 200, 64, 0.4);
+}
+
+.pill {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  min-width: 220px;
+  background: rgba(29, 27, 32, 0.95);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.pillHeader {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.entryList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.appName {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.iconRed { color: #ff5f56; }
+.iconGreen { color: #28c840; }
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-top: 12px;
+}

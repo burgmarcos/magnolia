@@ -1,0 +1,76 @@
+.appBar {
+  position: absolute;
+  top: 1.125rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2.25rem);
+  height: 4.5rem;
+  background-color: var(--schemes-surface-container);
+  border-radius: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.375rem;
+  box-shadow: var(--elevation-light-3);
+  z-index: var(--z-appbar, 600);
+}
+
+.leadingIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+}
+
+.userAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--schemes-secondary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.textContent {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.headline {
+  font-family: var(--title-large-font);
+  font-size: var(--title-large-size);
+  font-weight: var(--title-large-weight);
+  letter-spacing: var(--title-large-tracking);
+  color: var(--schemes-on-surface);
+  line-height: var(--title-large-line-height);
+  margin: 0;
+}
+
+.trailingElements {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+}
+
+.iconButton {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}

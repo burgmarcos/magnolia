@@ -1,0 +1,147 @@
+.appWindow {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  border-radius: 30px;
+  box-shadow: var(--elevation-light-3);
+  z-index: 10;
+  overflow: visible; /* Allow handles to bleed out */
+}
+
+.resizeHandle {
+  position: absolute;
+  z-index: 101;
+}
+
+.top { top: -5px; left: 10px; right: 10px; height: 10px; cursor: n-resize; }
+.bottom { bottom: -5px; left: 10px; right: 10px; height: 10px; cursor: s-resize; }
+.left { left: -5px; top: 10px; bottom: 10px; width: 10px; cursor: w-resize; }
+.right { right: -5px; top: 10px; bottom: 10px; width: 10px; cursor: e-resize; }
+
+.topLeft { top: -5px; left: -5px; width: 15px; height: 15px; cursor: nw-resize; }
+.topRight { top: -5px; right: -5px; width: 15px; height: 15px; cursor: ne-resize; }
+.bottomLeft { bottom: -5px; left: -5px; width: 15px; height: 15px; cursor: sw-resize; }
+.bottomRight { bottom: -5px; right: -5px; width: 15px; height: 15px; cursor: se-resize; }
+
+.appBar {
+  background-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  height: 64px;
+  cursor: grab;
+  user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.appBar:active {
+  cursor: grabbing;
+}
+
+.controlsLeft {
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  width: 120px;
+}
+
+.iconContainerBg {
+  width: 36px;
+  height: 36px;
+  border-radius: 30px;
+  background-color: var(--schemes-secondary-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 16px;
+}
+
+.titleContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.titleText {
+  font-family: var(--title-large-font);
+  font-size: var(--title-large-size);
+  font-weight: var(--title-large-weight);
+  color: var(--schemes-on-surface);
+  line-height: var(--title-large-line-height);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.controlsRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  width: auto;
+  gap: 8px;
+}
+
+.iconButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--schemes-surface-container-high);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.iconButton:hover {
+  background-color: var(--schemes-surface-container-highest);
+}
+
+.iconButton:active {
+  transform: scale(0.95);
+}
+
+.closeButton:hover {
+  background-color: var(--schemes-error-container);
+}
+
+.maximized {
+  position: absolute !important;
+  top: 108px !important; /* Start below the floating AppBar */
+  left: 18px !important;
+  right: 18px !important;
+  bottom: 110px !important; /* End above the bottom navbar */
+  width: auto !important;
+  height: auto !important;
+  border-radius: 24px !important;
+  box-shadow: var(--elevation-light-3);
+  z-index: var(--z-window-base, 10);
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1.0);
+}
+
+.maximized .appBar {
+  border-radius: 24px 24px 0 0;
+}
+
+.body {
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(24px);
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  overflow: hidden;
+  position: relative;
+}
+
+.maximized .body {
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+}

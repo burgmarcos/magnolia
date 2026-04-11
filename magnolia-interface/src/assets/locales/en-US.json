@@ -1,0 +1,14 @@
+{
+  "os.settings": "Settings",
+  "os.connectivity": "Connections",
+  "os.bluetooth.pair": "Pair",
+  "os.eco.battery": "Eco Mode",
+  "os.flashlight": "Flashlight",
+  "app.store": "App Store",
+  "app.archive": "Archive App",
+  "os.lifestyle": "Lifestyle",
+  "os.lifestyle.screentime": "Digital Health",
+  "os.capture": "Screen Capture",
+  "os.ml.performance": "Intelligent Power",
+  "chat.welcome": "Hello! I'm the Magnolia Assistant. I understand our Sovereign architecture, Stage A/B partitioning, and Bubblewrap sandboxing. How can I help you today?"
+}

@@ -1,0 +1,77 @@
+.layoutContainer {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background-color: var(--schemes-surface);
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  overflow: hidden;
+  box-shadow: var(--elevation-light-3);
+}
+
+.navRail {
+  width: 88px;
+  min-width: 88px;
+  background-color: var(--schemes-surface-container-low);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+  gap: 12px;
+  border-right: 1px solid var(--schemes-outline-variant);
+  overflow-y: auto;
+}
+
+.navItem {
+  width: 56px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  cursor: pointer;
+  background-color: transparent;
+  transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+  position: relative;
+}
+
+.navItem:hover {
+  background-color: color-mix(in srgb, var(--schemes-on-surface) 8%, transparent);
+}
+
+.navItemActive {
+  width: 56px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background-color: var(--schemes-surface-container-highest);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+  box-shadow: var(--elevation-light-1);
+}
+
+.navItemActive svg {
+  color: var(--schemes-primary) !important;
+}
+
+.contentPane {
+  flex: 1;
+  padding: 16px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

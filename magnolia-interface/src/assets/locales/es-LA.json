@@ -1,0 +1,14 @@
+{
+  "os.settings": "Configuraciones",
+  "os.connectivity": "Conexiones",
+  "os.bluetooth.pair": "Vincular",
+  "os.eco.battery": "Ahorro de Energía",
+  "os.flashlight": "Linterna",
+  "app.store": "Tienda",
+  "app.archive": "Archivar App",
+  "os.lifestyle": "Estilo de Vida",
+  "os.lifestyle.screentime": "Salud Digital",
+  "os.capture": "Captura de Pantalla",
+  "os.ml.performance": "Energía Inteligente",
+  "chat.welcome": "¡Hola! Soy el asistente de Magnolia. Entiendo nuestra arquitectura Soberana, el particionamiento Stage A/B y el aislamiento con Bubblewrap. ¿En qué puedo ayudarte?"
+}

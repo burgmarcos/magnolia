@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Lexend+Deca:wght@300;400;600&display=swap');
+
+:root {
+  /* Dynamic 4K/720p Scaling - Resizes the entire OS based on viewport 
+     Sets base font size relative to viewport height (1.25vh) 
+     capped between 13px (low res) and 28px (4K).
+  */
+  font-size: clamp(13px, 1.25vh, 28px);
+
+  /* Colors */
+  --grays-black: #000000;
+  
+  --accents-indigo: #6155f5;
+  --accents-green: #34c759;
+  --accents-indigo-alpha: rgba(97, 85, 245, 0.48);
+  --accents-green-alpha: rgba(52, 199, 89, 0.48);
+  
+  /* Glassmorphism - Updated for WCAG 2.1 AA Compliance (Opacities increased) */
+  --magnolia-glass-bg: rgba(255, 255, 255, 0.16);
+  --magnolia-glass-border: rgba(255, 255, 255, 0.20);
+  --magnolia-glass-blur: blur(40px);
+  
+  --schemes-on-surface: #1d1b20;
+  --schemes-primary-container: #dde1ff;
+  --schemes-surface-container: #f3edf7;
+  --schemes-secondary: #625b71;
+  --schemes-surface-container-highest: #e6e0e9;
+  --schemes-surface-container-high: #ece6f0;
+  --schemes-on-surface-variant: #404040; /* Darkened for accessibility */
+  
+  --schemes-primary: #6750a4;
+  --schemes-on-primary: #ffffff;
+  --schemes-error-container: #ffdad6;
+  --schemes-on-primary-container: #4f378a;
+  
+  --schemes-surface: #fef7ff;
+  --schemes-outline-variant: #938f99; /* Darkened for accessibility */
+  --schemes-secondary-container: #dfe1f9;
+  --schemes-inverse-on-surface: #f2f0f7;
+  --schemes-inverse-surface: #2f3036;
+  --schemes-surface-container-low: #f7f2fa;
+  
+  /* Typography - Using rem for 4K scaling */
+  --title-large-font: 'Roboto', sans-serif;
+  --title-large-size: 1.375rem; /* 22px at baseline */
+  --title-large-weight: 400;
+  --title-large-line-height: 1.75rem;
+  --title-large-tracking: 0px;
+
+  --display-medium-font: 'Roboto', sans-serif;
+  --display-medium-size: 2.8125rem; /* 45px at base */
+  --display-medium-weight: 400;
+  --display-medium-line-height: 3.25rem;
+  --display-medium-tracking: 0px;
+
+  --label-large-font: 'Roboto', sans-serif;
+  --label-large-size: 0.875rem; /* 14px at base */
+  --label-large-weight: 500;
+  --label-large-line-height: 1.25rem;
+  --label-large-tracking: 0.1px;
+
+  --body-large-font: 'Roboto', sans-serif;
+  --body-large-size: 1rem; /* 16px at base */
+  --body-large-weight: 400;
+  --body-large-line-height: 1.5rem;
+  --body-large-tracking: 0.5px;
+  
+  --title-medium-font: 'Roboto', sans-serif;
+  --title-medium-size: 1rem; /* 16px at base */
+  --title-medium-weight: 500;
+  --title-medium-line-height: 1.5rem;
+  --title-medium-tracking: 0.15px;
+  
+  /* M3 Expressive Elevation */
+  --elevation-level-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.30), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --elevation-level-2: 0px 1px 2px 0px rgba(0, 0, 0, 0.30), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --elevation-level-3: 0px 1px 3px 0px rgba(0, 0, 0, 0.30), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
+  --elevation-level-4: 0px 2px 3px 0px rgba(0, 0, 0, 0.30), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
+  --elevation-level-5: 0px 4px 4px 0px rgba(0, 0, 0, 0.30), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
+
+  /* M3 Expressive Motion */
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --motion-duration-medium-1: 250ms;
+  --motion-duration-long-2: 500ms;
+
+  --schemes-surface-tint: #6750a4;
+  --schemes-outline: #79747e;
+  --schemes-surface-variant: #e7e0ec;
+
+  /* Layering System */
+  --z-desktop: 0;
+  --z-wallpaper: 1;
+  --z-window-base: 100;
+  --z-navbar: 500;
+  --z-appbar: 600;
+  --z-drawer: 800;
+  --z-notification: 900;
+  --z-toast: 1000;
+  --z-lockscreen: 2000;
+  --z-boot: 3000;
+}
+
+/* --- THEME: BRAT (Neon Green / Black) --- */
+.theme-brat {
+  --accents-indigo: #8ace00;
+  --accents-green: #8ace00;
+  --accents-indigo-alpha: rgba(138, 206, 0, 0.4);
+  --accents-green-alpha: rgba(138, 206, 0, 0.4);
+  
+  --schemes-surface: #000000;
+  --schemes-on-surface: #8ace00;
+  --schemes-primary: #8ace00;
+  --schemes-on-primary: #000000;
+  --schemes-secondary-container: #1a1a1a;
+  
+  --magnolia-glass-bg: rgba(0, 0, 0, 0.8);
+  --magnolia-glass-border: #8ace00;
+  --magnolia-glass-blur: blur(0px); /* Sharp aesthetic */
+  
+  --title-large-font: 'Arial', sans-serif;
+  --display-medium-font: 'Arial', sans-serif;
+}
+
+/* --- THEME: FRUIT (Apple Glassmorphism) --- */
+.theme-fruit {
+  --accents-indigo: #007aff;
+  --accents-green: #34c759;
+  
+  --magnolia-glass-bg: rgba(255, 255, 255, 0.65); /* Increased for text legibility */
+  --magnolia-glass-blur: blur(60px);
+  --magnolia-glass-border: rgba(255, 255, 255, 0.4);
+  
+  --schemes-surface: rgba(255, 255, 255, 0.85);
+  --schemes-on-surface: #000000;
+  --schemes-primary: #0056b3; /* Darkened for AA contrast */
+  --schemes-secondary-container: rgba(0, 122, 255, 0.15);
+}
+
+/* Accessibility Support: High Contrast Mode */
+.magnolia-high-contrast {
+  --magnolia-glass-bg: rgba(255, 255, 255, 0.95) !important;
+  --magnolia-glass-blur: none !important;
+  --schemes-outline: #000000 !important;
+  --schemes-primary: #3700b3 !important;
+  --accents-indigo: #0000ff !important;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--magnolia-glass-bg);
+  backdrop-filter: var(--magnolia-glass-blur);
+  -webkit-backdrop-filter: var(--magnolia-glass-blur);
+  border: 1px solid var(--magnolia-glass-border);
+}
+
+.magnolia-display-large {
+  font-family: 'Lexend Deca', sans-serif;
+  font-weight: 400;
+  font-size: 3.5625rem; /* 57px / 16 */
+  line-height: 4rem; /* 64px / 16 */
+  letter-spacing: -0.25px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  /* Hardware acceleration for WPE WebKit */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--grays-black);
+  color: var(--schemes-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+button {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+p, h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+.desktop-main {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--grays-black);
+}
+
+.safe-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 5rem; /* ~80px relative */
+  pointer-events: none;
+}
+
+.safe-zone > * {
+  pointer-events: auto;
+}

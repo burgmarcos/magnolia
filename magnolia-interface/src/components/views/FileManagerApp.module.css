@@ -1,0 +1,29 @@
+.fileEntry {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  gap: 8px;
+}
+
+.fileEntry:hover {
+  background: var(--schemes-surface-container-high);
+  transform: translateY(-2px);
+}
+
+.breadcrumbBtn {
+  background: transparent;
+  border: none;
+  padding: 2px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: inherit;
+  transition: background 0.2s;
+}
+
+.breadcrumbBtn:hover {
+  background: var(--schemes-surface-container-high);
+}

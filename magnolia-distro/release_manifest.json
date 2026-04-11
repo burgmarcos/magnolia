@@ -1,0 +1,17 @@
+{
+  "project_id": "mrburg-os",
+  "project_number": "39450626577",
+  "distribution": "Magnolia",
+  "release_channel": "rolling",
+  "current_stable": {
+    "version": "v1.0.4-LTS",
+    "kernel": "Linux 7.0-rc7",
+    "bundle_url": "gs://mrburg-os-ota/bundles/latest.raucb"
+  },
+  "update_history": [
+    {
+      "version": "v1.0.3",
+      "date": "2026-04-05"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+# Magnolia Premium Minimalist Bootcamp GRUB Theme
+desktop-image: "background.png"
+desktop-color: "#f3e5f5"
+title-text: ""
+title-font: "Unifont Regular 16"
+terminal-font: "Unifont Regular 16"
+
++ label {
+  top = 30%
+  left = 0%
+  width = 100%
+  align = "center"
+  text = "SELECT BOOT VOLUME"
+  color = "#4a148c"
+  font = "Unifont Regular 16"
+}
+
++ boot_menu {
+  left = 20%
+  top = 40%
+  width = 60%
+  height = 40%
+  item_font = "Unifont Regular 16"
+  item_color = "#7b1fa2"
+  selected_item_color = "#311b92"
+  item_height = 50
+  item_spacing = 20
+}
+
++ vbox {
+  top = 80%
+  left = 0%
+  width = 100%
+  + progress_bar {
+    id = "__timeout__"
+    left = 40%
+    width = 20%
+    height = 2
+    fg_color = "#ffffff"
+    bg_color = "#333333"
+  }
+}
