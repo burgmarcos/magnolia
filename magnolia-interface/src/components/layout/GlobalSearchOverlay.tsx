@@ -14,7 +14,7 @@ interface SearchResult {
 
 interface GlobalSearchOverlayProps {
   onClose: () => void;
-  onOpenApp: (type: string, title: string) => void;
+  onOpenApp: (type: any, title: string) => void;
 }
 
 export function GlobalSearchOverlay({ onClose, onOpenApp }: GlobalSearchOverlayProps) {
@@ -125,7 +125,7 @@ export function GlobalSearchOverlay({ onClose, onOpenApp }: GlobalSearchOverlayP
                 key={i} 
                 className="search-result-item"
                 onClick={() => {
-                  if (res.type === 'app') onOpenApp(res.appType, res.name);
+                  if (res.type === 'app') onOpenApp(res.appType || 'browser', res.name);
                   onClose();
                 }}
                 style={{

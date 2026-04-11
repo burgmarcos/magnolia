@@ -61,6 +61,8 @@ interface DiskInfo {
   free_space: number;
 }
 
+type InstallState = 'idle' | 'downloading' | 'verifying' | 'installed' | 'error';
+
 export const AppStore: React.FC = () => {
   const { translate } = useLanguage();
   const [appStates, setAppStates] = useState<Record<string, { state: InstallState; progress: number }>>({});
