@@ -3,6 +3,7 @@ use bip39::Mnemonic;
 use chrono::Utc;
 use keyring::Entry;
 use notify::{Config, Event, RecursiveMode, Watcher};
+use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 
 use std::fs::File;
@@ -102,11 +103,15 @@ impl SovereignEncrypter {
 
         let encrypted_size = target.metadata().map_err(|e| anyhow::anyhow!(e))?.len();
 
+        let encrypted_data = std::fs::read(target).map_err(|e| anyhow::anyhow!(e))?;
+        let hash = Sha256::digest(&encrypted_data);
+        let sha256: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+
         Ok(SyncMetadata {
             file_name: source.file_name().unwrap().to_string_lossy().into(),
             original_size: total_bytes,
             encrypted_size,
-            sha256: "stub-hash".into(),
+            sha256,
             timestamp: Utc::now().to_rfc3339(),
         })
     }
