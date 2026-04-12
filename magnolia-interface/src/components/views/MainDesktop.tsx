@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy, ElementType } from 'react';
+import { useState, useEffect, Suspense, lazy, type ComponentType } from 'react';
 import { extractThemeFromImage } from '../../utils/theme';
 import { DesktopEnvironment } from '../layout/DesktopEnvironment';
 import { XRAppBar } from '../layout/XRAppBar';
@@ -17,6 +17,7 @@ import {
 import { Toaster, toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWindows } from '../../contexts/WindowContext';
+import type { WindowType } from '../../contexts/WindowContext';
 
 const ChatInterface = lazy(() => import('./ChatInterface').then(m => ({ default: m.ChatInterface })));
 const AboutSystem = lazy(() => import('./AboutSystem').then(m => ({ default: m.AboutSystem })));
@@ -47,7 +48,7 @@ const StorageSettingsView = lazy(() => import('./StorageSettings.tsx').then(m =>
 type SettingsRoute = 'general' | 'models' | 'telegram' | 'knowledge' | 'graph' | 'search' | 'palette' | 'updates' | 'security' | 'preferences' | 'connectivity' | 'lifestyle' | 'regional' | 'privacy' | 'storage';
 type NavTabRoute = 'apps' | 'home' | 'updates';
 
-const WINDOW_METADATA: Record<string, { icon: ElementType, color: string }> = {
+const WINDOW_METADATA: Record<string, { icon: ComponentType<{ size?: number; color?: string }>, color: string }> = {
   chat: { icon: MessageSquare, color: '#3A7BD5' },
   browser: { icon: Globe, color: '#4285F4' },
   appstore: { icon: Package, color: '#BA68C8' },

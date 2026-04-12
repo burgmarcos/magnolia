@@ -1,4 +1,4 @@
-import { useState, useEffect, ElementType } from 'react';
+import { useState, useEffect, type ComponentType } from 'react';
 import { 
   Activity, 
   Cpu, 
@@ -33,7 +33,7 @@ interface SecurityStatus {
 }
 
 interface MetricCardProps {
-  icon: ElementType;
+  icon: ComponentType<{ size?: number; color?: string }>;
   label: string;
   value: string;
   subvalue?: string;

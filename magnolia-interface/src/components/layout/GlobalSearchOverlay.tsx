@@ -3,6 +3,7 @@ import { Search, File, Folder, Rocket, X, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
 import { usePreferences } from '../../context/PreferencesContext';
+import type { WindowType } from '../../contexts/WindowContext';
 
 interface SearchResult {
   name: string;
@@ -14,7 +15,7 @@ interface SearchResult {
 
 interface GlobalSearchOverlayProps {
   onClose: () => void;
-  onOpenApp: (type: string, title: string) => void;
+  onOpenApp: (type: WindowType, title: string) => void;
 }
 
 export function GlobalSearchOverlay({ onClose, onOpenApp }: GlobalSearchOverlayProps) {
@@ -125,7 +126,7 @@ export function GlobalSearchOverlay({ onClose, onOpenApp }: GlobalSearchOverlayP
                 key={i} 
                 className="search-result-item"
                 onClick={() => {
-                  if (res.type === 'app') onOpenApp(res.appType || 'browser', res.name);
+                  if (res.type === 'app') onOpenApp((res.appType as WindowType) || 'browser', res.name);
                   onClose();
                 }}
                 style={{

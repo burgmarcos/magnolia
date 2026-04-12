@@ -1,4 +1,4 @@
-import { useState, CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { ArrowLeft, ArrowRight, RotateCw, Home, Shield, Globe, Lock, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
