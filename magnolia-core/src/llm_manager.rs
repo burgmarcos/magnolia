@@ -53,7 +53,7 @@ pub async fn start_llama_server_loop(
             let start_time = tokio::time::Instant::now();
             let mut command = Command::new("llama-server");
             command.arg("-m").arg(&model_path);
-            
+
             // Switch to Unix Socket for secure, local-only communication
             command.arg("--socket").arg("/run/magnolia/llama.sock");
 
@@ -67,11 +67,17 @@ pub async fn start_llama_server_loop(
                 if quant_type.contains(':') {
                     let parts: Vec<&str> = quant_type.split(':').collect();
                     if parts.len() == 2 {
-                        info!("Applying separate K/V quantization: K={}, V={}", parts[0], parts[1]);
+                        info!(
+                            "Applying separate K/V quantization: K={}, V={}",
+                            parts[0], parts[1]
+                        );
                         command.arg("-ctk").arg(parts[0]);
                         command.arg("-ctv").arg(parts[1]);
                     } else {
-                        warn!("Invalid quantization format: {}. Defaulting to uniform.", quant_type);
+                        warn!(
+                            "Invalid quantization format: {}. Defaulting to uniform.",
+                            quant_type
+                        );
                         command.arg("-ctk").arg(&quant_type);
                         command.arg("-ctv").arg(&quant_type);
                     }
@@ -136,7 +142,7 @@ pub async fn start_llama_server_loop(
                             if !exit_status.success() && elapsed.as_secs() < 3 {
                                 let final_logs = stderr_logs.lock().await.clone();
                                 error!("llama-server failed on startup (exited in {:?}). Logs: {}", elapsed, final_logs);
-                                
+
                                 let _ = app.emit("engine-error", EngineErrorPayload {
                                     message: format!("Process failed on startup after {:?}", elapsed),
                                     logs: final_logs,
@@ -195,13 +201,16 @@ pub async fn monitor_ai_pressure(_child_id: u32) {
     loop {
         sys.refresh_memory();
         let used_pct = (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0;
-        
+
         if used_pct > 90.0 {
-            warn!("[Magnolia] Critical Memory Pressure ({:.1}%). Throttling AI...", used_pct);
+            warn!(
+                "[Magnolia] Critical Memory Pressure ({:.1}%). Throttling AI...",
+                used_pct
+            );
             // On Linux, we could use cgroups or SIGSTOP/SIGCONT to throttle.
             // For now, we just log a warning for the user.
         }
-        
+
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
     }
 }

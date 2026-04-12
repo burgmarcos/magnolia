@@ -1,8 +1,8 @@
 use rusqlite::{params, Connection, Result};
-use std::path::Path;
-use walkdir::WalkDir;
 use serde::Serialize;
+use std::path::Path;
 use tauri::command;
+use walkdir::WalkDir;
 
 #[derive(Serialize)]
 pub struct SearchResult {
@@ -33,11 +33,12 @@ pub fn initialize_search_db(data_dir: &Path) -> Result<Connection> {
 pub async fn rebuild_index(user_id: String) -> Result<(), String> {
     let data_path = format!("/data/users/{}", user_id);
     let db_path = format!("/data/system/search_{}.db", user_id);
-    
+
     let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    
+
     // Clear existing index
-    conn.execute("DELETE FROM file_index", []).map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM file_index", [])
+        .map_err(|e| e.to_string())?;
 
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 

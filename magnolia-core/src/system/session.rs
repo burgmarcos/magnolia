@@ -20,12 +20,10 @@ fn get_session_path(user_id: &str) -> PathBuf {
 #[command]
 pub async fn save_session(user_id: String, state: SessionStore) -> Result<(), String> {
     let path = get_session_path(&user_id);
-    let data = serde_json::to_string_pretty(&state)
-        .map_err(|e| e.to_string())?;
-    
-    fs::write(path, data)
-        .map_err(|e| e.to_string())?;
-    
+    let data = serde_json::to_string_pretty(&state).map_err(|e| e.to_string())?;
+
+    fs::write(path, data).map_err(|e| e.to_string())?;
+
     Ok(())
 }
 
@@ -36,12 +34,10 @@ pub async fn load_session(user_id: String) -> Result<Option<SessionStore>, Strin
         return Ok(None);
     }
 
-    let data = fs::read_to_string(path)
-        .map_err(|e| e.to_string())?;
-    
-    let state: SessionStore = serde_json::from_str(&data)
-        .map_err(|e| e.to_string())?;
-        
+    let data = fs::read_to_string(path).map_err(|e| e.to_string())?;
+
+    let state: SessionStore = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+
     Ok(Some(state))
 }
 

@@ -92,12 +92,18 @@ async fn process_sse_stream(
     Ok(())
 }
 
-pub async fn stream_chat_local(app: AppHandle, mut messages: Vec<ChatMessage>) -> Result<(), String> {
+pub async fn stream_chat_local(
+    app: AppHandle,
+    mut messages: Vec<ChatMessage>,
+) -> Result<(), String> {
     // Inject specialized system knowledge
-    messages.insert(0, ChatMessage {
-        role: "system".into(),
-        content: SYSTEM_PROMPT.into(),
-    });
+    messages.insert(
+        0,
+        ChatMessage {
+            role: "system".into(),
+            content: SYSTEM_PROMPT.into(),
+        },
+    );
 
     let client = Client::new();
     let request_body = ChatRequest {
@@ -133,10 +139,13 @@ pub async fn stream_chat_cloud(
 ) -> Result<(), String> {
     let mut messages = messages;
     // Inject specialized system knowledge
-    messages.insert(0, ChatMessage {
-        role: "system".into(),
-        content: SYSTEM_PROMPT.into(),
-    });
+    messages.insert(
+        0,
+        ChatMessage {
+            role: "system".into(),
+            content: SYSTEM_PROMPT.into(),
+        },
+    );
 
     let api_key = secrets::get_api_key(&provider)?;
     let client = Client::new();

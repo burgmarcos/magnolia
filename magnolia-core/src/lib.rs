@@ -1,26 +1,26 @@
+mod app_manager;
 pub mod database;
 mod downloader;
 mod huggingface;
 pub mod indexer;
 mod inference;
+mod installer;
 mod llm_manager;
 pub mod rag;
 mod secrets;
-mod telemetry;
-mod installer;
-mod app_manager;
 pub mod system;
+mod telemetry;
 
 pub fn run_headless() {
     println!("[Magnolia] Headless mode: Starting background systems...");
-    
+
     // Spawn heartbeats without Tauri context
     system::storage::spawn_storage_pulse();
     system::network::spawn_network_lattice();
     system::hal::spawn_hal_maintenance();
 
     println!("[Magnolia] Headless backend is active. Keeping main thread alive...");
-    
+
     // Keep the main thread alive since we don't have the Tauri loop
     loop {
         std::thread::sleep(std::time::Duration::from_secs(3600));
@@ -39,15 +39,14 @@ fn get_launch_mode() -> String {
     if args.iter().any(|arg| arg == "--uninstall") {
         return "uninstaller".to_string();
     }
-    
+
     // If not running from the install directory, we assume it's the bootstrapper/installer
     if !installer::is_installed() {
         return "installer".to_string();
     }
-    
+
     "main".to_string()
 }
-
 
 #[tauri::command]
 fn get_app_status() -> String {
@@ -80,7 +79,9 @@ async fn get_hardware_specs(app: tauri::AppHandle) -> Result<telemetry::Hardware
         let mut specs = telemetry::get_system_specs();
         specs.screen_resolution = telemetry::get_screen_resolution(&app);
         specs
-    }).await.map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -91,7 +92,8 @@ async fn refresh_hardware_specs(app: tauri::AppHandle) -> Result<telemetry::Hard
 #[tauri::command]
 async fn verify_hf_token(token: String) -> Result<String, String> {
     let client = reqwest::Client::new();
-    let res = client.get("https://huggingface.co/api/whoami-v2")
+    let res = client
+        .get("https://huggingface.co/api/whoami-v2")
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await
@@ -111,7 +113,7 @@ async fn search_hf_models(model_id: String) -> Result<huggingface::HfModelInfo, 
         println!("Keyring access warning: {}", e);
         "HF API Key not found. Please set it in Models Hub.".to_string()
     })?;
-    
+
     huggingface::fetch_hf_model_size(&model_id, Some(token)).await
 }
 
@@ -322,12 +324,12 @@ async fn spawn_browser_view(
     _height: f64,
 ) -> Result<(), String> {
     // In Magnolia Phase 3, we spawn a truly isolated Bubblewrap container
-    // for the browser engine. The previous Tauri-native webview is 
+    // for the browser engine. The previous Tauri-native webview is
     // replaced with a sandboxed WPE-WebKit kiosk for maximum sovereignty.
-    
+
     let sandbox = system::sandbox::SovereignSandbox::new(&label, &url);
     sandbox.spawn_browser()?;
-        
+
     Ok(())
 }
 
@@ -341,10 +343,16 @@ async fn sync_browser_view(
     height: f64,
 ) -> Result<(), String> {
     if let Some(view) = app.get_webview_window(&label) {
-        view.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x: x as i32, y: y as i32 }))
-            .map_err(|e| e.to_string())?;
-        view.set_size(tauri::Size::Physical(tauri::PhysicalSize { width: width as u32, height: height as u32 }))
-            .map_err(|e| e.to_string())?;
+        view.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+            x: x as i32,
+            y: y as i32,
+        }))
+        .map_err(|e| e.to_string())?;
+        view.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+            width: width as u32,
+            height: height as u32,
+        }))
+        .map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -356,7 +364,6 @@ async fn detach_browser_view(app: tauri::AppHandle, label: String) -> Result<(),
     }
     Ok(())
 }
-
 
 #[tauri::command]
 async fn ensure_default_knowledge_dir() -> Result<String, String> {
@@ -543,7 +550,10 @@ pub fn run() {
                         }
                     }
                 }
-                Err(e) => eprintln!("[Magnolia ERROR] Could not determine AppData directory: {}", e),
+                Err(e) => eprintln!(
+                    "[Magnolia ERROR] Could not determine AppData directory: {}",
+                    e
+                ),
             }
 
             println!("[Magnolia] Initializing Tauri plugins...");
@@ -554,13 +564,23 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            
-            app.handle().plugin(tauri_plugin_dialog::init())
-                .map_err(|e| { eprintln!("[Magnolia ERROR] Dialog plugin fail: {}", e); e })?;
-            app.handle().plugin(tauri_plugin_fs::init())
-                .map_err(|e| { eprintln!("[Magnolia ERROR] FS plugin fail: {}", e); e })?;
-            app.handle().plugin(tauri_plugin_process::init())
-                .map_err(|e| { eprintln!("[Magnolia ERROR] Process plugin fail: {}", e); e })?;
+
+            app.handle()
+                .plugin(tauri_plugin_dialog::init())
+                .map_err(|e| {
+                    eprintln!("[Magnolia ERROR] Dialog plugin fail: {}", e);
+                    e
+                })?;
+            app.handle().plugin(tauri_plugin_fs::init()).map_err(|e| {
+                eprintln!("[Magnolia ERROR] FS plugin fail: {}", e);
+                e
+            })?;
+            app.handle()
+                .plugin(tauri_plugin_process::init())
+                .map_err(|e| {
+                    eprintln!("[Magnolia ERROR] Process plugin fail: {}", e);
+                    e
+                })?;
 
             // 3. Start Sovereign Sync Watchdog for AppData
             if let Ok(app_data_dir) = app.path().app_data_dir() {

@@ -1,7 +1,7 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use chrono::{DateTime, Utc};
 use tauri::command;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -21,7 +21,11 @@ fn get_audit_path() -> PathBuf {
 }
 
 #[command]
-pub async fn log_permission_event(app_id: String, permission: String, status: String) -> Result<(), String> {
+pub async fn log_permission_event(
+    app_id: String,
+    permission: String,
+    status: String,
+) -> Result<(), String> {
     let path = get_audit_path();
     let mut logs: Vec<AuditEntry> = if path.exists() {
         let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
@@ -57,7 +61,7 @@ pub async fn get_permission_history() -> Result<Vec<AuditEntry>, String> {
 
     let data = fs::read_to_string(path).map_err(|e| e.to_string())?;
     let logs: Vec<AuditEntry> = serde_json::from_str(&data).map_err(|e| e.to_string())?;
-    
+
     // Return logs in reverse chronological order
     let mut reversed = logs;
     reversed.reverse();

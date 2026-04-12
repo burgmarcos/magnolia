@@ -1,6 +1,6 @@
 use serde::Serialize;
-use tauri::command;
 use std::net::UdpSocket;
+use tauri::command;
 
 #[derive(Serialize)]
 pub struct UpdatePeer {
@@ -15,15 +15,13 @@ pub struct UpdatePeer {
 pub async fn discover_update_peers() -> Result<Vec<UpdatePeer>, String> {
     // In a real scenario, we use mDNS or NAN discovery.
     // For now, we simulate finding one peer on the local subnet.
-    Ok(vec![
-        UpdatePeer {
-            hostname: "magnolia-neighbor-8af3".to_string(),
-            ip: "192.168.1.142".to_string(),
-            version: "v0.0.5".to_string(),
-            is_verified: true,
-            account_id: "@burgmarcos:bos".to_string(),
-        }
-    ])
+    Ok(vec![UpdatePeer {
+        hostname: "magnolia-neighbor-8af3".to_string(),
+        ip: "192.168.1.142".to_string(),
+        version: "v0.0.5".to_string(),
+        is_verified: true,
+        account_id: "@burgmarcos:bos".to_string(),
+    }])
 }
 
 #[command]

@@ -1,8 +1,8 @@
-use tauri::command;
-use serde::{Serialize, Deserialize};
-use std::process::Command;
-use crate::system::{rauc, partition, sync, cloud};
 use crate::system::error::ToBridgeResult;
+use crate::system::{cloud, partition, rauc, sync};
+use serde::{Deserialize, Serialize};
+use std::process::Command;
+use tauri::command;
 
 #[derive(Serialize, Deserialize)]
 pub struct UpdateStatus {
@@ -14,7 +14,7 @@ pub struct UpdateStatus {
 // Diagnostic wrappers for Dashboard HUD
 #[command]
 pub async fn get_system_update_status() -> Result<rauc::RaucStatus, String> {
-    rauc::get_rauc_status() 
+    rauc::get_rauc_status()
 }
 
 #[command]
@@ -43,8 +43,16 @@ pub struct SecurityStatus {
 pub async fn get_security_status() -> Result<Vec<SecurityStatus>, String> {
     // In Magnolia, we monitor the UserData (LUKS) and System (RO) states
     Ok(vec![
-        SecurityStatus { label: "OS_CORE".into(), is_locked: false, is_encrypted: false }, // System is RO
-        SecurityStatus { label: "UserData".into(), is_locked: false, is_encrypted: true },  // UserData is LUKS
+        SecurityStatus {
+            label: "OS_CORE".into(),
+            is_locked: false,
+            is_encrypted: false,
+        }, // System is RO
+        SecurityStatus {
+            label: "UserData".into(),
+            is_locked: false,
+            is_encrypted: true,
+        }, // UserData is LUKS
     ])
 }
 
@@ -64,9 +72,10 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
         .map_err(|e| format!("NetworkManager not responding: {}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    
+
     // Parse nmcli output for the active SSID
-    let active_ssid = stdout.lines()
+    let active_ssid = stdout
+        .lines()
         .find(|line| line.starts_with("yes:"))
         .map(|line| line.replace("yes:", ""))
         .unwrap_or_else(|| "Disconnected".to_string());
@@ -76,7 +85,7 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
         .arg("-I")
         .output()
         .map_err(|e| e.to_string())?;
-    
+
     let ip_address = String::from_utf8_lossy(&ip_output.stdout)
         .split_whitespace()
         .next()
@@ -112,7 +121,9 @@ pub async fn set_power_state(state: String) -> Result<(), String> {
             Command::new("reboot").spawn().map_err(|e| e.to_string())?;
         }
         "shutdown" => {
-            Command::new("poweroff").spawn().map_err(|e| e.to_string())?;
+            Command::new("poweroff")
+                .spawn()
+                .map_err(|e| e.to_string())?;
         }
         _ => return Err("Invalid power state".into()),
     }
@@ -142,23 +153,23 @@ pub async fn commit_identity(mnemonic: String) -> Result<(), String> {
     use keyring::Entry;
     let entry = Entry::new("Magnolia-Sovereign-Sync", "user")
         .map_err(|e| format!("Keychain access failed: {}", e))?;
-    
+
     // Validate mnemonic before storing
     let mnemonic_str: &str = mnemonic.as_str();
     if bip39::Mnemonic::parse(mnemonic_str).is_err() {
         return Err("Invalid BIP-39 mnemonic provided".to_string());
     }
 
-    entry.set_password(mnemonic_str)
+    entry
+        .set_password(mnemonic_str)
         .map_err(|e| format!("Failed to secure identity: {}", e))
 }
 
 #[command]
 pub async fn check_identity_exists() -> Result<bool, String> {
     use keyring::Entry;
-    let entry = Entry::new("Magnolia-Sovereign-Sync", "user")
-        .map_err(|e| e.to_string())?;
-    
+    let entry = Entry::new("Magnolia-Sovereign-Sync", "user").map_err(|e| e.to_string())?;
+
     Ok(entry.get_password().is_ok())
 }
 
@@ -176,10 +187,10 @@ pub async fn detect_gpu() -> Result<GPUInfo, String> {
         .unwrap_or_else(|_| "0x0000".to_string())
         .trim()
         .to_string();
-    
+
     let mut vendor_name = "Unknown GPU";
     let mut requires_proprietary = false;
-    
+
     // Vendor IDs
     if vendor_id.contains("0x10de") {
         vendor_name = "Nvidia GeForce / RTX";
@@ -189,11 +200,10 @@ pub async fn detect_gpu() -> Result<GPUInfo, String> {
     } else if vendor_id.contains("0x8086") {
         vendor_name = "Intel Graphics";
     }
-    
+
     Ok(GPUInfo {
         vendor: vendor_name.to_string(),
         model: "Primary Display Adapter".to_string(),
         requires_proprietary,
     })
 }
-

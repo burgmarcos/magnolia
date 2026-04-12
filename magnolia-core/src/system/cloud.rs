@@ -1,6 +1,6 @@
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use log::{info, error};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CloudConfig {
@@ -26,7 +26,10 @@ impl CloudBridge {
         let has_sa = auth_path.exists();
 
         if has_sa {
-            info!("Sovereign Identity: Service Account key detected at {:?}", auth_path);
+            info!(
+                "Sovereign Identity: Service Account key detected at {:?}",
+                auth_path
+            );
         } else {
             error!("Sovereignty Warning: No GCP Service Account key found at {:?}. Cloud features will be restricted.", auth_path);
         }

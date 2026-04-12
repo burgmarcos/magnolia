@@ -29,13 +29,13 @@ pub fn get_system_specs() -> HardwareSpecs {
     let mut vendor = "Core Graphics".to_string();
 
     let mut cmd = Command::new("nvidia-smi");
-    
+
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
-    
+
     cmd.args(["--query-gpu=memory.total", "--format=csv,noheader,nounits"]);
 
     let output = cmd.output();

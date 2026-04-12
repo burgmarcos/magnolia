@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::fs;
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
@@ -21,7 +21,7 @@ fn main() {
         let status = Command::new("mount")
             .args(["-t", fstype, source, target])
             .status();
-        
+
         if let Err(e) = status {
             eprintln!("[Magnolia ERROR] Failed to mount {}: {}", target, e);
         }
@@ -38,7 +38,7 @@ fn main() {
     // 4. Launch the Magnolia Hub (Tauri)
     // We launch this in the background or replace our process
     println!("[Magnolia] Launching Magnolia Dashboard Hub...");
-    
+
     // Give the system a second to settle
     thread::sleep(Duration::from_secs(1));
 
@@ -46,13 +46,19 @@ fn main() {
         .spawn()
         .expect("[Magnolia FATAL] Failed to launch Magnolia-hub");
 
-    println!("[Magnolia] Supervisor active. Monitoring Hub (PID {})...", hub.id());
+    println!(
+        "[Magnolia] Supervisor active. Monitoring Hub (PID {})...",
+        hub.id()
+    );
 
     // 5. Keep PID 1 alive and reap orphans
     loop {
         match hub.try_wait() {
             Ok(Some(status)) => {
-                println!("[Magnolia] Dashboard Hub exited with {}. Restarting...", status);
+                println!(
+                    "[Magnolia] Dashboard Hub exited with {}. Restarting...",
+                    status
+                );
                 thread::sleep(Duration::from_secs(5));
                 hub = Command::new("/usr/bin/Magnolia-hub")
                     .spawn()

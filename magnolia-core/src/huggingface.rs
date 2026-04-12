@@ -16,7 +16,8 @@ pub async fn fetch_hf_model_size(
     let client = Client::new();
     let url = format!("https://huggingface.co/api/models/{}", model_id);
 
-    let mut request = client.get(&url)
+    let mut request = client
+        .get(&url)
         .header("User-Agent", "Magnolia-desktop-v0.0.2"); // Standard UA for HF
 
     if let Some(ref t) = token {
@@ -69,7 +70,7 @@ pub async fn fetch_hf_model_size(
                     "https://huggingface.co/{}/resolve/main/{}",
                     model_id, sib.rfilename
                 );
-                
+
                 let mut head_req = client.head(&file_url);
                 if let Some(ref t) = token {
                     head_req = head_req.header("Authorization", format!("Bearer {}", t));

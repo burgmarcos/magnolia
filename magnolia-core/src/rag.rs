@@ -134,18 +134,12 @@ pub fn delete_document_from_index(conn: &mut Connection, doc_id: &str) -> Result
     .map_err(|e| e.to_string())?;
 
     // 3. Delete from nodes
-    tx.execute(
-        "DELETE FROM nodes WHERE document_id = ?1",
-        params![doc_id],
-    )
-    .map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM nodes WHERE document_id = ?1", params![doc_id])
+        .map_err(|e| e.to_string())?;
 
     // 4. Delete from documents
-    tx.execute(
-        "DELETE FROM documents WHERE id = ?1",
-        params![doc_id],
-    )
-    .map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM documents WHERE id = ?1", params![doc_id])
+        .map_err(|e| e.to_string())?;
 
     tx.commit().map_err(|e| e.to_string())?;
     Ok(())
@@ -207,35 +201,43 @@ pub fn get_graph_data(conn: &Connection) -> Result<GraphData, String> {
     let mut edges = Vec::new();
 
     // 1. Fetch Documents as Root Nodes
-    let mut doc_stmt = conn.prepare("SELECT id, filename FROM documents").map_err(|e| e.to_string())?;
-    let doc_rows = doc_stmt.query_map([], |row| {
-        Ok(GraphNode {
-            id: row.get(0)?,
-            label: row.get(1)?,
-            type_name: "document".to_string(),
-            details: "Source File".to_string(),
+    let mut doc_stmt = conn
+        .prepare("SELECT id, filename FROM documents")
+        .map_err(|e| e.to_string())?;
+    let doc_rows = doc_stmt
+        .query_map([], |row| {
+            Ok(GraphNode {
+                id: row.get(0)?,
+                label: row.get(1)?,
+                type_name: "document".to_string(),
+                details: "Source File".to_string(),
+            })
         })
-    }).map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())?;
 
     for node in doc_rows.filter_map(|r| r.ok()) {
         nodes.push(node);
     }
 
     // 2. Fetch Chunks as Leaf Nodes
-    let mut chunk_stmt = conn.prepare("SELECT rowid, document_id, chunk_index, SUBSTR(content, 0, 40) FROM nodes").map_err(|e| e.to_string())?;
-    let chunk_rows = chunk_stmt.query_map([], |row| {
-        let rowid: i64 = row.get(0)?;
-        let doc_id: String = row.get(1)?;
-        let chunk_idx: u32 = row.get(2)?;
-        let snippet: String = row.get(3)?;
-        
-        Ok((rowid, doc_id, chunk_idx, snippet))
-    }).map_err(|e| e.to_string())?;
+    let mut chunk_stmt = conn
+        .prepare("SELECT rowid, document_id, chunk_index, SUBSTR(content, 0, 40) FROM nodes")
+        .map_err(|e| e.to_string())?;
+    let chunk_rows = chunk_stmt
+        .query_map([], |row| {
+            let rowid: i64 = row.get(0)?;
+            let doc_id: String = row.get(1)?;
+            let chunk_idx: u32 = row.get(2)?;
+            let snippet: String = row.get(3)?;
+
+            Ok((rowid, doc_id, chunk_idx, snippet))
+        })
+        .map_err(|e| e.to_string())?;
 
     for chunk in chunk_rows.filter_map(|r| r.ok()) {
         let (rowid, doc_id, chunk_idx, snippet) = chunk;
         let node_id = format!("chunk-{}", rowid);
-        
+
         nodes.push(GraphNode {
             id: node_id.clone(),
             label: format!("Chunk #{}", chunk_idx),
@@ -253,15 +255,19 @@ pub fn get_graph_data(conn: &Connection) -> Result<GraphData, String> {
     }
 
     // 3. Fetch Explicit Semantic Edges
-    let mut edge_stmt = conn.prepare("SELECT id, source_node_id, target_node_id, relationship_type FROM edges").map_err(|e| e.to_string())?;
-    let edge_rows = edge_stmt.query_map([], |row| {
-        Ok(GraphEdge {
-            id: row.get(0)?,
-            source: format!("chunk-{}", row.get::<_, i64>(1)?),
-            target: format!("chunk-{}", row.get::<_, i64>(2)?),
-            relationship: row.get(3).unwrap_or("related".to_string()),
+    let mut edge_stmt = conn
+        .prepare("SELECT id, source_node_id, target_node_id, relationship_type FROM edges")
+        .map_err(|e| e.to_string())?;
+    let edge_rows = edge_stmt
+        .query_map([], |row| {
+            Ok(GraphEdge {
+                id: row.get(0)?,
+                source: format!("chunk-{}", row.get::<_, i64>(1)?),
+                target: format!("chunk-{}", row.get::<_, i64>(2)?),
+                relationship: row.get(3).unwrap_or("related".to_string()),
+            })
         })
-    }).map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())?;
 
     for edge in edge_rows.filter_map(|r| r.ok()) {
         edges.push(edge);

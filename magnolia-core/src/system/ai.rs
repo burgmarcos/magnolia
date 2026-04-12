@@ -1,5 +1,5 @@
+use log::{error, info};
 use serde::{Deserialize, Serialize};
-use log::{info, error};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VertexRequest {
@@ -34,11 +34,17 @@ impl VertexBridge {
     }
 
     pub async fn query(&self, prompt: &str) -> anyhow::Result<VertexResponse> {
-        info!("Querying Magnolia Intelligence (Vertex AI) with prompt: {}...", prompt);
-        
+        info!(
+            "Querying Magnolia Intelligence (Vertex AI) with prompt: {}...",
+            prompt
+        );
+
         match &self.service_account_path {
             Some(path) => {
-                info!("Sovereign Authorization valid using Service Account at {:?}", path);
+                info!(
+                    "Sovereign Authorization valid using Service Account at {:?}",
+                    path
+                );
                 // Implementation will use the GCloud GenAI SDK with the SA credentials
                 Ok(VertexResponse {
                     content: format!("[Magnolia Assistant - {}/{} mode] Processing technical request in project '{}'. Response synthesis specialized for hardware-level telemetry and system diagnostics in progress...", self.assistant_gender, self.assistant_tone, self.project_id),

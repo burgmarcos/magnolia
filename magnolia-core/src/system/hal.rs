@@ -1,6 +1,6 @@
-use std::process::Command;
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 use tauri::command;
 
 #[command]
@@ -30,7 +30,9 @@ pub async fn set_system_brightness(brightness: u8) -> Result<(), String> {
         .status();
 
     if let Ok(s) = status {
-        if s.success() { return Ok(()); }
+        if s.success() {
+            return Ok(());
+        }
     }
 
     // Fallback: search for a backlight device in sysfs
@@ -53,20 +55,26 @@ pub async fn set_system_brightness(brightness: u8) -> Result<(), String> {
 
 #[command]
 pub async fn set_hardware_killswitch(device: String, block: bool) -> Result<(), String> {
-    println!("[HAL] Setting Hardware Killswitch for {} -> Blocked: {}", device, block);
+    println!(
+        "[HAL] Setting Hardware Killswitch for {} -> Blocked: {}",
+        device, block
+    );
     // Conceptual mock for Sandbox block (requires udev reloading or rfkill)
     let action = if block { "block" } else { "unblock" };
-    
+
     let target = match device.as_str() {
         "wlan" | "wifi" => "wlan",
         "bluetooth" => "bluetooth",
         "nfc" => "nfc",
-        _ => return Err(format!("Device type {} not directly supported by rfkill", device)),
+        _ => {
+            return Err(format!(
+                "Device type {} not directly supported by rfkill",
+                device
+            ))
+        }
     };
 
-    let status = Command::new("rfkill")
-        .args([action, target])
-        .status();
+    let status = Command::new("rfkill").args([action, target]).status();
 
     match status {
         Ok(s) if s.success() => Ok(()),
@@ -80,7 +88,7 @@ pub async fn set_power_saving_mode(enabled: bool) -> Result<(), String> {
     println!("[HAL] Setting Power Saving Mode to {}", enabled);
     // Control CPU governor
     let governor = if enabled { "powersave" } else { "performance" };
-    
+
     println!("[HAL] Targeting scaling_governor: {}", governor);
 
     // 1. Try cpufreq-set
@@ -98,14 +106,14 @@ pub async fn set_power_saving_mode(enabled: bool) -> Result<(), String> {
             }
         }
     }
-    
+
     Ok(())
 }
 
 #[command]
 pub async fn suggest_performance_mode() -> Result<String, String> {
     println!("[HAL] Analyzing lifestyle logs for performance suggestion...");
-    
+
     // In production, we query the lifestyle_audit.json and check for high-demand apps (e.g. Llama Vault)
     let log_path = "/data/system/lifestyle_audit.json";
     if let Ok(contents) = fs::read_to_string(log_path) {
@@ -135,9 +143,9 @@ pub fn spawn_hal_maintenance() {
             // Task 2: Suggest Performance Mode based on logs
             if let Ok(suggestion) = suggest_performance_mode().await {
                 if suggestion == "turbo" && temp < 80 {
-                     let _ = set_power_saving_mode(false).await;
+                    let _ = set_power_saving_mode(false).await;
                 } else if temp > 85 {
-                     let _ = set_power_saving_mode(true).await;
+                    let _ = set_power_saving_mode(true).await;
                 }
             }
 

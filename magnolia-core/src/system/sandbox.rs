@@ -1,6 +1,6 @@
-use std::process::Command;
-use std::path::{Path, PathBuf};
 use std::env;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 pub struct BrowserConfig {
     pub label: String,
@@ -33,8 +33,8 @@ impl SovereignSandbox {
         let mut cmd = Command::new("bwrap");
 
         // 1. Basic Isolation
-        cmd.arg("--unshare-all");   // Unshare all namespaces (PID, IPC, UTS, etc.)
-        cmd.arg("--share-net");      // Share network for browsing
+        cmd.arg("--unshare-all"); // Unshare all namespaces (PID, IPC, UTS, etc.)
+        cmd.arg("--share-net"); // Share network for browsing
         cmd.arg("--new-session");
 
         // 2. Filesystem - READ ONLY root
@@ -68,7 +68,7 @@ impl SovereignSandbox {
         cmd.arg("--dev-bind");
         cmd.arg("/dev/dri");
         cmd.arg("/dev/dri");
-        
+
         // Map Wayland Socket (if present)
         if let Ok(runtime_dir) = env::var("XDG_RUNTIME_DIR") {
             cmd.arg("--bind");
@@ -91,8 +91,11 @@ impl SovereignSandbox {
         cmd.arg("wpe-webkit-kiosk");
         cmd.arg(&self.target_url);
 
-        println!("[Magnolia] Launching Sandboxed View [{}] -> {}", self.label, self.target_url);
-        
+        println!(
+            "[Magnolia] Launching Sandboxed View [{}] -> {}",
+            self.label, self.target_url
+        );
+
         cmd.spawn()
             .map_err(|e| format!("Failed to launch sandbox: {}", e))?;
 

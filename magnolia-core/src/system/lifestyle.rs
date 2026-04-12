@@ -1,10 +1,10 @@
-use serde::{Serialize, Deserialize};
-use tauri::command;
 use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
+use tauri::command;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UsageEvent {
@@ -23,7 +23,7 @@ pub struct AppUsageSummary {
 pub async fn log_usage_event(app_id: String, event_type: String) -> Result<(), String> {
     let now = Local::now();
     println!("[LIFESTYLE] App '{}' triggered {}", app_id, event_type);
-    
+
     let event = UsageEvent {
         app_id: app_id.clone(),
         timestamp: now,
@@ -63,8 +63,12 @@ pub async fn get_lifestyle_stats() -> Result<Vec<AppUsageSummary>, String> {
         }
     }
 
-    let stats = usage_map.into_iter()
-        .map(|(app_id, count)| AppUsageSummary { app_id, total_minutes: count })
+    let stats = usage_map
+        .into_iter()
+        .map(|(app_id, count)| AppUsageSummary {
+            app_id,
+            total_minutes: count,
+        })
         .collect();
 
     Ok(stats)
