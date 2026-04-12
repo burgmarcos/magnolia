@@ -14,7 +14,7 @@ echo "[Magnolia] Executing Post-Build Bundle..."
 # These are the web assets built from the React frontend.
 # Expects magnolia-interface/dist to exist (built in workflow)
 INTERFACE_SRC="${BR2_EXTERNAL_MAGNOLIA_PATH}/../magnolia-interface/dist"
-INTERFACE_DEST="${TARGET_DIR}/usr/share/magnolia-interface"
+INTERFACE_DEST="${TARGET_DIR}/usr/share/magnolia/interface"
 
 if [ -d "$INTERFACE_SRC" ]; then
     echo "[Magnolia] Copying magnolia-interface assets to $INTERFACE_DEST..."

@@ -39,4 +39,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Magnolia-x86_64-Rolling
-          path: ../buildroot/output/images/rootfs.iso
+          path: ../buildroot/output/images/magnolia.img

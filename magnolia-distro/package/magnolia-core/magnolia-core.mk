@@ -9,10 +9,7 @@ MAGNOLIA_CORE_SITE = "$(BR2_EXTERNAL_MAGNOLIA_PATH)/../magnolia-core"
 MAGNOLIA_CORE_SITE_METHOD = local
 
 # Build dependencies
-MAGNOLIA_CORE_DEPENDENCIES = host-rustc buildroot-pkg-cargo openssl
-
-# Package options
-MAGNOLIA_CORE_CARGO_OPTS = --features "target-magnolia"
+MAGNOLIA_CORE_DEPENDENCIES = host-rustc openssl
 
 # Installation
 define MAGNOLIA_CORE_INSTALL_TARGET_CMDS
