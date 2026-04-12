@@ -7,7 +7,7 @@ echo "--- POST-IMAGE DEBUG: BINARIES_DIR STATE ---"
 ls -R "${BINARIES_DIR}"
 echo "------------------------------------------"
 GENIMAGE_CFG="${BOARD_DIR}/genimage.cfg"
-GENIMAGE_TMP="${BUILD_DIR}/genimage.tmp"
+GENIMAGE_TMP="${BINARIES_DIR}/genimage.tmp"
 
 # Sync EFI binary to top level for genimage
 if [ -f "${BINARIES_DIR}/efi-part/EFI/BOOT/bootx64.efi" ]; then

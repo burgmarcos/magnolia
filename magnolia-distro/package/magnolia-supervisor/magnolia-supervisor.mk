@@ -9,7 +9,7 @@ MAGNOLIA_SUPERVISOR_SITE = "$(BR2_EXTERNAL_MAGNOLIA_PATH)/../magnolia-supervisor
 MAGNOLIA_SUPERVISOR_SITE_METHOD = local
 
 # Build dependencies
-MAGNOLIA_SUPERVISOR_DEPENDENCIES = host-rustc buildroot-pkg-cargo
+MAGNOLIA_SUPERVISOR_DEPENDENCIES = host-rustc
 
 # Installation logic
 # This process serves as PID 1, but we prefer to install it to /usr/bin
