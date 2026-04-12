@@ -19,7 +19,7 @@ define MAGNOLIA_SUPERVISOR_INSTALL_TARGET_CMDS
 		$(TARGET_DIR)/usr/bin/magnolia-supervisor
 	
 	# Create symlink to /sbin/init for boot process
-	ln -sf ../usr/bin/magnolia-supervisor $(TARGET_DIR)/sbin/init
+	ln -sf /usr/bin/magnolia-supervisor $(TARGET_DIR)/sbin/init
 endef
 
 $(eval $(cargo-package))

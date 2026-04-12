@@ -10,21 +10,8 @@ TARGET_DIR="${1:-output/target}"
 
 echo "[Magnolia] Executing Post-Build Bundle..."
 
-# 1. Deploy Magnolia Interface assets
-# These are the web assets built from the React frontend.
-# Expects magnolia-interface/dist to exist (built in workflow)
-INTERFACE_SRC="${BR2_EXTERNAL_MAGNOLIA_PATH}/../magnolia-interface/dist"
-INTERFACE_DEST="${TARGET_DIR}/usr/share/magnolia/interface"
-
-if [ -d "$INTERFACE_SRC" ]; then
-    echo "[Magnolia] Copying magnolia-interface assets to $INTERFACE_DEST..."
-    mkdir -p "$INTERFACE_DEST"
-    cp -r "$INTERFACE_SRC/"* "$INTERFACE_DEST/"
-else
-    echo "[Magnolia ERROR] magnolia-interface dist directory not found at $INTERFACE_SRC!"
-    echo "[Magnolia ERROR] This will cause the Dashboard Hub to display a blank screen."
-    # We don't exit 1 here to allow the build to finish for debugging, but it's a critical warning.
-fi
+# 1. Magnolia Interface assets are deployed by magnolia-interface.mk
+#    (via generic-package INSTALL_TARGET_CMDS to /usr/share/magnolia/interface)
 
 # 2. Inject Kernel for GRUB discovery
 echo "[Magnolia] Injecting Kernel to /boot..."
