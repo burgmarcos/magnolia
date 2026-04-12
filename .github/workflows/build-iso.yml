@@ -23,10 +23,21 @@ jobs:
           tar cpio python3 python3-pip rsync bc bison flex qemu-utils genimage \
           libelf-dev libdw-dev
 
+      - name: Cache Buildroot output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ../buildroot-dl
+            ../buildroot/output/host
+            ../buildroot/output/build
+            ~/.buildroot-ccache
+          key: buildroot-${{ hashFiles('magnolia-distro/configs/magnolia_x86_64_defconfig', 'magnolia-distro/package/**') }}
+          restore-keys: buildroot-
+
       - name: Setup Buildroot
         run: |
           git clone --depth 1 https://github.com/buildroot/buildroot.git ../buildroot
-          
+
       - name: Configure Magnolia x86_64
         run: |
           cd ../buildroot
@@ -35,7 +46,10 @@ jobs:
       - name: Build Magnolia ISO (Multi-threaded)
         run: |
           cd ../buildroot
-          make BR2_EXTERNAL=$GITHUB_WORKSPACE/magnolia-distro -j$(nproc)
+          make BR2_EXTERNAL=$GITHUB_WORKSPACE/magnolia-distro \
+            BR2_DL_DIR=$GITHUB_WORKSPACE/../buildroot-dl \
+            BR2_CCACHE=y BR2_CCACHE_DIR=$HOME/.buildroot-ccache \
+            -j$(nproc)
 
       - name: Upload Magnolia ISO Artifact
         uses: actions/upload-artifact@v4
