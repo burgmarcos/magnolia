@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnolia OS — The Sovereign Intelligent Workspace</title>
+    <meta name="description" content="A privacy-first, AI-powered operating system built on hardened Linux. Local intelligence, zero telemetry, beautiful by design.">
+    <meta name="theme-color" content="#2D1B33">
+    <meta property="og:title" content="Magnolia OS">
+    <meta property="og:description" content="The Sovereign Intelligent Workspace. Privacy-first, AI-powered, beautiful by design.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://magnol.ia.br">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav" id="nav">
+    <div class="nav-inner">
+        <a href="#" class="nav-logo">
+            <svg class="nav-flower" viewBox="0 0 32 32" width="28" height="28">
+                <ellipse cx="16" cy="8" rx="5" ry="8" fill="currentColor" opacity="0.9"/>
+                <ellipse cx="16" cy="8" rx="5" ry="8" fill="currentColor" opacity="0.7" transform="rotate(72 16 16)"/>
+                <ellipse cx="16" cy="8" rx="5" ry="8" fill="currentColor" opacity="0.7" transform="rotate(144 16 16)"/>
+                <ellipse cx="16" cy="8" rx="5" ry="8" fill="currentColor" opacity="0.7" transform="rotate(216 16 16)"/>
+                <ellipse cx="16" cy="8" rx="5" ry="8" fill="currentColor" opacity="0.7" transform="rotate(288 16 16)"/>
+                <circle cx="16" cy="16" r="3" fill="currentColor" opacity="0.5"/>
+            </svg>
+            Magnolia
+        </a>
+        <div class="nav-links">
+            <a href="#about">About</a>
+            <a href="#features">Features</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#roadmap">Roadmap</a>
+            <a href="#download">Download</a>
+            <a href="https://github.com/burgmarcos/magnolia" target="_blank" class="nav-cta">GitHub</a>
+        </div>
+        <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero" id="hero">
+    <div class="hero-bg">
+        <!-- Large decorative magnolia petals -->
+        <svg class="hero-petal hero-petal-1" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="130" rx="70" ry="120" fill="url(#petal-grad)" opacity="0.12"/>
+            <defs><linearGradient id="petal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#E8B4C8"/><stop offset="100%" stop-color="#F5E6D3"/>
+            </linearGradient></defs>
+        </svg>
+        <svg class="hero-petal hero-petal-2" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="130" rx="60" ry="110" fill="url(#petal-grad2)" opacity="0.08"/>
+            <defs><linearGradient id="petal-grad2" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#D4A0B9"/><stop offset="100%" stop-color="#F0DED5"/>
+            </linearGradient></defs>
+        </svg>
+        <svg class="hero-petal hero-petal-3" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="100" cy="130" rx="55" ry="100" fill="url(#petal-grad3)" opacity="0.1"/>
+            <defs><linearGradient id="petal-grad3" x1="50%" y1="0%" x2="50%" y2="100%">
+                <stop offset="0%" stop-color="#C990AE"/><stop offset="100%" stop-color="#EDD8CB"/>
+            </linearGradient></defs>
+        </svg>
+    </div>
+    <div class="hero-content">
+        <div class="hero-flower">
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" class="magnolia-bloom">
+                <ellipse cx="60" cy="24" rx="18" ry="28" fill="#F2D7E0" opacity="0.9"/>
+                <ellipse cx="60" cy="24" rx="18" ry="28" fill="#ECC8D6" opacity="0.8" transform="rotate(60 60 60)"/>
+                <ellipse cx="60" cy="24" rx="18" ry="28" fill="#E8B4C8" opacity="0.7" transform="rotate(120 60 60)"/>
+                <ellipse cx="60" cy="24" rx="18" ry="28" fill="#ECC8D6" opacity="0.8" transform="rotate(180 60 60)"/>
+                <ellipse cx="60" cy="24" rx="18" ry="28" fill="#F2D7E0" opacity="0.7" transform="rotate(240 60 60)"/>
+                <ellipse cx="60" cy="24" rx="18" ry="28" fill="#E8B4C8" opacity="0.8" transform="rotate(300 60 60)"/>
+                <circle cx="60" cy="60" r="10" fill="#D4A0B9"/>
+                <circle cx="57" cy="57" r="2" fill="#C990AE" opacity="0.6"/>
+                <circle cx="63" cy="59" r="1.5" fill="#C990AE" opacity="0.5"/>
+                <circle cx="60" cy="63" r="1.8" fill="#C990AE" opacity="0.4"/>
+            </svg>
+        </div>
+        <h1 class="hero-title">Magnolia OS</h1>
+        <p class="hero-subtitle">The Sovereign Intelligent Workspace</p>
+        <p class="hero-tagline">A privacy-first operating system with built-in AI intelligence.<br>No telemetry. No surveillance. Just yours.</p>
+        <div class="hero-actions">
+            <a href="#download" class="btn btn-primary">Download</a>
+            <a href="https://github.com/burgmarcos/magnolia" target="_blank" class="btn btn-secondary">View Source</a>
+        </div>
+        <p class="hero-quote">"Computed in Private. Verified by You. Sovereign by Design."</p>
+    </div>
+</header>
+
+<!-- About / Why -->
+<section class="section" id="about">
+    <div class="container">
+        <div class="section-grid about-grid">
+            <div class="about-story">
+                <span class="section-label">The Story</span>
+                <h2>Born from Frustration,<br>Built with Purpose</h2>
+                <p>I'm <a href="https://mrburg.com.br" target="_blank">Marcos Burg</a>, a teacher based in Brazil. For years I relied on open-source operating systems for my work and personal projects. But nothing quite worked the way I needed it to &mdash; tools that should be simple were broken, AI integration was an afterthought, and privacy was always someone else's problem.</p>
+                <p>After yet another round of fighting with <strong>OpenClaw</strong> not working, I made a decision that sounds a little crazy: <em>I would vibe-code an entire operating system</em> that does exactly what I need.</p>
+                <p>Magnolia OS is the result. It's a sovereign, modular Linux distribution designed for people who believe their computer should work <em>for</em> them, not <em>on</em> them. Every line of code is open. Every AI model runs locally. Every byte of your data stays yours.</p>
+                <div class="about-links">
+                    <a href="https://mrburg.com.br" target="_blank" class="inline-link">mrburg.com.br</a>
+                    <a href="https://buymeacoffee.com/burgmarcos" target="_blank" class="inline-link coffee-link">Buy me a coffee</a>
+                </div>
+            </div>
+            <div class="about-values">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    </div>
+                    <h3>Zero Telemetry</h3>
+                    <p>No data leaves your machine. Ever. Your computer doesn't report to anyone.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <h3>Local-First AI</h3>
+                    <p>LLM inference runs on your hardware via llama.cpp. Your conversations never leave the device.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <h3>App Sandboxing</h3>
+                    <p>Every application runs in an isolated Bubblewrap namespace. No cross-app data leaks.</p>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/><path d="M4 12h5"/><path d="M15 12h5"/><path d="M12 4v5"/><path d="M12 15v5"/></svg>
+                    </div>
+                    <h3>A/B Root Updates</h3>
+                    <p>Dual-root partitioning means your system never breaks. Failed update? Instant rollback.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="section section-alt" id="features">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-label">Capabilities</span>
+            <h2>Everything You Need,<br>Nothing You Don't</h2>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card feature-card-lg">
+                <div class="feature-status stable">Stable</div>
+                <h3>Magnolia Assistant</h3>
+                <p>A built-in AI assistant powered by local LLM inference. Ask questions, get help with system tasks, or use it as your private knowledge companion. All processing stays on-device.</p>
+                <span class="feature-tech">llama.cpp &middot; sqlite-vec &middot; RAG</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-status stable">Stable</div>
+                <h3>MemPalace Search</h3>
+                <p>Index your local Markdown files into a private vector database. Semantic search across your knowledge base without any cloud dependency.</p>
+                <span class="feature-tech">sqlite-vec &middot; Local Embeddings</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-status stable">Stable</div>
+                <h3>Stage A/B Boot</h3>
+                <p>Dual-root architecture ensures rock-solid reliability. System updates target the inactive partition for seamless, risk-free upgrades.</p>
+                <span class="feature-tech">RAUC &middot; GRUB2 &middot; GPT</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-status stable">Stable</div>
+                <h3>Sovereign Sandbox</h3>
+                <p>Every application is isolated in Bubblewrap namespaces with audited filesystem and network access. No app sees another's data.</p>
+                <span class="feature-tech">Bubblewrap &middot; namespaces</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-status stable">Stable</div>
+                <h3>Internationalization</h3>
+                <p>Hot-swappable language packs for English, Portuguese, and Spanish. Built for a global community from day one.</p>
+                <span class="feature-tech">JSON locales &middot; React i18n</span>
+            </div>
+            <div class="feature-card">
+                <div class="feature-status alpha">Alpha</div>
+                <h3>Cloud Fusion</h3>
+                <p>Optional integration with Google Cloud and Vertex AI for heavy workloads. Your identity stays sovereign &mdash; only compute goes to the cloud.</p>
+                <span class="feature-tech">GCP &middot; Vertex AI</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Architecture -->
+<section class="section" id="architecture">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-label">Under the Hood</span>
+            <h2>Built on Proven Foundations</h2>
+        </div>
+        <div class="arch-visual">
+            <div class="arch-layer">
+                <div class="arch-block arch-uefi">UEFI Firmware</div>
+            </div>
+            <div class="arch-arrow"></div>
+            <div class="arch-layer">
+                <div class="arch-block arch-grub">GRUB2 EFI Bootloader</div>
+            </div>
+            <div class="arch-arrow"></div>
+            <div class="arch-layer">
+                <div class="arch-block arch-kernel">Linux Kernel 6.12.9 <span>Hardened &middot; VirtIO &middot; DRM</span></div>
+            </div>
+            <div class="arch-arrow"></div>
+            <div class="arch-layer">
+                <div class="arch-block arch-supervisor">Magnolia Supervisor <span>Rust PID 1 &middot; Static Binary &middot; musl</span></div>
+            </div>
+            <div class="arch-arrow"></div>
+            <div class="arch-layer">
+                <div class="arch-block arch-cage">Cage Wayland Compositor <span>Kiosk Mode &middot; Software Rendering</span></div>
+            </div>
+            <div class="arch-arrow"></div>
+            <div class="arch-layer arch-layer-wide">
+                <div class="arch-block arch-hub">Magnolia Hub <span>Tauri v2 &middot; React 19 &middot; WebKit</span></div>
+                <div class="arch-sub-blocks">
+                    <div class="arch-sub">AI Engine</div>
+                    <div class="arch-sub">App Sandbox</div>
+                    <div class="arch-sub">MemPalace</div>
+                    <div class="arch-sub">HAL</div>
+                </div>
+            </div>
+        </div>
+        <div class="tech-badges">
+            <span class="badge">Rust</span>
+            <span class="badge">React 19</span>
+            <span class="badge">TypeScript</span>
+            <span class="badge">Tauri v2</span>
+            <span class="badge">Buildroot</span>
+            <span class="badge">Wayland</span>
+            <span class="badge">llama.cpp</span>
+            <span class="badge">SQLite</span>
+        </div>
+    </div>
+</section>
+
+<!-- Roadmap -->
+<section class="section section-alt" id="roadmap">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-label">Roadmap</span>
+            <h2>Where We're Going</h2>
+        </div>
+        <div class="timeline">
+            <div class="timeline-item done">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <span class="timeline-date">Q1 2026</span>
+                    <h3>Foundation</h3>
+                    <ul>
+                        <li>Tauri/React desktop app scaffold</li>
+                        <li>Local LLM inference via llama.cpp</li>
+                        <li>Model downloader with HuggingFace integration</li>
+                        <li>Secure keyring for API keys</li>
+                        <li>RAG engine with sqlite-vec</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-item done">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <span class="timeline-date">Q2 2026</span>
+                    <h3>Sovereign OS Image</h3>
+                    <ul>
+                        <li>Custom Linux distro via Buildroot</li>
+                        <li>Rust PID 1 supervisor with Cage compositor</li>
+                        <li>A/B root partitioning with RAUC</li>
+                        <li>UEFI boot chain with GRUB2 theming</li>
+                        <li>CI/CD pipeline for ISO builds</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-item current">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <span class="timeline-date">Q3 2026</span>
+                    <h3>First Hardware Boot</h3>
+                    <ul>
+                        <li>QEMU/Hyper-V validation</li>
+                        <li>Real hardware deployment and driver testing</li>
+                        <li>WiFi/Bluetooth stack hardening</li>
+                        <li>Performance optimization for ARM/x86</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-item future">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <span class="timeline-date">Q4 2026</span>
+                    <h3>Public Beta</h3>
+                    <ul>
+                        <li>Downloadable ISO for early adopters</li>
+                        <li>P2P update distribution network</li>
+                        <li>Flatpak/AppImage app store integration</li>
+                        <li>Multi-language voice assistant</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-item future">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <span class="timeline-date">2027</span>
+                    <h3>Magnolia 1.0</h3>
+                    <ul>
+                        <li>Stable release with hardware certification</li>
+                        <li>Sovereign cloud sync (optional, encrypted)</li>
+                        <li>Plugin ecosystem for community extensions</li>
+                        <li>Education-focused distribution variant</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Download & Contribute -->
+<section class="section" id="download">
+    <div class="container">
+        <div class="download-grid">
+            <div class="download-card">
+                <h2>Get Magnolia</h2>
+                <p>Magnolia OS is in active development. You can grab the latest build artifacts from our CI pipeline or compile from source.</p>
+                <div class="download-options">
+                    <a href="https://github.com/burgmarcos/magnolia/actions" target="_blank" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download from CI
+                    </a>
+                    <div class="download-code">
+                        <code>git clone https://github.com/burgmarcos/magnolia.git<br>cd magnolia<br>.\build.bat</code>
+                    </div>
+                </div>
+                <p class="download-note">Requires WSL2 (Ubuntu) on Windows, or a native Linux environment. Full build takes ~45 minutes.</p>
+            </div>
+            <div class="download-card" id="contribute">
+                <h2>Contribute</h2>
+                <p>Magnolia is open source and welcomes contributors. Whether you write Rust, React, or just have ideas &mdash; we'd love your help.</p>
+                <div class="contribute-ways">
+                    <div class="contribute-item">
+                        <strong>Code</strong>
+                        <p>Fork the repo, pick an issue, submit a PR. We enforce strict clippy + ESLint on CI.</p>
+                    </div>
+                    <div class="contribute-item">
+                        <strong>Test</strong>
+                        <p>Boot the image in QEMU, file bugs, help us reach hardware parity.</p>
+                    </div>
+                    <div class="contribute-item">
+                        <strong>Translate</strong>
+                        <p>Help us bring Magnolia to more languages. Currently: EN, PT-BR, ES.</p>
+                    </div>
+                    <div class="contribute-item">
+                        <strong>Sponsor</strong>
+                        <p>This project is built in spare time by a teacher. Every coffee helps.</p>
+                    </div>
+                </div>
+                <a href="https://github.com/burgmarcos/magnolia" target="_blank" class="btn btn-secondary">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <svg class="footer-flower" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="60" cy="24" rx="18" ry="28" fill="#F2D7E0" opacity="0.4"/>
+                    <ellipse cx="60" cy="24" rx="18" ry="28" fill="#ECC8D6" opacity="0.3" transform="rotate(60 60 60)"/>
+                    <ellipse cx="60" cy="24" rx="18" ry="28" fill="#E8B4C8" opacity="0.3" transform="rotate(120 60 60)"/>
+                    <ellipse cx="60" cy="24" rx="18" ry="28" fill="#ECC8D6" opacity="0.3" transform="rotate(180 60 60)"/>
+                    <ellipse cx="60" cy="24" rx="18" ry="28" fill="#F2D7E0" opacity="0.3" transform="rotate(240 60 60)"/>
+                    <ellipse cx="60" cy="24" rx="18" ry="28" fill="#E8B4C8" opacity="0.3" transform="rotate(300 60 60)"/>
+                    <circle cx="60" cy="60" r="8" fill="#D4A0B9" opacity="0.4"/>
+                </svg>
+                <p>Magnolia OS</p>
+                <span>Sovereign by Design</span>
+            </div>
+            <div class="footer-links">
+                <h4>Project</h4>
+                <a href="https://github.com/burgmarcos/magnolia" target="_blank">GitHub</a>
+                <a href="https://github.com/burgmarcos/magnolia/issues" target="_blank">Issues</a>
+                <a href="https://github.com/burgmarcos/magnolia/actions" target="_blank">CI Builds</a>
+            </div>
+            <div class="footer-links">
+                <h4>Community</h4>
+                <a href="https://github.com/burgmarcos/magnolia/blob/main/docs/AGENT_HANDBOOK.md" target="_blank">Agent Handbook</a>
+                <a href="https://github.com/burgmarcos/magnolia/blob/main/DEVELOPER.md" target="_blank">Developer Guide</a>
+                <a href="#contribute">Contribute</a>
+            </div>
+            <div class="footer-links">
+                <h4>Creator</h4>
+                <a href="https://mrburg.com.br" target="_blank">mrburg.com.br</a>
+                <a href="https://buymeacoffee.com/burgmarcos" target="_blank">Buy Me a Coffee</a>
+                <a href="https://github.com/burgmarcos" target="_blank">@burgmarcos</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>Made with care in Brazil. Open source under the AGPL-3.0 License.</p>
+            <a href="https://buymeacoffee.com/burgmarcos" target="_blank" class="coffee-btn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 21h18v-2H2v2zM20 8h-2V5h2v3zm0-5H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm-4 10c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V5h10v8zm4-5h-2V7h2v1z"/></svg>
+                Support this project
+            </a>
+        </div>
+    </div>
+</footer>
+
+<script>
+// Navbar scroll effect
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.querySelector('.nav-links').classList.remove('open');
+        }
+    });
+});
+
+// Intersection observer for fade-in animations
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1 });
+
+const animatedEls = document.querySelectorAll('.section, .timeline-item, .feature-card, .value-card');
+animatedEls.forEach(el => observer.observe(el));
+
+// Immediately reveal elements already in viewport on load
+requestAnimationFrame(() => {
+    animatedEls.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight) {
+            el.classList.add('visible');
+        }
+    });
+});
+</script>
+
+</body>
+</html>

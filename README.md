@@ -1,10 +1,11 @@
 # 🌸 Magnolia OS: The Sovereign Intelligent Workspace
 
 ![Magnolia Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-ISC-green.svg)
+![License](https://img.shields.io/badge/license-AGPL--3.0-green.svg)
 ![Rust](https://img.shields.io/badge/rust-2024-orange.svg)
 ![GCP](https://img.shields.io/badge/GCP-magnolia--os-blue.svg)
 ![Website](https://img.shields.io/badge/website-magnol.ia.br-purple.svg)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow.svg)](https://buymeacoffee.com/burgmarcos)
 
 # Magnolia OS: The Sovereign Computing Manifest
 
@@ -108,5 +109,18 @@ This project maintains absolute data integrity checks, absolute type-safety acro
 
 All Pull Requests *(PRs)* must satisfy the internal `npm run lint` configuration across the `magnolia-interface` dashboard framework, and maintain strict `cargo clippy` adherence within the `magnolia-core` subsystem.
 
+---
+
+## ☕ Support This Project
+
+Magnolia OS is built in spare time by [Marcos Burg](https://mrburg.com.br), a teacher based in Brazil who was tired of open-source operating systems not working the way they should — so he decided to vibe-code an entire OS from scratch.
+
+If you find this project useful or inspiring, consider buying me a coffee:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/burgmarcos)
+
+---
+
 **Repository**: [github.com/burgmarcos/magnolia](https://github.com/burgmarcos/magnolia)  
-**Domain**: [magnol.ia.br](https://magnol.ia.br)
+**Website**: [magnol.ia.br](https://magnol.ia.br)  
+**Creator**: [mrburg.com.br](https://mrburg.com.br)
