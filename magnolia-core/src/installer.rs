@@ -1,8 +1,10 @@
 #[cfg(windows)]
 use mslnk::ShellLink;
 use std::env;
+#[cfg(windows)]
 use std::fs;
 use std::path::PathBuf;
+#[cfg(windows)]
 use std::process::Command;
 #[cfg(windows)]
 use winreg::enums::*;
@@ -111,7 +113,7 @@ fn register_uninstaller(target: &std::path::Path) -> Result<(), std::io::Error> 
 }
 
 #[tauri::command]
-pub fn perform_uninstallation(_delete_data: bool) -> Result<(), String> {
+pub fn perform_uninstallation(#[allow(unused_variables)] delete_data: bool) -> Result<(), String> {
     #[cfg(windows)]
     {
         // 1. Remove Registry Key

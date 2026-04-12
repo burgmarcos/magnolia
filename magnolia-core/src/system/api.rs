@@ -1,6 +1,7 @@
 use crate::system::error::ToBridgeResult;
 use crate::system::{cloud, partition, rauc, sync};
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 
 use tauri::command;
 

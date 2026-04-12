@@ -1,3 +1,8 @@
+use std::fs;
+use std::process::Command;
+use std::thread;
+use std::time::Duration;
+
 fn main() {
     println!("[Magnolia] Initializing Sovereign Supervisor (PID 1)...");
 
