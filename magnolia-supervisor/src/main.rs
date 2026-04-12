@@ -159,6 +159,8 @@ fn main() {
         // Force software rendering for stable simulation in virtualized/headless environments
         std::env::set_var("WLR_RENDERER", "pixman");
         std::env::set_var("WLR_NO_HARDWARE_CURSORS", "1");
+        // Allow Cage to start without physical input devices (required for VM environments)
+        std::env::set_var("WLR_LIBINPUT_NO_DEVICES", "1");
     }
 
     // Start udev daemon to populate devices (DRM, input)

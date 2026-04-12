@@ -1,14 +1,25 @@
 #!/bin/bash
-# Magnolia - WSL2 QEMU Boot Test
+# Magnolia - WSL2 QEMU Boot Test (v2.0)
+
+set -e
 
 IMAGE_PATH="${HOME}/magnolia-buildroot/output/images/magnolia.img"
 # Fallback to current project dir if buildroot location is missing
 [ ! -f "$IMAGE_PATH" ] && IMAGE_PATH="$(pwd)/magnolia.img"
+# Fallback to Windows-side project root (accessed via /mnt/c)
+[ ! -f "$IMAGE_PATH" ] && IMAGE_PATH="/mnt/c/Users/burgm/OneDrive/Documentos/bOS/magnolia.img"
 OVMF_PATH="/usr/share/ovmf/OVMF.fd"
 
-# 1. Install Dependencies
+if [ ! -f "$IMAGE_PATH" ]; then
+    echo "[Magnolia ERROR] No magnolia.img found! Run build.bat first."
+    exit 1
+fi
+
+echo "[Magnolia] Image: $IMAGE_PATH ($(du -h "$IMAGE_PATH" | cut -f1))"
+
+# 1. Install Dependencies (idempotent)
 echo "[Magnolia] Verifying QEMU and UEFI headers..."
-apt-get update -yq && apt-get install -yq qemu-system-x86 qemu-utils ovmf
+dpkg -l | grep -q qemu-system-x86 || apt-get update -yq && apt-get install -yq qemu-system-x86 qemu-utils ovmf
 
 # 2. Check for KVM
 KVM_FLAG=""
@@ -29,10 +40,16 @@ echo "[Magnolia] Booting Sovereign Magnolia. Close the QEMU window to return."
 qemu-system-x86_64 \
     $KVM_FLAG \
     -m 4G \
+    -smp 4 \
     -bios $OVMF_PATH \
     -drive file=$IMAGE_PATH,if=none,id=drive0,format=raw,snapshot=on \
     -device virtio-blk-pci,drive=drive0 \
-    -net nic -net user \
-    -vga std \
-    -display gtk \
-    -serial file:/tmp/Magnolia_boot.log
+    -device virtio-vga \
+    -device virtio-keyboard-pci \
+    -device virtio-tablet-pci \
+    -net nic,model=virtio -net user \
+    -display gtk,show-cursor=on \
+    -device virtio-rng-pci \
+    -serial file:/tmp/magnolia_boot.log
+
+echo "[Magnolia] Session ended. Boot log: /tmp/magnolia_boot.log"
