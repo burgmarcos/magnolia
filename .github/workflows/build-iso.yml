@@ -1,8 +1,9 @@
 name: Magnolia ISO Build
 
 on:
-  push:
-    branches: [ main ]
+  # Disabled auto-trigger until local build is verified
+  # push:
+  #   branches: [ main ]
   workflow_dispatch:
 
 jobs:
