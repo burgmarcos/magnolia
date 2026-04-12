@@ -92,6 +92,91 @@ async fn process_sse_stream(
     Ok(())
 }
 
+/// Streams a chat completion from the Anthropic Messages API.
+/// Parses SSE events of type `content_block_delta` and emits `chat-token` events.
+async fn stream_chat_anthropic(
+    app: AppHandle,
+    model: String,
+    messages: Vec<ChatMessage>,
+    api_key: String,
+) -> Result<(), String> {
+    let client = Client::new();
+
+    // Anthropic requires a separate top-level "system" param — not in messages array
+    let system_content = messages
+        .iter()
+        .find(|m| m.role == "system")
+        .map(|m| m.content.clone())
+        .unwrap_or_default();
+
+    let user_messages: Vec<_> = messages
+        .iter()
+        .filter(|m| m.role != "system")
+        .collect();
+
+    let body = serde_json::json!({
+        "model": model,
+        "max_tokens": 2048,
+        "system": system_content,
+        "messages": user_messages,
+        "stream": true
+    });
+
+    let res = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", &api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Anthropic request failed: {}", e))?;
+
+    if !res.status().is_success() {
+        let status = res.status();
+        let err_body = res.text().await.unwrap_or_default();
+        return Err(format!("Anthropic API error {}: {}", status, err_body));
+    }
+
+    let mut stream = res.bytes_stream();
+    let mut buffer = String::new();
+    let mut current_event = String::new();
+
+    while let Some(chunk_result) = stream.next().await {
+        let chunk = chunk_result.map_err(|e| format!("Stream error: {}", e))?;
+        buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+        while let Some(newline_idx) = buffer.find('\n') {
+            let raw_line = buffer[..newline_idx].to_string();
+            buffer = buffer[newline_idx + 1..].to_string();
+            let line = raw_line.trim();
+
+            if line.starts_with("event:") {
+                current_event = line.trim_start_matches("event:").trim().to_string();
+            } else if let Some(data) = line.strip_prefix("data:") {
+                let data = data.trim();
+                if data == "[DONE]" {
+                    let _ = app.emit("chat-token", ChatChunk { token: String::new(), is_done: true });
+                    return Ok(());
+                }
+                if current_event == "content_block_delta" {
+                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
+                        if let Some(text) = json.get("delta").and_then(|d| d.get("text")).and_then(|t| t.as_str()) {
+                            let _ = app.emit("chat-token", ChatChunk { token: text.to_string(), is_done: false });
+                        }
+                    }
+                } else if current_event == "message_stop" {
+                    let _ = app.emit("chat-token", ChatChunk { token: String::new(), is_done: true });
+                    return Ok(());
+                }
+            }
+        }
+    }
+
+    let _ = app.emit("chat-token", ChatChunk { token: String::new(), is_done: true });
+    Ok(())
+}
+
 pub async fn stream_chat_local(
     app: AppHandle,
     mut messages: Vec<ChatMessage>,
@@ -154,13 +239,7 @@ pub async fn stream_chat_cloud(
     let url = match provider.to_lowercase().as_str() {
         "openai" => "https://api.openai.com/v1/chat/completions",
         "anthropic" => {
-            // Anthropic stream API is slightly different (Messages API vs Completions),
-            // but we'll leave it simple for now or enforce openai compatibility.
-            // As a placeholder, we map it, though Anthropic API requires different format.
-            return Err(
-                "Anthropic native streaming not fully implemented yet, use OpenAI interface."
-                    .into(),
-            );
+            return stream_chat_anthropic(app, model, messages, api_key).await;
         }
         _ => return Err("Unsupported cloud provider".to_string()),
     };
