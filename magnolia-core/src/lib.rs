@@ -10,7 +10,6 @@ mod telemetry;
 mod installer;
 mod app_manager;
 pub mod system;
-pub mod ai;
 
 pub fn run_headless() {
     println!("[Magnolia] Headless mode: Starting background systems...");
