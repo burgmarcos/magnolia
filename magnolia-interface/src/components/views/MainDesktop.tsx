@@ -17,7 +17,6 @@ import {
 import { Toaster, toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWindows } from '../../contexts/WindowContext';
-import type { WindowType } from '../../contexts/WindowContext';
 
 const ChatInterface = lazy(() => import('./ChatInterface').then(m => ({ default: m.ChatInterface })));
 const AboutSystem = lazy(() => import('./AboutSystem').then(m => ({ default: m.AboutSystem })));
