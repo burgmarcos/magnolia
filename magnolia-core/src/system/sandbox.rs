@@ -78,8 +78,17 @@ impl SovereignSandbox {
 
         // 5. Ephemeral Home
         // Provide a minimalist home for the browser's cache/config
+        let uid = std::fs::read_to_string("/proc/self/status")
+            .ok()
+            .and_then(|s| {
+                s.lines()
+                    .find(|l| l.starts_with("Uid:"))
+                    .and_then(|l| l.split_whitespace().nth(1))
+                    .and_then(|uid_str| uid_str.parse::<u32>().ok())
+            })
+            .unwrap_or(1000);
         cmd.arg("--dir");
-        cmd.arg("/run/user/1000"); // Mocking Magnolia user UID
+        cmd.arg(format!("/run/user/{}", uid));
         cmd.arg("--dir");
         cmd.arg("/home/sandbox");
         cmd.arg("--setenv");
