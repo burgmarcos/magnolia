@@ -32,9 +32,7 @@ pub fn assess_model_fit(model_size_bytes: u64) -> String {
         return "Fits Perfectly".into();
     }
 
-    if required_memory <= (specs.total_ram_bytes / 2) {
-        return "Needs Offload".into();
-    } else if required_memory <= specs.total_ram_bytes {
+    if required_memory <= specs.total_ram_bytes {
         return "Needs Offload".into();
     }
 
