@@ -19,3 +19,16 @@ build/
 .vscode/
 # Hotfix & Local Testing (Not for Repo)
 local_scripts/
+
+# Magnolia OS Build Outputs
+*.img
+*.raucb
+*.vhdx
+*.iso
+*.log
+targ*/
+Cargo.lock
+**/target/
+node_modules/
+dist/
+build/
