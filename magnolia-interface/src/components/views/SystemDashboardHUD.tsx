@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ElementType } from 'react';
 import { 
   Activity, 
   Cpu, 
@@ -33,7 +32,15 @@ interface SecurityStatus {
   is_encrypted: boolean;
 }
 
-const MetricCard = ({ icon: Icon, label, value, subvalue, color }: any) => (
+interface MetricCardProps {
+  icon: ElementType;
+  label: string;
+  value: string;
+  subvalue?: string;
+  color: string;
+}
+
+const MetricCard = ({ icon: Icon, label, value, subvalue, color }: MetricCardProps) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}

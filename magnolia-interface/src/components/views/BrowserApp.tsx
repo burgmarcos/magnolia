@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, CSSProperties } from 'react';
 import { ArrowLeft, ArrowRight, RotateCw, Home, Shield, Globe, Lock, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
@@ -197,7 +196,7 @@ export function BrowserApp({ initialUrl }: BrowserProps) {
   );
 }
 
-const toolbarBtn: any = {
+const toolbarBtn: CSSProperties = {
   background: 'transparent',
   border: 'none',
   padding: '8px',

@@ -14,7 +14,7 @@ interface SearchResult {
 
 interface GlobalSearchOverlayProps {
   onClose: () => void;
-  onOpenApp: (type: any, title: string) => void;
+  onOpenApp: (type: string, title: string) => void;
 }
 
 export function GlobalSearchOverlay({ onClose, onOpenApp }: GlobalSearchOverlayProps) {

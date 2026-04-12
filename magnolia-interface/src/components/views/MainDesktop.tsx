@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, Suspense, lazy, ElementType } from 'react';
 import { extractThemeFromImage } from '../../utils/theme';
 import { DesktopEnvironment } from '../layout/DesktopEnvironment';
 import { XRAppBar } from '../layout/XRAppBar';
@@ -48,7 +47,7 @@ const StorageSettingsView = lazy(() => import('./StorageSettings.tsx').then(m =>
 type SettingsRoute = 'general' | 'models' | 'telegram' | 'knowledge' | 'graph' | 'search' | 'palette' | 'updates' | 'security' | 'preferences' | 'connectivity' | 'lifestyle' | 'regional' | 'privacy' | 'storage';
 type NavTabRoute = 'apps' | 'home' | 'updates';
 
-const WINDOW_METADATA: Record<string, { icon: any, color: string }> = {
+const WINDOW_METADATA: Record<string, { icon: ElementType, color: string }> = {
   chat: { icon: MessageSquare, color: '#3A7BD5' },
   browser: { icon: Globe, color: '#4285F4' },
   appstore: { icon: Package, color: '#BA68C8' },
@@ -355,7 +354,7 @@ export const MainDesktop = ({ onLogout }: { onLogout?: () => void }) => {
       <AnimatePresence>
         {activeNavTab === 'apps' && (
           <AppsDrawer 
-            onOpenApp={(type: any, title: string) => { setActiveNavTab('home'); openWindow(type, title); }} 
+            onOpenApp={(type: string, title: string) => { setActiveNavTab('home'); openWindow(type, title); }} 
             onClose={() => setActiveNavTab('home')} 
           />
         )}
