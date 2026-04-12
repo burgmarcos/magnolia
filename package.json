@@ -8,8 +8,8 @@
   },
   "scripts": {
     "tauri": "tauri",
-    "dev": "npm run dev --prefix ui",
-    "build": "npm run build --prefix ui",
+    "dev": "npm run dev --prefix magnolia-interface",
+    "build": "npm run build --prefix magnolia-interface",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

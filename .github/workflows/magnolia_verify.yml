@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   verify-ui:
@@ -34,6 +35,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-gnu
+          components: rustfmt, clippy
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -41,6 +43,8 @@ jobs:
       - name: Check & Test
         working-directory: magnolia-core
         run: |
+          cargo fmt -- --check
+          cargo clippy --target x86_64-unknown-linux-gnu -- -D warnings
           cargo check --target x86_64-unknown-linux-gnu
           cargo test --target x86_64-unknown-linux-gnu
 
@@ -53,6 +57,11 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-unknown-linux-musl
-      - name: Build Static binary
+          components: rustfmt, clippy
+      - name: Check, Test & Build
         working-directory: magnolia-supervisor
-        run: cargo build --release --target x86_64-unknown-linux-musl
+        run: |
+          cargo fmt -- --check
+          cargo clippy --target x86_64-unknown-linux-musl -- -D warnings
+          cargo check --target x86_64-unknown-linux-musl
+          cargo build --release --target x86_64-unknown-linux-musl

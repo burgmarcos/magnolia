@@ -4,7 +4,8 @@ config BR2_PACKAGE_MAGNOLIA_CORE
 	select BR2_PACKAGE_HOST_RUSTC
 	select BR2_PACKAGE_OPENSSL # for cloud/reqwest
 	help
-	  The Magnolia OS Supervisor (PID 1) for Magnolia.
-	  Responsible for system initialization, sandboxing, and LLM orchestration.
+	  The Magnolia OS Dashboard Hub.
+	  Responsible for the user interface, system diagnostics,
+	  and local-first application management.
 
 	  https://github.com/burgmarcos/bos

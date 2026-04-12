@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   release:
@@ -37,11 +38,11 @@ jobs:
         run: npm ci
 
       - name: Install frontend dependencies
-        working-directory: ./ui
+        working-directory: magnolia-interface
         run: npm ci
 
       - name: Build frontend ui
-        working-directory: ./ui
+        working-directory: magnolia-interface
         run: npm run build
 
       - name: Install Rust stable
@@ -52,6 +53,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          projectPath: magnolia-core
           tagName: ${{ github.ref_name }}
           releaseName: "Magnolia ${{ github.ref_name }}"
           releaseBody: "Automated unsigned release build for v0.0.1."

@@ -10,30 +10,9 @@ TARGET_DIR="${1:-output/target}"
 
 echo "[Magnolia] Executing Post-Build Bundle..."
 
-# 1. Copy the Magnolia Supervisor to /sbin/init (Static MUSL)
-SUPERVISOR_SRC="/root/magnolia-workspace/magnolia-supervisor/target/x86_64-unknown-linux-musl/release/magnolia-supervisor"
-CORE_SRC="/root/magnolia-workspace/magnolia-core/target/x86_64-unknown-linux-gnu/release/magnolia-core"
-
-if [ -f "$SUPERVISOR_SRC" ]; then
-    echo "[Magnolia] Deploying Static Supervisor to /sbin/init..."
-    cp "$SUPERVISOR_SRC" "${TARGET_DIR}/sbin/init"
-    chmod 755 "${TARGET_DIR}/sbin/init"
-else
-    echo "[Magnolia ERROR] Supervisor binary not found at $SUPERVISOR_SRC!"
-    exit 1
-fi
-
-# 2. Copy the Magnolia Hub to /sbin/magnolia-hub (The UI App)
-if [ -f "$CORE_SRC" ]; then
-    echo "[Magnolia] Deploying Magnolia Dashboard Hub to /sbin/magnolia-hub..."
-    cp "$CORE_SRC" "${TARGET_DIR}/sbin/magnolia-hub"
-    chmod 755 "${TARGET_DIR}/sbin/magnolia-hub"
-else
-    echo "[Magnolia WARNING] magnolia-core binary not found at $CORE_SRC!"
-fi
-
-# 2. Copy the Magnolia Interface assets
+# 1. Deploy Magnolia Interface assets
 # These are the web assets built from the React frontend.
+# Expects magnolia-interface/dist to exist (built in workflow)
 INTERFACE_SRC="${BR2_EXTERNAL_MAGNOLIA_PATH}/../magnolia-interface/dist"
 INTERFACE_DEST="${TARGET_DIR}/usr/share/magnolia-interface"
 
@@ -42,24 +21,26 @@ if [ -d "$INTERFACE_SRC" ]; then
     mkdir -p "$INTERFACE_DEST"
     cp -r "$INTERFACE_SRC/"* "$INTERFACE_DEST/"
 else
-    echo "[Magnolia WARNING] magnolia-interface dist directory not found at $INTERFACE_SRC!"
-    echo "[Magnolia WARNING] Ensure you have run 'npm run build' in magnolia-interface."
+    echo "[Magnolia ERROR] magnolia-interface dist directory not found at $INTERFACE_SRC!"
+    echo "[Magnolia ERROR] This will cause the Dashboard Hub to display a blank screen."
+    # We don't exit 1 here to allow the build to finish for debugging, but it's a critical warning.
 fi
 
-# 3. Inject Kernel for GRUB discovery
+# 2. Inject Kernel for GRUB discovery
 echo "[Magnolia] Injecting Kernel to /boot..."
 mkdir -p "${TARGET_DIR}/boot"
 if [ -f "${BINARIES_DIR}/bzImage" ]; then
     cp "${BINARIES_DIR}/bzImage" "${TARGET_DIR}/boot/bzImage"
 else
-    echo "[Magnolia WARNING] bzImage not found in ${BINARIES_DIR}! Kernel may not boot."
+    echo "[Magnolia WARNING] bzImage not found in ${BINARIES_DIR}! Check kernel configuration."
 fi
 
-# 4. Finalize permissions
+# 3. Finalize permissions and system configuration
+echo "[Magnolia] Finalizing system configuration..."
 chmod 644 "${TARGET_DIR}/etc/hostname"
 chmod 644 "${TARGET_DIR}/etc/hosts"
 
-# 5. Copy GRUB themes to Images directory
+# 4. Copy GRUB themes to Images directory for EFI partition generation
 echo "[Magnolia] Staging GRUB Theme assets..."
 if [ -d "${BOARD_DIR}/grub-theme" ]; then
     cp -r "${BOARD_DIR}/grub-theme" "${BINARIES_DIR}/"

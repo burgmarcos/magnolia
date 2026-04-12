@@ -14,14 +14,11 @@ MAGNOLIA_CORE_DEPENDENCIES = host-rustc buildroot-pkg-cargo openssl
 # Package options
 MAGNOLIA_CORE_CARGO_OPTS = --features "target-magnolia"
 
-# Installation to /sbin/init
+# Installation
 define MAGNOLIA_CORE_INSTALL_TARGET_CMDS
-	# Install the supervisor binary
-	$(INSTALL) -D -m 0755 $(@D)/target/$(RUSTC_TARGET_NAME)/release/Magnolia \
-		$(TARGET_DIR)/usr/bin/magnolia-core
-		
-	# Point Magnolia init logic (Sovereign Init)
-	ln -sf /usr/bin/magnolia-core $(TARGET_DIR)/sbin/init
+	# Install the dashboard hub binary
+	$(INSTALL) -D -m 0755 $(@D)/target/$(RUSTC_TARGET_NAME)/release/magnolia-core \
+		$(TARGET_DIR)/sbin/magnolia-hub
 endef
 
 $(eval $(cargo-package))

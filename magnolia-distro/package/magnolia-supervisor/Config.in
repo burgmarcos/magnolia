@@ -1,0 +1,10 @@
+config BR2_PACKAGE_MAGNOLIA_SUPERVISOR
+	bool "magnolia-supervisor"
+	depends on BR2_PACKAGE_HOST_RUSTC_ARCH_SUPPORTS
+	select BR2_PACKAGE_HOST_RUSTC
+	help
+	  The Magnolia OS Supervisor (PID 1).
+	  Responsible for early system initialization, mounting filesystems,
+	  and launching the UI session (Magnolia Hub) via Cage.
+
+	  https://github.com/burgmarcos/bos

@@ -21,20 +21,30 @@ jobs:
           sed make binutils build-essential diffutils gcc g++ bash patch gzip bzip2 perl \
           tar cpio python3 python3-pip rsync bc bison flex qemu-utils genimage
 
+      - name: Setup Node.js (for Magnolia Interface)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Magnolia Interface
+        working-directory: magnolia-interface
+        run: |
+          npm install
+          npm run build
+
       - name: Setup Buildroot
         run: |
           git clone --depth 1 https://github.com/buildroot/buildroot.git ../buildroot
-          cp -r magnolia-distro/* ../buildroot/
           
       - name: Configure Magnolia x86_64
         run: |
           cd ../buildroot
-          make BR2_EXTERNAL=../magnolia-distro magnolia_x86_64_defconfig
+          make BR2_EXTERNAL=$GITHUB_WORKSPACE/magnolia-distro magnolia_x86_64_defconfig
 
       - name: Build Magnolia ISO (Multi-threaded)
         run: |
           cd ../buildroot
-          make BR2_EXTERNAL=../magnolia-distro -j$(nproc)
+          make BR2_EXTERNAL=$GITHUB_WORKSPACE/magnolia-distro -j$(nproc)
 
       - name: Upload Magnolia ISO Artifact
         uses: actions/upload-artifact@v4
