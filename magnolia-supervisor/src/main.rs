@@ -1,9 +1,9 @@
-use nix::mount::{MsFlags, mount};
+use nix::mount::{mount, MsFlags};
 use nix::sys::signal::{self, SigHandler, Signal};
 use std::fs;
 use std::process::Command;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
