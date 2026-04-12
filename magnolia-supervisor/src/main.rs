@@ -137,7 +137,10 @@ fn main() {
         
         match hub.try_wait() {
             Ok(Some(status)) => {
-                println!("[Magnolia] Dashboard Hub exited with {}. Restarting...", status);
+                println!(
+                    "[Magnolia] Dashboard Hub exited with {}. Restarting...",
+                    status
+                );
                 thread::sleep(Duration::from_secs(5));
                 hub = Command::new("cage")
                     .args(["-s", "--", "/sbin/magnolia-hub"])
