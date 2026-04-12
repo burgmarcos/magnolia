@@ -1,3 +1,7 @@
+// DEFERRED: Needs actual GCP integration design.
+// Requires architecture decisions on: service account key management,
+// GCS bucket layout, resumable upload strategy, and quota enforcement.
+// Do not implement until design is reviewed.
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;

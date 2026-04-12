@@ -1,3 +1,8 @@
+// DEFERRED: Needs architecture design for mDNS peer discovery and
+// binary transfer protocol. Requires decisions on: mDNS library choice
+// (compatible with Buildroot cross-compilation), chunk transfer format,
+// integrity verification, and rollback strategy. Do not implement until
+// design is reviewed.
 use serde::Serialize;
 
 use tauri::command;
