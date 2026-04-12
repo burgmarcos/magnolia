@@ -75,6 +75,8 @@ graph TD
 ## 💬 Human-Oriented Support
 Magnolia includes an integrated **Sovereign Assistant**. Use the `/help` command or speak naturally to learn about system internals, adjust privacy settings, or troubleshoot network lattice issues.
 
+For AI Developers and Agents, see the [Agent Handbook](docs/AGENT_HANDBOOK.md).
+
 ---
 
 *Magnolia is more than an OS. It is a commitment to digital self-determination.*
