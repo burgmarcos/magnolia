@@ -45,14 +45,21 @@ export function ModelsDownloader() {
         .catch(console.error);
 
       invoke<string[]>('get_local_models')
-        .then(localModels => {
-          const installed: ModelItem[] = localModels.map(name => ({
-            id: name,
-            name,
-            description: 'Local model',
-            fit: 'perfect', // TODO evaluate fit if possible
-            status: 'installed'
-          }));
+        .then(async localModels => {
+          const installed: ModelItem[] = await Promise.all(
+            localModels.map(async name => {
+              let fit: FitState = 'cannot-run';
+              try {
+                const sizeBytes = await invoke<number>('get_local_model_size_bytes', { modelName: name });
+                const fitStatus = await invoke<string>('assess_model_fit', { modelSizeBytes: sizeBytes });
+                if (fitStatus === 'Fits Perfectly') fit = 'perfect';
+                else if (fitStatus === 'Needs Offload') fit = 'offload';
+              } catch {
+                fit = 'cannot-run';
+              }
+              return { id: name, name, description: 'Local model', fit, status: 'installed' as const };
+            })
+          );
           setModels(installed);
         })
         .catch(e => {
