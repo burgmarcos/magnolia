@@ -355,7 +355,7 @@ export const MainDesktop = ({ onLogout }: { onLogout?: () => void }) => {
       <AnimatePresence>
         {activeNavTab === 'apps' && (
           <AppsDrawer 
-            onOpenApp={(type: string, title: string) => { setActiveNavTab('home'); openWindow(type, title); }} 
+            onOpenApp={(type: WindowType, title: string) => { setActiveNavTab('home'); openWindow(type, title); }} 
             onClose={() => setActiveNavTab('home')} 
           />
         )}
