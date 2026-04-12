@@ -30,11 +30,41 @@ fn main() {
     }
 
     let mounts = [
-        MountEntry { source: Some("proc"), target: "/proc", fstype: Some("proc"), flags: MsFlags::empty(), data: None },
-        MountEntry { source: Some("sysfs"), target: "/sys", fstype: Some("sysfs"), flags: MsFlags::empty(), data: None },
-        MountEntry { source: Some("devtmpfs"), target: "/dev", fstype: Some("devtmpfs"), flags: MsFlags::empty(), data: None },
-        MountEntry { source: Some("tmpfs"), target: "/tmp", fstype: Some("tmpfs"), flags: MsFlags::empty(), data: None },
-        MountEntry { source: Some("tmpfs"), target: "/run", fstype: Some("tmpfs"), flags: MsFlags::empty(), data: None },
+        MountEntry {
+            source: Some("proc"),
+            target: "/proc",
+            fstype: Some("proc"),
+            flags: MsFlags::empty(),
+            data: None,
+        },
+        MountEntry {
+            source: Some("sysfs"),
+            target: "/sys",
+            fstype: Some("sysfs"),
+            flags: MsFlags::empty(),
+            data: None,
+        },
+        MountEntry {
+            source: Some("devtmpfs"),
+            target: "/dev",
+            fstype: Some("devtmpfs"),
+            flags: MsFlags::empty(),
+            data: None,
+        },
+        MountEntry {
+            source: Some("tmpfs"),
+            target: "/tmp",
+            fstype: Some("tmpfs"),
+            flags: MsFlags::empty(),
+            data: None,
+        },
+        MountEntry {
+            source: Some("tmpfs"),
+            target: "/run",
+            fstype: Some("tmpfs"),
+            flags: MsFlags::empty(),
+            data: None,
+        },
     ];
 
     for entry in mounts {
