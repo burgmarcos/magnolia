@@ -74,8 +74,17 @@ fn main() {
             entry.target
         );
         let _ = fs::create_dir_all(entry.target);
-        if let Err(e) = mount(entry.source, entry.target, entry.fstype, entry.flags, entry.data) {
-            eprintln!("[Magnolia ERROR] Syscall failed for {}: {}", entry.target, e);
+        if let Err(e) = mount(
+            entry.source,
+            entry.target,
+            entry.fstype,
+            entry.flags,
+            entry.data,
+        ) {
+            eprintln!(
+                "[Magnolia ERROR] Syscall failed for {}: {}",
+                entry.target, e
+            );
         }
     }
 

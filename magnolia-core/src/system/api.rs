@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use tauri::command;
 
-
 #[derive(Serialize, Deserialize)]
 pub struct UpdateStatus {
     pub compatible: String,

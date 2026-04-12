@@ -1,7 +1,6 @@
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CloudConfig {
     pub project_id: String,
