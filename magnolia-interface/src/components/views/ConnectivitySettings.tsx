@@ -18,12 +18,12 @@ export function ConnectivitySettings() {
   const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([]);
   const [btDevices, setBtDevices] = useState<BtDevice[]>([]);
   const [isScanning, setIsScanning] = useState(true);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Attempt mock scans
     invoke<WifiNetwork[]>('scan_wifi', { interface: 'wlan0' })
-      .then(setWifiNetworks)
-      .catch()
+      .then(networks => { setScanError(null); setWifiNetworks(networks); })
+      .catch(e => setScanError(String(e)))
       .finally(() => setIsScanning(false));
       
     // Mock BT scan immediately alongside Wifi
@@ -47,7 +47,9 @@ export function ConnectivitySettings() {
         <section>
           <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--schemes-primary)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '16px' }}>Wi-Fi Array</p>
           <div style={{ background: 'var(--schemes-surface-container-high)', borderRadius: '24px', padding: '24px', border: '1px solid var(--schemes-outline-variant)' }}>
-             {isScanning ? <p>Scanning radios...</p> : (
+             {isScanning ? <p>Scanning radios...</p> : scanError ? (
+               <p style={{ color: 'var(--schemes-error)', fontSize: '13px' }}>Scan failed: {scanError}</p>
+             ) : (
                wifiNetworks.map((net, i) => (
                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: i < wifiNetworks.length - 1 ? '1px solid var(--schemes-outline-variant)' : 'none' }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
