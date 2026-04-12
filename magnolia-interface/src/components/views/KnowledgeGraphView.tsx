@@ -20,6 +20,78 @@ import { FileText, Database, Loader2 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import styles from './KnowledgeGraphView.module.css';
 
+// === Force-directed layout ===
+function forceLayout(
+  nodeIds: string[],
+  edgePairs: { source: string; target: string }[],
+  width = 800,
+  height = 600,
+  iterations = 50
+): Map<string, { x: number; y: number }> {
+  const positions = new Map<string, { x: number; y: number }>();
+  const n = nodeIds.length;
+  if (n === 0) return positions;
+
+  // Initialize on a circle
+  nodeIds.forEach((id, i) => {
+    const angle = (2 * Math.PI * i) / n;
+    positions.set(id, {
+      x: width / 2 + (width / 3) * Math.cos(angle),
+      y: height / 2 + (height / 3) * Math.sin(angle),
+    });
+  });
+
+  const repulsion = 4000;
+  const attraction = 0.05;
+  const damping = 0.85;
+  const velocities = new Map(nodeIds.map(id => [id, { vx: 0, vy: 0 }]));
+
+  for (let iter = 0; iter < iterations; iter++) {
+    // Repulsion between all pairs
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const a = positions.get(nodeIds[i])!;
+        const b = positions.get(nodeIds[j])!;
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const force = repulsion / (dist * dist);
+        const vA = velocities.get(nodeIds[i])!;
+        const vB = velocities.get(nodeIds[j])!;
+        vA.vx += (dx / dist) * force;
+        vA.vy += (dy / dist) * force;
+        vB.vx -= (dx / dist) * force;
+        vB.vy -= (dy / dist) * force;
+      }
+    }
+    // Attraction along edges
+    for (const { source, target } of edgePairs) {
+      const a = positions.get(source);
+      const b = positions.get(target);
+      if (!a || !b) continue;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const vA = velocities.get(source)!;
+      const vB = velocities.get(target)!;
+      vA.vx += dx * attraction;
+      vA.vy += dy * attraction;
+      vB.vx -= dx * attraction;
+      vB.vy -= dy * attraction;
+    }
+    // Apply velocities with damping
+    for (const id of nodeIds) {
+      const p = positions.get(id)!;
+      const v = velocities.get(id)!;
+      v.vx *= damping;
+      v.vy *= damping;
+      p.x = Math.max(50, Math.min(width - 50, p.x + v.vx));
+      p.y = Math.max(50, Math.min(height - 50, p.y + v.vy));
+    }
+  }
+
+  return positions;
+}
+
 // === Custom Node Types ===
 
 interface CustomNodeData extends Record<string, unknown> {
@@ -71,10 +143,15 @@ export function KnowledgeGraphView() {
     try {
       const data = await invoke<GraphData>('get_graph_data');
       
+      const positions = forceLayout(
+        data.nodes.map(n => n.id),
+        data.edges.map(e => ({ source: e.source, target: e.target }))
+      );
+
       const flowNodes: CustomNodeType[] = data.nodes.map(n => ({
         id: n.id,
         type: 'custom',
-        position: { x: Math.random() * 800, y: Math.random() * 600 }, // Simple random layout for now
+        position: positions.get(n.id) ?? { x: 0, y: 0 },
         data: {
           label: n.label,
           type: n.type_name as 'document' | 'chunk',
