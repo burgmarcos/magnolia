@@ -1,0 +1,4 @@
+config BR2_PACKAGE_MAGNOLIA_INTERFACE
+	bool "magnolia-interface"
+	help
+	  The Magnolia OS GUI interface (React/Tauri assets).

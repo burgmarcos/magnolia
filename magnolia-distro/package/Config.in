@@ -3,3 +3,4 @@
 
 source "$BR2_EXTERNAL_MAGNOLIA_PATH/package/magnolia-supervisor/Config.in"
 source "$BR2_EXTERNAL_MAGNOLIA_PATH/package/magnolia-core/Config.in"
+source "$BR2_EXTERNAL_MAGNOLIA_PATH/package/magnolia-interface/Config.in"

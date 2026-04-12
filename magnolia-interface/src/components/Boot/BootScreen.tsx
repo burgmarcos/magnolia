@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const imgMask = "/assets/design/ba958120f5fea1caffaf43075caae2f4694ddc01.png";
+import abstractMask from '../../assets/abstract-mask.svg';
 
 const FUN_MESSAGES = [
   "Calibrating neural pathways...",
@@ -39,9 +39,9 @@ export const BootScreen: React.FC<{ progress?: number }> = ({ progress: initialP
       {/* Background Mask */}
       <div className="absolute inset-0 opacity-40">
         <img 
-          src={imgMask} 
+          src={abstractMask} 
           alt="" 
-          className="w-full h-full object-cover rounded-[30px]"
+          className="w-full h-full object-cover"
         />
       </div>
 

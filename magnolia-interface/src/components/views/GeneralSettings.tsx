@@ -12,7 +12,7 @@ interface GeneralSettingsProps {
 
 const WALLPAPERS = [
   { id: 'vibrant', name: 'Vibrant Abstract', url: '/src/assets/wallpapers/vibrant_abstract.png' },
-  { id: 'soft', name: 'Soft Flow', url: '/src/assets/wallpapers/soft_flow.png' }
+  { id: 'soft', name: 'Soft Flow', url: '/wallpapers/soft_flow.svg' }
 ];
 
 export function GeneralSettings({ onNavigate, onWallpaperChange, currentWallpaper }: GeneralSettingsProps) {

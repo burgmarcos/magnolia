@@ -50,7 +50,7 @@ export async function extractThemeFromImage(imgUrl: string): Promise<ThemeColors
 
       const primaryHex = hsvToHex(hsv.h, hsv.s, hsv.v);
       
-      resolve({
+      const theme = {
         primary: primaryHex,
         onPrimary: getContrastColor(r, g, b),
         primaryContainer: hsvToHex(hsv.h, 0.15, 0.95), // Light tint
@@ -58,7 +58,16 @@ export async function extractThemeFromImage(imgUrl: string): Promise<ThemeColors
         secondary: hsvToHex(hsv.h, 0.3, 0.5),
         surface: hsvToHex(hsv.h, 0.05, 0.98),
         rgb: `${r}, ${g}, ${b}`
-      });
+      };
+
+      // Apply as CSS variables for mutable vector assets
+      const root = document.documentElement;
+      root.style.setProperty('--magnolia-primary', theme.primary);
+      root.style.setProperty('--magnolia-secondary', theme.secondary);
+      root.style.setProperty('--magnolia-surface', theme.onPrimaryContainer); // Using a dark tone for depth
+      root.style.setProperty('--magnolia-background', theme.surface);
+      
+      resolve(theme);
     };
 
     img.onerror = () => resolve(getDefaultTheme());
