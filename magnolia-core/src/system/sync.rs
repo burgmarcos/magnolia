@@ -4,7 +4,7 @@ use chrono::Utc;
 use keyring::Entry;
 use notify::{Config, Event, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -22,7 +22,7 @@ pub struct SyncMetadata {
 
 pub struct SovereignEncrypter {
     recipient: age::x25519::Recipient,
-    identity: age::x25519::Identity,
+    _identity: age::x25519::Identity,
 }
 
 impl SovereignEncrypter {
@@ -51,7 +51,7 @@ impl SovereignEncrypter {
 
         Ok(Self {
             recipient,
-            identity,
+            _identity: identity,
         })
     }
 

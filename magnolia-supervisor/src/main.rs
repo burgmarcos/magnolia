@@ -21,36 +21,38 @@ fn main() {
     println!("[Magnolia] Initializing Sovereign Supervisor (PID 1)...");
 
     // 1. Mount essential filesystems using direct Syscalls
-    let mounts: [(Option<&str>, &str, Option<&str>, MsFlags, Option<&str>); 5] = [
-        (Some("proc"), "/proc", Some("proc"), MsFlags::empty(), None),
-        (Some("sysfs"), "/sys", Some("sysfs"), MsFlags::empty(), None),
-        (
-            Some("devtmpfs"),
-            "/dev",
-            Some("devtmpfs"),
-            MsFlags::empty(),
-            None,
-        ),
-        (Some("tmpfs"), "/tmp", Some("tmpfs"), MsFlags::empty(), None),
-        (Some("tmpfs"), "/run", Some("tmpfs"), MsFlags::empty(), None),
+    struct MountEntry {
+        source: Option<&'static str>,
+        target: &'static str,
+        fstype: Option<&'static str>,
+        flags: MsFlags,
+        data: Option<&'static str>,
+    }
+
+    let mounts = [
+        MountEntry { source: Some("proc"), target: "/proc", fstype: Some("proc"), flags: MsFlags::empty(), data: None },
+        MountEntry { source: Some("sysfs"), target: "/sys", fstype: Some("sysfs"), flags: MsFlags::empty(), data: None },
+        MountEntry { source: Some("devtmpfs"), target: "/dev", fstype: Some("devtmpfs"), flags: MsFlags::empty(), data: None },
+        MountEntry { source: Some("tmpfs"), target: "/tmp", fstype: Some("tmpfs"), flags: MsFlags::empty(), data: None },
+        MountEntry { source: Some("tmpfs"), target: "/run", fstype: Some("tmpfs"), flags: MsFlags::empty(), data: None },
     ];
 
-    for (source, target, fstype, flags, data) in mounts {
+    for entry in mounts {
         println!(
             "[Magnolia] Syscall Mounting {} to {}...",
-            fstype.unwrap_or("none"),
-            target
+            entry.fstype.unwrap_or("none"),
+            entry.target
         );
-        let _ = fs::create_dir_all(target);
-        if let Err(e) = mount(source, target, fstype, flags, data) {
-            eprintln!("[Magnolia ERROR] Syscall failed for {}: {}", target, e);
+        let _ = fs::create_dir_all(entry.target);
+        if let Err(e) = mount(entry.source, entry.target, entry.fstype, entry.flags, entry.data) {
+            eprintln!("[Magnolia ERROR] Syscall failed for {}: {}", entry.target, e);
         }
     }
 
     // 1.1 Mount Persistent Partitions (Steel Implementation)
     // Dynamic detection of boot media (vda for Virtio, sda for SATA/SCSI)
     let mut boot_disk = "/dev/vda";
-    if !fs::metadata("/dev/vda").is_ok() {
+    if fs::metadata("/dev/vda").is_err() {
         if fs::metadata("/dev/sda").is_ok() {
             println!("[Magnolia] Virtio disk not found. Falling back to /dev/sda.");
             boot_disk = "/dev/sda";

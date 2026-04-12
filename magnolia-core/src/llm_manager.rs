@@ -196,6 +196,7 @@ pub async fn stop_llama_server(state: tauri::State<'_, LlmEngineState>) -> Resul
 }
 
 /// Monitors system RAM and throttles the LLM if pressure is too high.
+#[allow(dead_code)]
 pub async fn monitor_ai_pressure(_child_id: u32) {
     let mut sys = sysinfo::System::new_all();
     loop {

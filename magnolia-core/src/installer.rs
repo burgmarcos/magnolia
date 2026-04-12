@@ -9,7 +9,9 @@ use winreg::enums::*;
 #[cfg(windows)]
 use winreg::RegKey;
 
+#[cfg(windows)]
 const APP_NAME: &str = "Magnolia - Sovereign AI OS";
+#[cfg(windows)]
 const UNINSTALL_REG_KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Magnolia";
 
 pub fn get_install_dir() -> PathBuf {
