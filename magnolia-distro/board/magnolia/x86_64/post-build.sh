@@ -13,6 +13,8 @@ echo "[Magnolia] Executing Post-Build Bundle..."
 # 1. Deploy Magnolia Interface assets
 # These are the web assets built from the React frontend.
 # Expects magnolia-interface/dist to exist (built in workflow)
+# Note: magnolia-interface.mk also installs via generic-package INSTALL_TARGET_CMDS,
+# but this fallback ensures assets are present even if the .mk install was skipped.
 INTERFACE_SRC="${BR2_EXTERNAL_MAGNOLIA_PATH}/../magnolia-interface/dist"
 INTERFACE_DEST="${TARGET_DIR}/usr/share/magnolia/interface"
 

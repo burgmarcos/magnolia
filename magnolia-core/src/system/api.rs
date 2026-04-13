@@ -66,20 +66,28 @@ pub struct NetworkInfo {
 
 #[command]
 pub async fn get_network_settings() -> Result<NetworkInfo, String> {
-    // Wrap nmcli to get SSID and connection status
+    // Wrap nmcli to get SSID, signal, and connection status
     let output = Command::new("nmcli")
-        .args(["-t", "-f", "active,ssid", "dev", "wifi"])
+        .args(["-t", "-f", "active,ssid,signal", "dev", "wifi"])
         .output()
         .map_err(|e| format!("NetworkManager not responding: {}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
-    // Parse nmcli output for the active SSID
-    let active_ssid = stdout
-        .lines()
-        .find(|line| line.starts_with("yes:"))
-        .map(|line| line.replace("yes:", ""))
-        .unwrap_or_else(|| "Disconnected".to_string());
+    // Parse nmcli terse output: "yes:MyNetwork:85" or "no:Other:60"
+    let active_line = stdout.lines().find(|line| line.starts_with("yes:"));
+
+    let (active_ssid, signal_strength) = if let Some(line) = active_line {
+        let parts: Vec<&str> = line.splitn(3, ':').collect();
+        let ssid = parts.get(1).unwrap_or(&"").to_string();
+        let signal = parts
+            .get(2)
+            .and_then(|s| s.trim().parse::<u8>().ok())
+            .unwrap_or(0);
+        (ssid, signal)
+    } else {
+        ("Disconnected".to_string(), 0)
+    };
 
     // Get IP address
     let ip_output = Command::new("hostname")

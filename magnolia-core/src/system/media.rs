@@ -32,7 +32,17 @@ pub async fn take_screenshot() -> Result<String, String> {
         }
         Err(e) => {
             println!("[MEDIA WARN] grim not available: {}", e);
-            Err("Screenshot capture unavailable. Install 'grim' for Wayland screenshot support.".into())
+            // grim unavailable — try ImageMagick import as fallback (X11/headless envs)
+            let import_status = Command::new("import")
+                .args(["-window", "root", path_str])
+                .status();
+            match import_status {
+                Ok(s) if s.success() => {
+                    println!("[MEDIA] Screenshot saved via import: {}", path_str);
+                    Ok(path_str.to_string())
+                }
+                _ => Err("Screenshot unavailable: neither grim nor ImageMagick import found. Ensure a Wayland compositor is running.".into()),
+            }
         }
     }
 }

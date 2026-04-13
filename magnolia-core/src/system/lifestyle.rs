@@ -54,12 +54,23 @@ pub async fn get_lifestyle_stats() -> Result<Vec<AppUsageSummary>, String> {
 
     let contents = fs::read_to_string(log_path).map_err(|e| e.to_string())?;
     let mut usage_map: HashMap<String, u64> = HashMap::new();
+    let mut focus_start: HashMap<String, DateTime<Local>> = HashMap::new();
 
     for line in contents.lines() {
         if let Ok(event) = serde_json::from_str::<UsageEvent>(line) {
-            // Simplified: every focus event counts as 1 minute for this maturity level
-            // In full production, we'd calculate diffs between Focus and LoseFocus
-            *usage_map.entry(event.app_id).or_insert(0) += 1;
+            match event.event_type.as_str() {
+                "gain_focus" => {
+                    focus_start.insert(event.app_id, event.timestamp);
+                }
+                "lose_focus" => {
+                    if let Some(start) = focus_start.remove(&event.app_id) {
+                        let elapsed = event.timestamp.signed_duration_since(start);
+                        let minutes = (elapsed.num_seconds().max(0) as u64) / 60;
+                        *usage_map.entry(event.app_id).or_insert(0) += minutes;
+                    }
+                }
+                _ => {}
+            }
         }
     }
 

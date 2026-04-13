@@ -1,0 +1,16 @@
+# Force LF line endings for all files that Linux/Buildroot will consume
+*.sh        eol=lf
+*.mk        eol=lf
+*.in        eol=lf
+*.cfg       eol=lf
+*.desc      eol=lf
+*.config    eol=lf
+*.toml      eol=lf
+*.rs        eol=lf
+*.lock      eol=lf
+grub.cfg    eol=lf
+defconfig   eol=lf
+Makefile    eol=lf
+hostname    eol=lf
+hosts       eol=lf
+fstab       eol=lf

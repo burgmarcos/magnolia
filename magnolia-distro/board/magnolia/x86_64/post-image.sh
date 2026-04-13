@@ -2,10 +2,7 @@
 
 # Magnolia - Post-Image Script
 
-BOARD_DIR="$(dirname $0)"
-echo "--- POST-IMAGE DEBUG: BINARIES_DIR STATE ---"
-ls -R "${BINARIES_DIR}"
-echo "------------------------------------------"
+BOARD_DIR="$(dirname "$0")"
 GENIMAGE_CFG="${BOARD_DIR}/genimage.cfg"
 GENIMAGE_TMP="${BINARIES_DIR}/genimage.tmp"
 

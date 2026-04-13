@@ -56,6 +56,6 @@ jobs:
           projectPath: magnolia-core
           tagName: ${{ github.ref_name }}
           releaseName: "Magnolia ${{ github.ref_name }}"
-          releaseBody: "Automated unsigned release build for v0.0.1."
+          releaseBody: "Automated unsigned release build for ${{ github.ref_name }}."
           releaseDraft: true
           prerelease: true

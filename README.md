@@ -1,112 +1,132 @@
-# 🌸 Magnolia OS: The Sovereign Intelligent Workspace
+<p align="center">
+  <img src="https://raw.githubusercontent.com/burgmarcos/magnolia/main/magnolia-distro/board/magnolia/x86_64/grub-theme/background.png" width="120" alt="Magnolia OS">
+</p>
 
-![Magnolia Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-ISC-green.svg)
-![Rust](https://img.shields.io/badge/rust-2024-orange.svg)
-![GCP](https://img.shields.io/badge/GCP-magnolia--os-blue.svg)
-![Website](https://img.shields.io/badge/website-magnol.ia.br-purple.svg)
+<h1 align="center">Magnolia OS</h1>
+<p align="center"><strong>The Sovereign Intelligent Workspace</strong></p>
 
-# Magnolia OS: The Sovereign Computing Manifest
+<p align="center">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/kernel-Linux%206.12.9-orange.svg" alt="Kernel">
+  <img src="https://img.shields.io/badge/runtime-Rust%202021%20%2B%20React%2019-blue.svg" alt="Runtime">
+  <img src="https://img.shields.io/badge/status-dev--build-yellow.svg" alt="Status">
+  <a href="https://burgmarcos.github.io/magnolia/"><img src="https://img.shields.io/badge/website-magnol.ia.br-purple.svg" alt="Website"></a>
+  <a href="https://buymeacoffee.com/burgmarcos"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow.svg" alt="Buy Me A Coffee"></a>
+</p>
 
-Magnolia OS is a high-performance, privacy-first operating system designed for the era of personal autonomy. Built on a hardened Linux 6.12.9 foundation, it decouples the user from centralized surveillance through local-first intelligence and hardware-level isolation.
-
-> *"Computed in Private. Verified by You. Sovereign by Design."*
-
----
-
-## 🌸 The Sovereign Pillars
-
-### 1. Radical Privacy
-Magnolia operates under a **Zero-Leak Policy**. Every application is sandboxed in an ephemeral Bubblewrap namespace, with strictly audited filesystem and network access. Your telemetry is nonexistent, and your encryption is local.
-
-### 2. Native Cloud Fusion
-While we champion local first, we recognize the power of the heavy cloud. **Cloud Fusion** allows sub-millisecond integration with Google Cloud and Vertex AI via secure, Service Account-based authentication, ensuring your AI workloads are powerful but your identity remains sovereign.
-
-### 3. Resilience Architecture (Stage A/B)
-Magnolia uses a dual-root strategy to ensure the system never breaks. System updates target the inactive partition (`Stage A` or `Stage B`), allowing for seamless rollbacks if a kernel update fails.
+<p align="center">
+  <em>"Computed in Private. Verified by You. Sovereign by Design."</em>
+</p>
 
 ---
 
-## 🛠 Project Architecture
+A privacy-first operating system with built-in AI intelligence, built on hardened Linux. No telemetry. No surveillance. Every AI model runs locally. Every byte of your data stays yours.
 
-```mermaid
-graph TD
-    A[EFI: GRUB2 Hardened] --> B[Kernel: Linux 6.12.9];
-    B --> C[Supervisor: Rust PID 1];
-    C --> D[Udev / Partition Discovery];
-    D --> E[Cage: Wayland Kiosk];
-    E --> F[Magnolia-Hub: Tauri/React];
-    F --> G[Bubblewrapped WebKit Engine];
-    F --> H[Local AI: llama-server];
+## Architecture
+
+```
+UEFI Firmware
+  └─ GRUB2 EFI (themed bootloader)
+       └─ Linux Kernel 6.12.9 (hardened, VirtIO, DRM)
+            └─ Magnolia Supervisor (Rust PID 1, static musl binary)
+                 ├─ Partition Discovery (udev, mount vda4/vda5)
+                 └─ Cage (Wayland kiosk compositor)
+                      └─ Magnolia Hub (Tauri v2 + React 19)
+                           ├─ Local AI (llama.cpp inference)
+                           ├─ MemPalace (RAG search, sqlite-vec)
+                           ├─ File Manager
+                           ├─ Sandboxed Browser (Bubblewrap + WebKit)
+                           └─ System Settings
 ```
 
-### Core Components
-- **The Supervisor (PID 1)**: A dedicated Rust binary responsible for mounting decrypted persistent volumes (`vda4`/`vda5`) and initializing the Wayland compositor.
-- **The Hub (Core)**: A Tauri-based system controller managing hardware abstraction, AI inference, and window management.
-- **MemPalace**: An ultra-fast local RAG (Retrieval-Augmented Generation) engine for indexing your files privately.
+## Features
 
----
+| Feature | Status | Stack |
+|:--------|:-------|:------|
+| Wayland-native desktop | Stable | Cage + WebKitGTK + Tauri |
+| Local LLM inference | Stable | llama.cpp, GGUF models |
+| App sandboxing | Stable | Bubblewrap namespaces |
+| MemPalace search | Stable | sqlite-vec, local embeddings |
+| i18n (EN, PT-BR, ES) | Stable | JSON locale hot-swap |
+| HuggingFace model browser | Stable | API + hardware fit assessment |
+| Secure keyring | Stable | OS-level credential storage |
+| A/B root updates | Alpha | GRUB + GPT dual-root |
+| Cloud Fusion | Alpha | GCP / Vertex AI |
+| P2P update mesh | Planned | mDNS + chunk transfer |
 
-## 📈 Feature Matrix (v1.0 Baseline)
+## Quick Start
 
-| Feature | Status | Technology |
-| :--- | :--- | :--- |
-| **Stage A/B Boot** | ✅ Stable | GRUB2 / GPT Mapping |
-| **App Sandboxing** | ✅ Stable | Bubblewrap / namespaces |
-| **Magnolia Assistant** | ✅ Beta | llama.cpp / Local Inference |
-| **Cloud Fusion** | 🛠 Alpha | GCP / Vertex AI Integration |
-| **MemPalace Search** | 🛠 Alpha | Vector DB / Local Indexing |
-| **i18n Support** | ✅ Stable | Hot-swappable JSON locales |
+### Build from Source (Windows + WSL2)
 
----
+```bash
+# Clone
+git clone https://github.com/burgmarcos/magnolia.git
+cd magnolia
 
-## 🚀 Getting Started
-
-### Windows (WSL2 / Development)
-1. Ensure `WSLg` is active.
-2. Run `scripts/test_wsl_qemu.sh` to launch the Magnolia Simulation.
-
-### Bare Metal (Target)
-1. Flash `magnolia.img` to a high-speed NVMe or USB 3.0 drive.
-2. Boot via UEFI. Ensure Secure Boot is configured in 'Audit Mode' for the initial flight.
-
----
-
-## 💬 Human-Oriented Support
-Magnolia includes an integrated **Sovereign Assistant**. Use the `/help` command or speak naturally to learn about system internals, adjust privacy settings, or troubleshoot network lattice issues.
-
-For AI Developers and Agents, see the [Agent Handbook](docs/AGENT_HANDBOOK.md).
-
----
-
-*Magnolia is more than an OS. It is a commitment to digital self-determination.*
-
-### How to Compile
-You can compile the system into a flashable `.img` immediately by executing the overarching build script at the project root:
-
-```cmd
+# Option A: Full OS image via build script
 .\build.bat
+
+# Option B: Direct Buildroot (faster, requires WSL2 Ubuntu)
+# See HANDOFF.md for full local build instructions
 ```
-*Note: This streams a real-time, debuggable log of the compilation pipeline straight to your terminal. Once completed, you will find `magnolia.img` in the workspace root.*
+
+### Test in QEMU
+
+```bash
+qemu-system-x86_64 \
+  -bios /usr/share/ovmf/OVMF.fd \
+  -drive file=magnolia.img,format=raw,if=virtio \
+  -m 4G -smp 4 -device virtio-vga \
+  -device virtio-keyboard-pci -device virtio-mouse-pci \
+  -serial mon:stdio
+```
+
+### Bare Metal
+
+Flash `magnolia.img` to a USB 3.0+ drive. Boot via UEFI.
+
+## Repository Structure
+
+```
+magnolia/
+├── magnolia-core/           Tauri v2 Rust backend
+│   └── src/handlers/        7 domain modules (app, models, llm, knowledge, files, secrets, browser)
+│   └── src/system/          19 system modules (hal, api, sandbox, privacy, sync, etc.)
+├── magnolia-interface/      React 19 + TypeScript frontend (60+ components)
+├── magnolia-supervisor/     Rust PID 1 init process
+├── magnolia-distro/         Buildroot external tree
+│   ├── configs/             defconfig for x86_64
+│   ├── package/             Custom Buildroot packages
+│   └── board/magnolia/      Kernel config, GRUB, genimage, rootfs overlay
+├── website/                 magnol.ia.br static site
+├── scripts/                 Build and test automation
+└── docs/                    Architecture, features, agent handbook
+```
+
+## Contributing
+
+Magnolia is open source under **AGPL-3.0** and welcomes contributors.
+
+- **Code**: Fork, pick an issue, submit a PR. CI enforces `cargo clippy` and `npm run lint`.
+- **Test**: Boot the image in QEMU, file bugs, help reach hardware parity.
+- **Translate**: Help bring Magnolia to more languages.
+
+See the [Agent Handbook](docs/AGENT_HANDBOOK.md) for AI developer integration.
+
+## Support
+
+Magnolia OS is built in spare time by [Marcos Burg](https://mrburg.com.br), a teacher based in Brazil who was tired of open-source operating systems not working the way they should — so he decided to build an entire OS from scratch.
+
+<p align="center">
+  <a href="https://buymeacoffee.com/burgmarcos">
+    <img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee">
+  </a>
+</p>
 
 ---
 
-## 🧪 Testing Environment
-
-Once built, developers can launch the sovereign OS on their host machine for rapid iteration:
-
-```cmd
-.\qemu-test-win.bat
-```
-This script leverages Microsoft's Windows Hypervisor Platform (WHPX) to boot `magnolia.img` with native graphical acceleration.
-
----
-
-## 🔐 Authentication & Governance
-
-This project maintains absolute data integrity checks, absolute type-safety across its interprocess bindings (IPC), and utilizes secure memory bounds defined by Rust 2024. 
-
-All Pull Requests *(PRs)* must satisfy the internal `npm run lint` configuration across the `magnolia-interface` dashboard framework, and maintain strict `cargo clippy` adherence within the `magnolia-core` subsystem.
-
-**Repository**: [github.com/burgmarcos/magnolia](https://github.com/burgmarcos/magnolia)  
-**Domain**: [magnol.ia.br](https://magnol.ia.br)
+<p align="center">
+  <a href="https://github.com/burgmarcos/magnolia">GitHub</a> &middot;
+  <a href="https://burgmarcos.github.io/magnolia/">Website</a> &middot;
+  <a href="https://mrburg.com.br">Creator</a>
+</p>

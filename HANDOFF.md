@@ -1,4 +1,4 @@
-# Magnolia OS Handoff Status
+# Magnolia OS — Handoff Status
 
 ## Current State (2026-04-13) — BOOT CHAIN COMPLETE, DISPLAY RENDERING IN PROGRESS
 

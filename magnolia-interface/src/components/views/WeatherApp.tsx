@@ -15,6 +15,7 @@ export function WeatherApp() {
   const [cityName, setCityName] = useState<string>('Detecting...');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
   const fetchWeather = useCallback(async (lat: number, lon: number) => {
     setIsLoading(true);
@@ -37,6 +38,7 @@ export function WeatherApp() {
         conditionCode: current.weather_code,
         condition: getConditionText(current.weather_code)
       });
+      setLastUpdated(Date.now());
     } catch (e) {
       toast.error("Weather sync failed");
       console.error(e);
@@ -56,6 +58,14 @@ export function WeatherApp() {
       setCityName('Geo Unsupported');
     }
   }, [fetchWeather]);
+
+  const getRelativeTime = (ts: number | null): string => {
+    if (!ts) return 'Not yet updated';
+    const diffSeconds = Math.floor((Date.now() - ts) / 1000);
+    if (diffSeconds < 60) return 'Just now';
+    const mins = Math.floor(diffSeconds / 60);
+    return `${mins} min ago`;
+  };
 
   const getConditionIcon = (code: number) => {
     if (code === 0) return <Sun size={64} color="#fcd34d" />;
@@ -107,7 +117,7 @@ export function WeatherApp() {
 
       <div style={{ marginTop: 'auto', padding: '24px', borderRadius: '24px', border: '1px solid var(--schemes-outline-variant)', background: 'var(--schemes-surface-container-low)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <p style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--schemes-outline)' }}>
-          <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Updated recently from local mesh
+          <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> {getRelativeTime(lastUpdated)} from local mesh
         </p>
         <button 
           onClick={() => navigator.geolocation.getCurrentPosition(p => fetchWeather(p.coords.latitude, p.coords.longitude))}

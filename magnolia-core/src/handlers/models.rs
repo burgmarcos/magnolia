@@ -68,3 +68,20 @@ pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
 
     Ok(models)
 }
+
+#[tauri::command]
+pub fn get_local_model_size_bytes(
+    app: tauri::AppHandle,
+    model_name: String,
+) -> Result<u64, String> {
+    use tauri::Manager;
+    let models_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("models");
+    let path = models_dir.join(&model_name);
+    path.metadata()
+        .map(|m| m.len())
+        .map_err(|e| format!("Cannot stat model file: {}", e))
+}
