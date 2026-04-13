@@ -20,6 +20,9 @@ build/
 # Hotfix & Local Testing (Not for Repo)
 local_scripts/
 
+# Claude Code local config
+.claude/
+
 # Magnolia OS Build Outputs
 *.img
 *.raucb

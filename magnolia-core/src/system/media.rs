@@ -31,9 +31,8 @@ pub async fn take_screenshot() -> Result<String, String> {
             Err("grim failed to capture screen (non-zero exit). Check compositor status.".into())
         }
         Err(e) => {
-            println!("[MEDIA WARN] grim not found, falling back to mock: {}", e);
-            // Mocking for environments without grim (Development)
-            Ok(format!("MOCK_CAPTURE:{}", path_str))
+            println!("[MEDIA WARN] grim not available: {}", e);
+            Err("Screenshot capture unavailable. Install 'grim' for Wayland screenshot support.".into())
         }
     }
 }

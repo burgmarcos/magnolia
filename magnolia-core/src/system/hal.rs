@@ -58,7 +58,7 @@ pub async fn set_hardware_killswitch(device: String, block: bool) -> Result<(), 
         "[HAL] Setting Hardware Killswitch for {} -> Blocked: {}",
         device, block
     );
-    // Conceptual mock for Sandbox block (requires udev reloading or rfkill)
+    // Hardware killswitch via rfkill (supports wlan, bluetooth, nfc)
     let action = if block { "block" } else { "unblock" };
 
     let target = match device.as_str() {
@@ -129,15 +129,29 @@ pub fn spawn_hal_maintenance() {
     tauri::async_runtime::spawn(async move {
         println!("[Magnolia] HAL Maintenance Pulse active.");
         loop {
-            // Task 1: Check Thermal State (sysfs mock)
-            let temp_path = "/sys/class/thermal/thermal_zone0/temp";
-            let temp = if let Ok(t) = fs::read_to_string(temp_path) {
-                t.trim().parse::<u32>().unwrap_or(0) / 1000
+            // Task 1: Check Thermal State via sysfs (scan all thermal zones)
+            let mut temp: u32 = 0;
+            let mut zone_found = false;
+            if let Ok(entries) = fs::read_dir("/sys/class/thermal") {
+                for entry in entries.flatten() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    if name.starts_with("thermal_zone") {
+                        let temp_path = entry.path().join("temp");
+                        if let Ok(t) = fs::read_to_string(&temp_path) {
+                            let zone_temp = t.trim().parse::<u32>().unwrap_or(0) / 1000;
+                            if zone_temp > temp {
+                                temp = zone_temp; // Track hottest zone
+                            }
+                            zone_found = true;
+                        }
+                    }
+                }
+            }
+            if !zone_found {
+                println!("[Magnolia HAL Pulse] No thermal zones found (QEMU/VM). Skipping thermal management.");
             } else {
-                45 // Fake nominal 45C
-            };
-
-            println!("[Magnolia HAL Pulse] CPU Temp: {}C", temp);
+                println!("[Magnolia HAL Pulse] CPU Temp: {}C (hottest zone)", temp);
+            }
 
             // Task 2: Suggest Performance Mode based on logs
             if let Ok(suggestion) = suggest_performance_mode().await {
