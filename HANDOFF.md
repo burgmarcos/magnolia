@@ -1,18 +1,21 @@
 # Magnolia OS Handoff Status
 
-## Current State (2026-04-12) — FULLY BOOTING AND STABLE
+## Current State (2026-04-13) — BOOT CHAIN COMPLETE, DISPLAY RENDERING IN PROGRESS
 
 | Component | Status | Details |
 |-----------|--------|---------|
 | **Boot Chain** | ✅ VERIFIED | UEFI → GRUB2 → Linux 6.12.9 → magnolia-supervisor → Cage → magnolia-hub |
 | **magnolia-supervisor** | ✅ RUNNING | Rust PID 1 init, all subsystems initializing |
-| **magnolia-hub (Tauri v2)** | ✅ STABLE | 85+ seconds uptime verified, zero restarts |
-| **Cage (Wayland kiosk)** | ✅ RUNNING | With wlroots XDG assertion patch applied |
+| **magnolia-hub (Tauri v2)** | ✅ STABLE | Tauri plugins loaded, DB initialized, all pulses active |
+| **Cage (Wayland kiosk)** | ✅ RUNNING | pixman renderer, 1280x800@75Hz on Virtual-1 connector |
 | **WebKitGTK 2.50.5** | ✅ COMPLETE | 4,249 cmake units compiled successfully |
-| **GRUB2 2.12** | ✅ COMPLETE | Host + target EFI builds done |
+| **libglvnd** | ✅ INSTALLED | libOpenGL.so.0, libGLdispatch.so.0 — real GL dispatch |
+| **Mesa DRI drivers** | ✅ INSTALLED | swrast_dri.so, kms_swrast_dri.so, virtio_gpu_dri.so |
+| **GRUB2 2.12** | ✅ COMPLETE | Magnolia flower theme visible in QEMU GUI |
 | **Linux Kernel 6.12.9** | ✅ COMPLETE | Boots with virtio drivers |
 | **License** | ✅ AGPL-3.0 | |
 | **Website** | ✅ LIVE | https://burgmarcos.github.io/magnolia/ |
+| **Display output** | 🔧 IN PROGRESS | Cage owns framebuffer but Hub content renders black |
 
 ---
 
@@ -23,15 +26,16 @@
 - **Problem:** Cage SIGABRTs when WebKitGTK creates surfaces before XDG handshake completes
 - **Fix:** Removes fatal assert in `wlr_xdg_surface_schedule_configure`, replaces with log+proceed
 
-### 2. libGL.so.1 Stub Library
-- **File:** `output/target/usr/lib/libGL.so.1.0.0`
-- **Problem:** WebKitGTK unconditionally dlopen()s libGL.so.1 and crashes if not found
-- **Fix:** Functional stub providing minimal GL API (version strings, noop calls). WebKit falls back to software path.
+### 2. libGL.so.1 Stub Library (v3)
+- **Source:** `magnolia-distro/board/magnolia/x86_64/stub-libGL.c`
+- **Problem:** WebKitGTK unconditionally dlopen()s libGL.so.1 and SIGABRTs if not found
+- **Fix:** Stub reports GL 2.1 with NPOT extension, valid shader compile/link. Prevents crash but all draw calls are noops (renders black). Real GL rendering routes through libglvnd → libOpenGL.so.0 → mesa softpipe.
 
-### 3. DRI Driver Installation
-- **Location:** `output/target/usr/lib/dri/`
-- **Problem:** Buildroot's mesa3d package didn't install DRI drivers automatically
-- **Fix:** Manually installed Mesa gallium drivers with symlinks (swrast_dri.so, kms_swrast_dri.so, virtio_gpu_dri.so → libgallium-26.0.4.so)
+### 3. libglvnd + Mesa DRI Stack
+- **Location:** `output/target/usr/lib/` (libOpenGL.so.0, libGLdispatch.so.0, libEGL.so.1)
+- **Location:** `output/target/usr/lib/dri/` (swrast_dri.so, kms_swrast_dri.so, virtio_gpu_dri.so → libgallium-26.0.4.so)
+- **Problem:** Buildroot's mesa3d package didn't install DRI drivers for Wayland-only softpipe builds, and no real GL dispatch existed
+- **Fix:** Enabled BR2_PACKAGE_LIBGLVND, manually installed Mesa gallium DRI drivers with symlinks
 
 ---
 
@@ -74,34 +78,100 @@ These stubs were replaced with real implementations:
 
 Remaining 13 stubs are complex features (P2P networking, Anthropic API, LLM throttling) — deferred until after boot works.
 
+## Serial Boot Log Analysis (2026-04-13)
+
+Full serial capture via `-nographic` confirms every stage:
+
+```
+[  2.658661] VFS: Mounted root (ext4 filesystem) on device 254:2.
+[  2.751069] Run /sbin/init as init process
+[Magnolia] Initializing Sovereign Supervisor (PID 1)...
+[Magnolia] Launching Magnolia Dashboard Hub on Cage...
+[Magnolia] Supervisor active. Monitoring Hub (PID 54)...
+```
+
+Cage initialization (via wlroots):
+```
+[backend/drm/backend.c:225] Initializing DRM backend for /dev/dri/card0 (virtio_gpu)
+[util/env.c:25] Loading WLR_RENDERER option: pixman
+[render/pixman/renderer.c:328] Creating pixman renderer
+[backend/drm/drm.c:944] connector Virtual-1: Modesetting with 1280x800 @ 74.994 Hz
+```
+
+XDG surface patch working:
+```
+[types/xdg_shell/wlr_xdg_surface.c:171] xdg_surface configure before init — proceeding anyway
+```
+
+Magnolia Hub fully operational:
+```
+[Magnolia] Dashboard Hub setup complete.
+[Magnolia] Storage Hub Pulse active.
+[Magnolia] HAL Maintenance Pulse active.
+[Magnolia] Network Lattice Pulse active.
+```
+
+## Black Screen Diagnosis
+
+**The app is running perfectly — it's a display compositing issue, not a crash.**
+
+What works:
+- Cage modesetting at 1280x800 on Virtual-1 via virtio-gpu-pci
+- XDG surface creation and configure (patch fires correctly)
+- Tauri app starts, database initializes, all pulses run
+- QEMU shows Cage has taken over the framebuffer (black rectangle inside QEMU chrome)
+
+What doesn't work:
+- Hub's rendered web content does not appear in the framebuffer
+- Possible causes to investigate:
+  1. **Wayland surface damage/commit** — WebKitGTK+Cairo may not be flushing damage to the Wayland surface
+  2. **Buffer format mismatch** — Cairo software buffer format vs what pixman compositor expects
+  3. **GSK_RENDERER=cairo + WEBKIT_DISABLE_COMPOSITING_MODE** — may prevent WebKitGTK from writing to the wl_surface entirely
+  4. **Stub libGL intercept** — if WebKitGTK uses libGL.so.1 for actual rendering instead of just probing, the stub's noop draw calls produce black
+  5. **Tauri embedded assets** — frontendDist embeds at compile time; verify cross-compile actually bundled them
+
 ## Known Issues (non-blocking)
-- `/dev/vda4` and `/dev/vda5` (appdata/userdata) fail to mount — partitions have no filesystem yet (need mkfs.ext4 on first boot)
+- `/dev/vda4` and `/dev/vda5` (appdata/userdata) fail to mount — need mkfs.ext4 on first boot
 - `/dev: EBUSY` on devtmpfs mount — benign, kernel already mounted it
 - `lsblk not found` — storage pulse audit can't run (cosmetic)
 - `nmcli not found` — WiFi scan fails gracefully (no WiFi hardware in QEMU)
 - Mock stubs remain for P2P networking, Anthropic streaming, LLM memory
 
-## QEMU Test Command (verified working)
+## QEMU Test Commands
+
+**GUI display (via WSLg):**
 ```bash
-qemu-system-x86_64 -drive if=virtio,format=raw,file=magnolia.img \
-  -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE_4M.fd \
-  -drive if=pflash,format=raw,file=efivars.fd \
+export DISPLAY=:0 GDK_BACKEND=x11
+cp /usr/share/OVMF/OVMF_VARS_4M.fd /root/ovmf_vars_magnolia.fd
+qemu-system-x86_64 \
+  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd \
+  -drive if=pflash,format=raw,file=/root/ovmf_vars_magnolia.fd \
+  -drive file=/root/buildroot/output/images/magnolia.img,format=raw,if=virtio,cache=writeback \
   -m 2G -smp 2 \
   -device virtio-gpu-pci -device virtio-keyboard-pci -device virtio-mouse-pci \
-  -serial stdio -net nic -net user
+  -display gtk -cpu qemu64 -daemonize
+```
+
+**Serial capture (headless):**
+```bash
+qemu-system-x86_64 [same drives] -nographic -cpu qemu64
 ```
 
 ## To Resume Build
 ```bash
-# If build died:
-wsl -d Ubuntu -- bash -c "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin && sysctl -w vm.overcommit_memory=1 && sysctl -w vm.swappiness=80 && cd ~/buildroot && tmux new-session -d -s build 'make BR2_EXTERNAL=/root/magnolia/magnolia-distro 2>&1 | tee /root/build.log'"
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+cd ~/buildroot
+make magnolia-supervisor-rebuild  # pick up source changes
+make                              # regenerate magnolia.img
 ```
 
-## Next Steps
-1. User GUI QEMU test (add `-display gtk` or use VNC)
-2. Format appdata/userdata partitions on first boot (mkfs.ext4 for /dev/vda4, /dev/vda5)
-3. Install lsblk (util-linux) for storage pulse
-4. Replace remaining mock stubs as features mature
+## Next Steps (Priority Order)
+1. **Fix black screen** — investigate Wayland surface damage path between WebKitGTK/Cairo and Cage/pixman
+2. Try removing `WEBKIT_DISABLE_COMPOSITING_MODE=1` — may be preventing surface writes
+3. Try removing `GSK_RENDERER=cairo` — let GTK4 pick its own renderer
+4. Add debug: simple HTML test page (solid color background) to isolate rendering vs content issue
+5. Format appdata/userdata partitions on first boot
+6. Replace remaining 13 mock stubs
 
 ---
-*Boot verified stable: 85+ seconds uptime, zero restarts, all subsystems initializing (2026-04-12)*
+*Boot chain verified end-to-end via serial log. Display rendering is the last mile. (2026-04-13)*
