@@ -17,6 +17,24 @@ extern "C" fn handle_sigint(_: i32) {
     println!("[Magnolia] Received SIGINT. Re-initializing graphics...");
 }
 
+/// Detect if we are running inside a virtual machine (QEMU, KVM, etc.)
+/// by inspecting DMI product name and CPU flags.
+fn is_running_in_vm() -> bool {
+    // Check DMI product name for known hypervisor identifiers
+    if let Ok(product) = fs::read_to_string("/sys/class/dmi/id/product_name") {
+        if product.contains("QEMU") || product.contains("KVM") || product.contains("Virtual") {
+            return true;
+        }
+    }
+    // Fallback: check if CPU advertises hypervisor flag
+    if let Ok(cpuinfo) = fs::read_to_string("/proc/cpuinfo") {
+        if cpuinfo.contains("hypervisor") {
+            return true;
+        }
+    }
+    false
+}
+
 fn main() {
     println!("[Magnolia] Initializing Sovereign Supervisor (PID 1)...");
 
@@ -168,12 +186,18 @@ fn main() {
         // Force mesa software rendering (avoids DRM render node requirement)
         std::env::set_var("LIBGL_ALWAYS_SOFTWARE", "1");
         std::env::set_var("GALLIUM_DRIVER", "softpipe");
-        // Disable WebKit sandboxing so web process inherits env vars and DRM access
-        std::env::set_var("WEBKIT_FORCE_SANDBOX", "0");
-        std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1");
         std::env::set_var("GSK_RENDERER", "cairo");
         // Prevent Cage XDG shell race — give wlroots extra init time
         std::env::set_var("CAGE_STARTUP_DELAY", "1");
+    }
+
+    // Only disable WebKit sandbox in VM environments — on real hardware the sandbox stays on
+    if is_running_in_vm() {
+        println!("[Magnolia] VM detected — disabling WebKit sandbox for DRM/env access");
+        unsafe {
+            std::env::set_var("WEBKIT_FORCE_SANDBOX", "0");
+            std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1");
+        }
     }
 
     // Start udev daemon to populate devices (DRM, input)

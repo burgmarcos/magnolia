@@ -39,6 +39,12 @@ if [ ! -f "${OVMF_CODE}" ]; then
     apt-get update -qq && apt-get install -y -qq ovmf qemu-system-x86
 fi
 
+if [ ! -f "${OVMF_VARS}" ]; then
+    echo "[FAIL] OVMF VARS not found: ${OVMF_VARS}"
+    echo "       Try: apt-get install ovmf"
+    exit 1
+fi
+
 # Create writable copy of OVMF vars (UEFI needs to write NVRAM)
 if [ ! -f "${OVMF_VARS_COPY}" ]; then
     echo "[test-boot] Creating writable OVMF VARS copy..."

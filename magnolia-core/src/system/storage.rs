@@ -189,13 +189,24 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
         "status": "pending",
         "requested_at": chrono::Utc::now().to_rfc3339()
     });
-    fs::write(&ops_path, serde_json::to_string_pretty(&op).unwrap())
+    let payload = serde_json::to_string_pretty(&op)
+        .unwrap_or_else(|e| format!("serialization error: {e}"));
+    fs::write(&ops_path, payload)
         .map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
 }
 
 #[command]
 pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
+    // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
+    // Reject path traversal sequences and any non-alphanumeric characters.
+    if !name.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(format!(
+            "Invalid device name '{}': must match [a-zA-Z0-9]+ only",
+            name
+        ));
+    }
+
     println!("[STORAGE] Executing {} on {}", action, name);
     match action.as_str() {
         "check" => {
@@ -224,6 +235,8 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
             }
         }
         "unmount" => {
+            // Using the device path with umount works here because we control the
+            // mount table (all mounts go through the "mount" branch above to /mnt/{name}).
             let status = Command::new("umount")
                 .arg(&format!("/dev/{}", name))
                 .status()
