@@ -30,7 +30,8 @@ pub async fn take_screenshot() -> Result<String, String> {
         Ok(_) => {
             Err("grim failed to capture screen (non-zero exit). Check compositor status.".into())
         }
-        Err(_) => {
+        Err(e) => {
+            println!("[MEDIA WARN] grim not available: {}", e);
             // grim unavailable — try ImageMagick import as fallback (X11/headless envs)
             let import_status = Command::new("import")
                 .args(["-window", "root", path_str])

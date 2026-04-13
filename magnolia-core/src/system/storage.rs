@@ -1,5 +1,7 @@
+use chrono;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -145,8 +147,24 @@ pub async fn verify_security_action(pin: String, user_confirm: String) -> Result
         "[AUTH] Verifying high-risk action for user: {}",
         user_confirm
     );
-    // Real logic: Verify PIN against encrypted keystore and string-match username
-    if pin == "0000" && !user_confirm.is_empty() {
+
+    if pin.is_empty() || user_confirm.is_empty() {
+        return Err("PIN and identity confirmation are required.".to_string());
+    }
+
+    // Verify PIN against hashed keystore at /data/system/pin.hash
+    let pin_hash_path = "/data/system/pin.hash";
+    let stored_hash = fs::read_to_string(pin_hash_path).map_err(|_| {
+        "Security PIN not configured. Complete initial setup to set a PIN.".to_string()
+    })?;
+
+    // SHA256(pin + user_confirm) must match stored hash
+    let mut hasher = Sha256::new();
+    hasher.update(pin.as_bytes());
+    hasher.update(user_confirm.as_bytes());
+    let computed_hash = format!("{:x}", hasher.finalize());
+
+    if computed_hash.trim() == stored_hash.trim() {
         Ok(true)
     } else {
         Err("Security verification failed. Invalid PIN or Identity string.".to_string())
@@ -159,14 +177,65 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
         "[STORAGE] Scheduling expansion for {} on next boot...",
         name
     );
-    // Write to /data/system/boot_ops.json
+    // Write resize request to /data/system/boot_ops.json for supervisor to process at boot
+    let ops_dir = PathBuf::from("/data/system");
+    if !ops_dir.exists() {
+        fs::create_dir_all(&ops_dir).map_err(|e| e.to_string())?;
+    }
+    let ops_path = ops_dir.join("boot_ops.json");
+    let op = serde_json::json!({
+        "action": "resize",
+        "target": name,
+        "status": "pending",
+        "requested_at": chrono::Utc::now().to_rfc3339()
+    });
+    fs::write(&ops_path, serde_json::to_string_pretty(&op).unwrap())
+        .map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
 }
 
 #[command]
 pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
     println!("[STORAGE] Executing {} on {}", action, name);
-    Ok(())
+    match action.as_str() {
+        "check" => {
+            // Run filesystem check (non-destructive)
+            let status = Command::new("fsck")
+                .args(["-n", &format!("/dev/{}", name)])
+                .status()
+                .map_err(|e| format!("Failed to run fsck: {}", e))?;
+            if status.success() {
+                Ok(())
+            } else {
+                Err(format!("Filesystem check reported issues on {}", name))
+            }
+        }
+        "mount" => {
+            let mount_point = format!("/mnt/{}", name);
+            fs::create_dir_all(&mount_point).map_err(|e| e.to_string())?;
+            let status = Command::new("mount")
+                .args([&format!("/dev/{}", name), &mount_point])
+                .status()
+                .map_err(|e| e.to_string())?;
+            if status.success() {
+                Ok(())
+            } else {
+                Err(format!("Failed to mount {}", name))
+            }
+        }
+        "unmount" => {
+            let status = Command::new("umount")
+                .arg(&format!("/dev/{}", name))
+                .status()
+                .map_err(|e| e.to_string())?;
+            if status.success() {
+                Ok(())
+            } else {
+                Err(format!("Failed to unmount {}", name))
+            }
+        }
+        _ => Err(format!("Unsupported partition action: {}", action)),
+    }
 }
 
 /// Spawns the autonomous Storage Pulse loop

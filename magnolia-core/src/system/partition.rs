@@ -9,12 +9,28 @@ pub enum Partition {
 }
 
 pub fn get_active_partition() -> Result<Partition, String> {
-    // Logic to detect which partition is currently mounted as / (root)
-    // For now, assume SystemA by default or detect via /proc/cmdline
     let cmdline = fs::read_to_string("/proc/cmdline").unwrap_or_default();
-    if cmdline.contains("root=LABEL=Magnolia_SYSTEM_B") {
+
+    // Detect active root from kernel cmdline (supports LABEL, UUID, and device paths)
+    // Magnolia uses root=/dev/vda2 (rootfs_a) or root=/dev/vda3 (rootfs_b) on virtio
+    if cmdline.contains("root=LABEL=Magnolia_SYSTEM_B")
+        || cmdline.contains("root=/dev/vda3")
+        || cmdline.contains("rootfs_b")
+    {
         Ok(Partition::SystemB)
     } else {
+        // Also verify via /proc/mounts for runtime accuracy
+        let mounts = fs::read_to_string("/proc/mounts").unwrap_or_default();
+        for line in mounts.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 && parts[1] == "/" {
+                println!("[PARTITION] Root mounted from: {}", parts[0]);
+                if parts[0].contains("vda3") || parts[0].contains("SYSTEM_B") {
+                    return Ok(Partition::SystemB);
+                }
+                break;
+            }
+        }
         Ok(Partition::SystemA)
     }
 }

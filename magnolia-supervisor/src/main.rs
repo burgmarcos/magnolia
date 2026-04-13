@@ -156,11 +156,24 @@ fn main() {
     let _ = fs::create_dir_all(xdg_dir);
     unsafe {
         std::env::set_var("XDG_RUNTIME_DIR", xdg_dir);
-        // Force software rendering for stable simulation in virtualized/headless environments
+        // Force software rendering for stable operation in virtualized/headless environments
         std::env::set_var("WLR_RENDERER", "pixman");
         std::env::set_var("WLR_NO_HARDWARE_CURSORS", "1");
         // Allow Cage to start without physical input devices (required for VM environments)
         std::env::set_var("WLR_LIBINPUT_NO_DEVICES", "1");
+        // Force GTK/WebKitGTK to use software rendering (no GL required)
+        std::env::set_var("GDK_BACKEND", "wayland");
+        std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        // Force mesa software rendering (avoids DRM render node requirement)
+        std::env::set_var("LIBGL_ALWAYS_SOFTWARE", "1");
+        std::env::set_var("GALLIUM_DRIVER", "softpipe");
+        // Disable WebKit sandboxing so web process inherits env vars and DRM access
+        std::env::set_var("WEBKIT_FORCE_SANDBOX", "0");
+        std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1");
+        std::env::set_var("GSK_RENDERER", "cairo");
+        // Prevent Cage XDG shell race — give wlroots extra init time
+        std::env::set_var("CAGE_STARTUP_DELAY", "1");
     }
 
     // Start udev daemon to populate devices (DRM, input)
@@ -180,9 +193,12 @@ fn main() {
     println!("[Magnolia] Launching Magnolia Dashboard Hub on Cage...");
     thread::sleep(Duration::from_secs(1));
 
-    // cage -s -- /sbin/magnolia-hub
+    // cage -s -- sh -c "sleep 2 && exec /sbin/magnolia-hub"
+    // The 2-second delay allows Cage/wlroots to fully initialize the XDG shell
+    // protocol before magnolia-hub creates its first surface, preventing the
+    // wlr_xdg_surface_schedule_configure assertion failure.
     let mut hub = Command::new("cage")
-        .args(["-s", "--", "/sbin/magnolia-hub"])
+        .args(["-s", "--", "/bin/sh", "-c", "sleep 2 && exec /sbin/magnolia-hub"])
         .spawn()
         .expect("[Magnolia FATAL] Failed to launch cage/magnolia-hub");
 
@@ -213,7 +229,7 @@ fn main() {
                 );
                 thread::sleep(Duration::from_secs(5));
                 hub = Command::new("cage")
-                    .args(["-s", "--", "/sbin/magnolia-hub"])
+                    .args(["-s", "--", "/bin/sh", "-c", "sleep 2 && exec /sbin/magnolia-hub"])
                     .spawn()
                     .expect("[Magnolia FATAL] Failed to relaunch cage/magnolia-hub");
             }
