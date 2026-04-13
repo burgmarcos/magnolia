@@ -20,7 +20,7 @@
 <!-- Navigation -->
 <nav class="nav" id="nav">
     <div class="nav-inner">
-        <a href="#" class="nav-logo">
+        <a href="#hero" class="nav-logo">
             <svg class="nav-flower" viewBox="0 0 32 32" width="28" height="28">
                 <ellipse cx="16" cy="8" rx="5" ry="8" fill="currentColor" opacity="0.9"/>
                 <ellipse cx="16" cy="8" rx="5" ry="8" fill="currentColor" opacity="0.7" transform="rotate(72 16 16)"/>
@@ -37,7 +37,7 @@
             <a href="#architecture">Architecture</a>
             <a href="#roadmap">Roadmap</a>
             <a href="#download">Download</a>
-            <a href="https://github.com/burgmarcos/magnolia" target="_blank" class="nav-cta">GitHub</a>
+            <a href="https://github.com/burgmarcos/magnolia" target="_blank" rel="noopener noreferrer" class="nav-cta">GitHub</a>
         </div>
         <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">
             <span></span><span></span><span></span>
@@ -88,7 +88,7 @@
         <p class="hero-tagline">A privacy-first operating system with built-in AI intelligence.<br>No telemetry. No surveillance. Just yours.</p>
         <div class="hero-actions">
             <a href="#download" class="btn btn-primary">Download</a>
-            <a href="https://github.com/burgmarcos/magnolia" target="_blank" class="btn btn-secondary">View Source</a>
+            <a href="https://github.com/burgmarcos/magnolia" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">View Source</a>
         </div>
         <p class="hero-quote">"Computed in Private. Verified by You. Sovereign by Design."</p>
     </div>
@@ -101,12 +101,12 @@
             <div class="about-story">
                 <span class="section-label">The Story</span>
                 <h2>Born from Frustration,<br>Built with Purpose</h2>
-                <p>I'm <a href="https://mrburg.com.br" target="_blank">Marcos Burg</a>, a teacher based in Brazil. For years I relied on open-source operating systems for my work and personal projects. But nothing quite worked the way I needed it to &mdash; tools that should be simple were broken, AI integration was an afterthought, and privacy was always someone else's problem.</p>
+                <p>I'm <a href="https://mrburg.com.br" target="_blank" rel="noopener noreferrer">Marcos Burg</a>, a teacher based in Brazil. For years I relied on open-source operating systems for my work and personal projects. But nothing quite worked the way I needed it to &mdash; tools that should be simple were broken, AI integration was an afterthought, and privacy was always someone else's problem.</p>
                 <p>After yet another round of fighting with <strong>OpenClaw</strong> not working, I made a decision that sounds a little crazy: <em>I would vibe-code an entire operating system</em> that does exactly what I need.</p>
                 <p>Magnolia OS is the result. It's a sovereign, modular Linux distribution designed for people who believe their computer should work <em>for</em> them, not <em>on</em> them. Every line of code is open. Every AI model runs locally. Every byte of your data stays yours.</p>
                 <div class="about-links">
-                    <a href="https://mrburg.com.br" target="_blank" class="inline-link">mrburg.com.br</a>
-                    <a href="https://buymeacoffee.com/burgmarcos" target="_blank" class="inline-link coffee-link">Buy me a coffee</a>
+                    <a href="https://mrburg.com.br" target="_blank" rel="noopener noreferrer" class="inline-link">mrburg.com.br</a>
+                    <a href="https://buymeacoffee.com/burgmarcos" target="_blank" rel="noopener noreferrer" class="inline-link coffee-link">Buy me a coffee</a>
                 </div>
             </div>
             <div class="about-values">
@@ -329,7 +329,7 @@
                 <h2>Get Magnolia</h2>
                 <p>Magnolia OS is in active development. You can grab the latest build artifacts from our CI pipeline or compile from source.</p>
                 <div class="download-options">
-                    <a href="https://github.com/burgmarcos/magnolia/actions" target="_blank" class="btn btn-primary">
+                    <a href="https://github.com/burgmarcos/magnolia/actions" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Download from CI
                     </a>
@@ -360,7 +360,7 @@
                         <p>This project is built in spare time by a teacher. Every coffee helps.</p>
                     </div>
                 </div>
-                <a href="https://github.com/burgmarcos/magnolia" target="_blank" class="btn btn-secondary">
+                <a href="https://github.com/burgmarcos/magnolia" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                     View on GitHub
                 </a>
@@ -388,26 +388,26 @@
             </div>
             <div class="footer-links">
                 <h4>Project</h4>
-                <a href="https://github.com/burgmarcos/magnolia" target="_blank">GitHub</a>
-                <a href="https://github.com/burgmarcos/magnolia/issues" target="_blank">Issues</a>
-                <a href="https://github.com/burgmarcos/magnolia/actions" target="_blank">CI Builds</a>
+                <a href="https://github.com/burgmarcos/magnolia" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="https://github.com/burgmarcos/magnolia/issues" target="_blank" rel="noopener noreferrer">Issues</a>
+                <a href="https://github.com/burgmarcos/magnolia/actions" target="_blank" rel="noopener noreferrer">CI Builds</a>
             </div>
             <div class="footer-links">
                 <h4>Community</h4>
-                <a href="https://github.com/burgmarcos/magnolia/blob/main/docs/AGENT_HANDBOOK.md" target="_blank">Agent Handbook</a>
-                <a href="https://github.com/burgmarcos/magnolia/blob/main/DEVELOPER.md" target="_blank">Developer Guide</a>
+                <a href="https://github.com/burgmarcos/magnolia/blob/main/docs/AGENT_HANDBOOK.md" target="_blank" rel="noopener noreferrer">Agent Handbook</a>
+                <a href="https://github.com/burgmarcos/magnolia/blob/main/DEVELOPER.md" target="_blank" rel="noopener noreferrer">Developer Guide</a>
                 <a href="#contribute">Contribute</a>
             </div>
             <div class="footer-links">
                 <h4>Creator</h4>
-                <a href="https://mrburg.com.br" target="_blank">mrburg.com.br</a>
-                <a href="https://buymeacoffee.com/burgmarcos" target="_blank">Buy Me a Coffee</a>
-                <a href="https://github.com/burgmarcos" target="_blank">@burgmarcos</a>
+                <a href="https://mrburg.com.br" target="_blank" rel="noopener noreferrer">mrburg.com.br</a>
+                <a href="https://buymeacoffee.com/burgmarcos" target="_blank" rel="noopener noreferrer">Buy Me a Coffee</a>
+                <a href="https://github.com/burgmarcos" target="_blank" rel="noopener noreferrer">@burgmarcos</a>
             </div>
         </div>
         <div class="footer-bottom">
             <p>Made with care in Brazil. Open source under the AGPL-3.0 License.</p>
-            <a href="https://buymeacoffee.com/burgmarcos" target="_blank" class="coffee-btn">
+            <a href="https://buymeacoffee.com/burgmarcos" target="_blank" rel="noopener noreferrer" class="coffee-btn">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M2 21h18v-2H2v2zM20 8h-2V5h2v3zm0-5H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm-4 10c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V5h10v8zm4-5h-2V7h2v1z"/></svg>
                 Support this project
             </a>

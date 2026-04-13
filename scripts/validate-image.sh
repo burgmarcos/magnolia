@@ -31,17 +31,17 @@ NC='\033[0m'
 
 pass() {
     echo -e "  [${GREEN}PASS${NC}] $1"
-    ((PASS++))
+    PASS=$((PASS+1))
 }
 
 fail() {
     echo -e "  [${RED}FAIL${NC}] $1"
-    ((FAIL++))
+    FAIL=$((FAIL+1))
 }
 
 warn() {
     echo -e "  [${YELLOW}WARN${NC}] $1"
-    ((WARN++))
+    WARN=$((WARN+1))
 }
 
 LOOP_DEV=""
@@ -326,8 +326,8 @@ echo ""
 if [ "${FAIL}" -eq 0 ]; then
     echo -e "[${GREEN}RESULT${NC}] Image is READY for QEMU boot testing."
     echo ""
-    echo "  Next step: /root/test-boot.sh"
-    echo "  Or headless: /root/test-boot.sh --headless"
+    echo "  Next step: scripts/test-boot.sh"
+    echo "  Or headless: scripts/test-boot.sh --headless"
     exit 0
 else
     echo -e "[${RED}RESULT${NC}] Image has ${FAIL} FAILURE(s). Fix before booting."

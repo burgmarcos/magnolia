@@ -21,7 +21,7 @@ INTERFACE_DEST="${TARGET_DIR}/usr/share/magnolia/interface"
 if [ -d "$INTERFACE_SRC" ]; then
     echo "[Magnolia] Copying magnolia-interface assets to $INTERFACE_DEST..."
     mkdir -p "$INTERFACE_DEST"
-    cp -r "$INTERFACE_SRC/"* "$INTERFACE_DEST/"
+    cp -r "$INTERFACE_SRC/." "$INTERFACE_DEST/"
 else
     echo "[Magnolia ERROR] magnolia-interface dist directory not found at $INTERFACE_SRC!"
     echo "[Magnolia ERROR] This will cause the Dashboard Hub to display a blank screen."
@@ -72,7 +72,7 @@ fi
 STUB_GL="${BOARD_DIR}/stub-libGL.c"
 if [ -f "${STUB_GL}" ] && [ -x "${HOST_DIR}/bin/x86_64-buildroot-linux-gnu-gcc" ]; then
     echo "[Magnolia] Building stub libGL.so.1..."
-    "${HOST_DIR}/bin/x86_64-buildroot-linux-gnu-gcc" -shared \
+    "${HOST_DIR}/bin/x86_64-buildroot-linux-gnu-gcc" -shared -fPIC -O2 \
         -o "${TARGET_DIR}/usr/lib/libGL.so.1.0.0" \
         "${STUB_GL}" -Wl,-soname,libGL.so.1
     cd "${TARGET_DIR}/usr/lib"
