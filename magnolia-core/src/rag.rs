@@ -81,33 +81,41 @@ pub async fn generate_document_embeddings(conn: &mut Connection) -> Result<usize
                 .filter(|s| !s.trim().is_empty())
                 .collect();
 
+            let mut embeddings = Vec::new();
             for (idx, chunk) in chunks.iter().enumerate() {
                 // Get vector from local API
                 if let Ok(emb) = fetch_embedding(chunk).await {
-                    let tx = conn.transaction().map_err(|e| e.to_string())?;
-
                     // sqlite-vec directly accepts a JSON string format containing floats `[0.1, 0.2, ...]`!
                     let emb_json = serde_json::to_string(&emb).map_err(|e| e.to_string())?;
-
-                    // Insert to physical table
-                    tx.execute(
-                        "INSERT INTO nodes (document_id, chunk_index, content) VALUES (?1, ?2, ?3)",
-                        params![doc_id, idx as u32, chunk],
-                    )
-                    .map_err(|e| e.to_string())?;
-
-                    let new_rowid = tx.last_insert_rowid();
-
-                    // Insert to virtual sqlite-vec table binding rowid
-                    tx.execute(
-                        "INSERT INTO vec_nodes(rowid, embedding) VALUES (?1, ?2)",
-                        params![new_rowid, emb_json],
-                    )
-                    .map_err(|e| e.to_string())?;
-
-                    tx.commit().map_err(|e| e.to_string())?;
-                    total_chunks_embedded += 1;
+                    embeddings.push((idx as u32, chunk.to_string(), emb_json));
                 }
+            }
+
+            if !embeddings.is_empty() {
+                let tx = conn.transaction().map_err(|e| e.to_string())?;
+                {
+                    let mut stmt_nodes = tx
+                        .prepare("INSERT INTO nodes (document_id, chunk_index, content) VALUES (?1, ?2, ?3)")
+                        .map_err(|e| e.to_string())?;
+                    let mut stmt_vec = tx
+                        .prepare("INSERT INTO vec_nodes(rowid, embedding) VALUES (?1, ?2)")
+                        .map_err(|e| e.to_string())?;
+
+                    for (idx, chunk, emb_json) in &embeddings {
+                        stmt_nodes
+                            .execute(params![doc_id, idx, chunk])
+                            .map_err(|e| e.to_string())?;
+
+                        let new_rowid = tx.last_insert_rowid();
+
+                        stmt_vec
+                            .execute(params![new_rowid, emb_json])
+                            .map_err(|e| e.to_string())?;
+
+                        total_chunks_embedded += 1;
+                    }
+                }
+                tx.commit().map_err(|e| e.to_string())?;
             }
         }
     }
