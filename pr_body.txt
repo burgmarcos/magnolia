@@ -1,0 +1,10 @@
+🎯 **What:** The testing gap addressed
+This PR addresses the missing unit tests for the `list_directory` function in `magnolia-core/src/handlers/files.rs`. It introduces the `tempfile` crate as a development dependency to securely and cleanly setup an isolated filesystem sandbox.
+
+📊 **Coverage:** What scenarios are now tested
+- The test verifies that a temporary directory with nested files and subdirectories is successfully scanned.
+- It validates the return struct size calculations, asserting that files and their byte sizes are properly accounted for.
+- It verifies the specific sorting constraints: directories are grouped first, and subsequent sorting falls back to alphabetical strings.
+
+✨ **Result:** The improvement in test coverage
+The critical filesystem scanning functionality `list_directory` is now covered by a robust test case, preventing future regressions.
