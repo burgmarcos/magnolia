@@ -123,6 +123,10 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
 
 #[command]
 pub async fn connect_to_wifi(ssid: String, password: String) -> Result<(), String> {
+    if ssid.starts_with('-') || password.starts_with('-') {
+        return Err("Invalid SSID or password format".to_string());
+    }
+
     let status = Command::new("nmcli")
         .args(["dev", "wifi", "connect", &ssid, "password", &password])
         .status()
