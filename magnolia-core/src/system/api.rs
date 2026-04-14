@@ -140,10 +140,10 @@ pub async fn set_power_state(state: String) -> Result<(), String> {
     println!("[Magnolia] Setting Power State: {}", state);
     match state.as_str() {
         "reboot" => {
-            Command::new("reboot").spawn().map_err(|e| e.to_string())?;
+            Command::new("/sbin/reboot").spawn().map_err(|e| e.to_string())?;
         }
         "shutdown" => {
-            Command::new("poweroff")
+            Command::new("/sbin/poweroff")
                 .spawn()
                 .map_err(|e| e.to_string())?;
         }
