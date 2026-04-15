@@ -326,7 +326,7 @@ echo ""
 if [ "${FAIL}" -eq 0 ]; then
     echo -e "[${GREEN}RESULT${NC}] Image is READY for QEMU boot testing."
     echo ""
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SCRIPT_DIR=$(dirname "$0")
     echo "  Next step: ${SCRIPT_DIR}/test-boot.sh"
     echo "  Or headless: ${SCRIPT_DIR}/test-boot.sh --headless"
     exit 0
