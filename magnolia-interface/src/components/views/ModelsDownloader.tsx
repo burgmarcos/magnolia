@@ -11,7 +11,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { HardwareFitChip, type FitState } from "../widgets/HardwareFitChip.tsx";
-import { LoadingAnimation } from "../common/LoadingAnimation";
 import { invoke } from "@tauri-apps/api/core";
 import styles from "./ModelsDownloader.module.css";
 
@@ -23,6 +22,8 @@ interface ModelItem {
   status: "available" | "downloading" | "installed";
   progress?: number;
 }
+
+import { LoadingAnimation } from "../common/LoadingAnimation";
 
 const iconBtnStyle = {
   padding: "6px",
