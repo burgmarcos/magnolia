@@ -109,7 +109,10 @@ async fn stream_chat_anthropic(
         .map(|m| m.content.clone())
         .unwrap_or_default();
 
-    let user_messages: Vec<_> = messages.iter().filter(|m| m.role != "system").collect();
+    let user_messages: Vec<_> = messages
+        .iter()
+        .filter(|m| m.role != "system")
+        .collect();
 
     let body = serde_json::json!({
         "model": model,
@@ -153,52 +156,24 @@ async fn stream_chat_anthropic(
             } else if let Some(data) = line.strip_prefix("data:") {
                 let data = data.trim();
                 if data == "[DONE]" {
-                    let _ = app.emit(
-                        "chat-token",
-                        ChatChunk {
-                            token: String::new(),
-                            is_done: true,
-                        },
-                    );
+                    let _ = app.emit("chat-token", ChatChunk { token: String::new(), is_done: true });
                     return Ok(());
                 }
                 if current_event == "content_block_delta" {
                     if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
-                        if let Some(text) = json
-                            .get("delta")
-                            .and_then(|d| d.get("text"))
-                            .and_then(|t| t.as_str())
-                        {
-                            let _ = app.emit(
-                                "chat-token",
-                                ChatChunk {
-                                    token: text.to_string(),
-                                    is_done: false,
-                                },
-                            );
+                        if let Some(text) = json.get("delta").and_then(|d| d.get("text")).and_then(|t| t.as_str()) {
+                            let _ = app.emit("chat-token", ChatChunk { token: text.to_string(), is_done: false });
                         }
                     }
                 } else if current_event == "message_stop" {
-                    let _ = app.emit(
-                        "chat-token",
-                        ChatChunk {
-                            token: String::new(),
-                            is_done: true,
-                        },
-                    );
+                    let _ = app.emit("chat-token", ChatChunk { token: String::new(), is_done: true });
                     return Ok(());
                 }
             }
         }
     }
 
-    let _ = app.emit(
-        "chat-token",
-        ChatChunk {
-            token: String::new(),
-            is_done: true,
-        },
-    );
+    let _ = app.emit("chat-token", ChatChunk { token: String::new(), is_done: true });
     Ok(())
 }
 
