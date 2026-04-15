@@ -34,7 +34,6 @@ if [ ! -f "${IMAGE}" ]; then
     exit 1
 fi
 
-missing_ovmf=0
 check_ovmf() {
     missing_ovmf=0
     [ -f "${OVMF_CODE}" ] || missing_ovmf=1
