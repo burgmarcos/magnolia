@@ -22,10 +22,7 @@ pub async fn search_hf_models(model_id: String) -> Result<huggingface::HfModelIn
     huggingface::fetch_hf_model_size(&model_id, Some(token)).await
 }
 
-pub fn assess_model_fit_internal(
-    model_size_bytes: u64,
-    specs: &telemetry::HardwareSpecs,
-) -> String {
+fn assess_model_fit_internal(model_size_bytes: u64, specs: &telemetry::HardwareSpecs) -> String {
     let buffer: u64 = 2 * 1024 * 1024 * 1024; // 2GB buffer
     let required_memory = model_size_bytes + buffer;
 
