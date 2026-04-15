@@ -237,7 +237,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
             // Using the device path with umount works here because we control the
             // mount table (all mounts go through the "mount" branch above to /mnt/{name}).
             let status = Command::new("umount")
-                .arg(format!("/dev/{}", name))
+                .arg(&format!("/dev/{}", name))
                 .status()
                 .map_err(|e| e.to_string())?;
             if status.success() {
