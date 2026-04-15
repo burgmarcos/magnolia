@@ -191,7 +191,8 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
     });
     let payload = serde_json::to_string_pretty(&op)
         .map_err(|e| format!("Failed to serialize boot resize request: {}", e))?;
-    fs::write(&ops_path, payload).map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
+    fs::write(&ops_path, payload)
+        .map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
 }
 
@@ -242,7 +243,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
             // Using the device path with umount works here because we control the
             // mount table (all mounts go through the "mount" branch above to /mnt/{name}).
             let status = Command::new("umount")
-                .arg(&format!("/dev/{}", name))
+                .arg(format!("/dev/{}", name))
                 .status()
                 .map_err(|e| e.to_string())?;
             if status.success() {
