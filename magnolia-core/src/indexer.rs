@@ -30,7 +30,7 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
                 "SELECT path, file_hash
                  FROM documents
                  WHERE path = ?1
-                    OR path LIKE ?2 ESCAPE '\\'",
+                    OR path LIKE ?2 ESCAPE ?3",
             )
             .map_err(|e| format!("Prepare error: {}", e))?;
 
@@ -43,7 +43,7 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
         let escaped_child_prefix = escape_like_pattern(&child_prefix);
         let like_pattern = format!("{}%", escaped_child_prefix);
         let rows = stmt
-            .query_map(params![path_str, like_pattern], |row| {
+            .query_map(params![path_str, like_pattern, "\\"], |row| {
                 Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
             })
             .map_err(|e| format!("Query error: {}", e))?;
@@ -189,7 +189,7 @@ mod tests {
                 "outside-id",
                 "outside.md",
                 outside_path.to_string_lossy().to_string(),
-                outside_hash.clone()
+                outside_hash
             ],
         )
         .expect("seed outside row");
@@ -231,7 +231,7 @@ mod tests {
                 |row| row.get(0),
             )
             .expect("fetch outside hash");
-        assert_eq!(outside_db_hash, outside_hash);
+        assert_eq!(outside_db_hash, hash_bytes(b"outside content"));
 
         let _ = fs::remove_dir_all(&base_dir);
     }
