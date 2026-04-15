@@ -1,7 +1,11 @@
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use argon2::{
+    password_hash::{rand_core::OsRng, SaltString},
+    Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
+};
 use chrono;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -157,21 +161,72 @@ pub async fn verify_security_action(pin: String, user_confirm: String) -> Result
     let stored_hash = fs::read_to_string(pin_hash_path).map_err(|_| {
         "Security PIN not configured. Complete initial setup to set a PIN.".to_string()
     })?;
+    let stored_hash = stored_hash.trim();
 
-    let parsed_hash = PasswordHash::new(stored_hash.trim())
+    if is_legacy_sha256_hash(stored_hash) {
+        if verify_legacy_sha256(pin.as_bytes(), user_confirm.as_bytes(), stored_hash) {
+            if let Err(e) = migrate_pin_hash(pin_hash_path, pin.as_bytes(), user_confirm.as_bytes())
+            {
+                println!("[AUTH] {}", e);
+            }
+            return Ok(true);
+        }
+
+        return Err("Security verification failed. Invalid PIN or Identity string.".to_string());
+    }
+
+    let parsed_hash = PasswordHash::new(stored_hash)
         .map_err(|_| "Stored PIN hash is corrupted or invalid format.".to_string())?;
 
-    let combined_secret = format!("{}{}", pin, user_confirm);
-
-    let is_valid = Argon2::default()
-        .verify_password(combined_secret.as_bytes(), &parsed_hash)
-        .is_ok();
-
-    if is_valid {
-        Ok(true)
-    } else {
-        Err("Security verification failed. Invalid PIN or Identity string.".to_string())
+    let argon2 = Argon2::default();
+    let secret = encode_security_secret(pin.as_bytes(), user_confirm.as_bytes());
+    if argon2.verify_password(&secret, &parsed_hash).is_ok() {
+        return Ok(true);
     }
+
+    let legacy_concat_secret = [pin.as_bytes(), user_confirm.as_bytes()].concat();
+    if argon2
+        .verify_password(&legacy_concat_secret, &parsed_hash)
+        .is_ok()
+    {
+        if let Err(e) = migrate_pin_hash(pin_hash_path, pin.as_bytes(), user_confirm.as_bytes()) {
+            println!("[AUTH] {}", e);
+        }
+        return Ok(true);
+    }
+
+    Err("Security verification failed. Invalid PIN or Identity string.".to_string())
+}
+
+fn is_legacy_sha256_hash(stored_hash: &str) -> bool {
+    stored_hash.len() == 64 && stored_hash.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn verify_legacy_sha256(pin: &[u8], user_confirm: &[u8], stored_hash: &str) -> bool {
+    let mut hasher = Sha256::new();
+    hasher.update(pin);
+    hasher.update(user_confirm);
+    format!("{:x}", hasher.finalize()) == stored_hash
+}
+
+fn encode_security_secret(pin: &[u8], user_confirm: &[u8]) -> Vec<u8> {
+    let mut secret = Vec::with_capacity(8 + pin.len() + user_confirm.len());
+    secret.extend_from_slice(&(pin.len() as u32).to_be_bytes());
+    secret.extend_from_slice(pin);
+    secret.extend_from_slice(&(user_confirm.len() as u32).to_be_bytes());
+    secret.extend_from_slice(user_confirm);
+    secret
+}
+
+fn migrate_pin_hash(pin_hash_path: &str, pin: &[u8], user_confirm: &[u8]) -> Result<(), String> {
+    let secret = encode_security_secret(pin, user_confirm);
+    let salt = SaltString::generate(&mut OsRng);
+    let phc_hash = Argon2::default()
+        .hash_password(&secret, &salt)
+        .map_err(|_| "Failed to migrate legacy PIN hash to Argon2.".to_string())?
+        .to_string();
+    fs::write(pin_hash_path, phc_hash)
+        .map_err(|e| format!("Failed to persist migrated PIN hash: {}", e))
 }
 
 #[command]
