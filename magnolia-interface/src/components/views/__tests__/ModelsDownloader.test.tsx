@@ -61,8 +61,8 @@ describe("ModelsDownloader", () => {
     });
   });
 
-  it("shows skeleton loaders and empty state checks", async () => {
-    // Configure mock for search failure mapping to empty state
+  it("renders search results after a successful model search", async () => {
+    // Configure mock for an empty initial local model list and a successful search result
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "get_local_models") return Promise.resolve([]);
       if (cmd === "search_hf_models")
