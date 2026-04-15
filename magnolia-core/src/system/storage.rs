@@ -191,8 +191,7 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
     });
     let payload = serde_json::to_string_pretty(&op)
         .map_err(|e| format!("Failed to serialize boot resize request: {}", e))?;
-    fs::write(&ops_path, payload)
-        .map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
+    fs::write(&ops_path, payload).map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
 }
 
