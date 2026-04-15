@@ -36,8 +36,8 @@ export function TelegramSettings() {
             toast.error(`Failed to load Telegram chat ID: ${String(error)}`);
           }
         }
-      } catch {
-        toast.error('Failed to access secure storage');
+      } catch (error) {
+        toast.error(`Failed to initialize secure storage access: ${String(error)}`);
       } finally {
         setIsLoading(false);
       }

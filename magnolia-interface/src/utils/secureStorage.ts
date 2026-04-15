@@ -8,5 +8,9 @@ export function isMissingSecureStorageKeyError(error: unknown): boolean {
   const looksLikeMissing = MISSING_ERROR_TOKENS.some((token) => message.includes(token));
   const looksUnexpected = UNEXPECTED_ERROR_TOKENS.some((token) => message.includes(token));
 
-  return looksLikeMissing && !looksUnexpected;
+  if (looksUnexpected) {
+    return false;
+  }
+
+  return looksLikeMissing;
 }
