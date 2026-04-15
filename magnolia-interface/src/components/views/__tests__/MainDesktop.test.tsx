@@ -8,6 +8,14 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
+vi.mock('react-hot-toast', () => ({
+  default: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+  Toaster: () => <div data-testid="toaster" />
+}));
+
 vi.mock('../../desktop/DesktopEnvironment', () => ({
   DesktopEnvironment: ({ children }: { children: React.ReactNode }) => <div data-testid="desktop-env">{children}</div>
 }));
@@ -34,7 +42,8 @@ describe('MainDesktop', () => {
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    render(
+    // Ensure we can render correctly
+    const { container } = render(
       <LanguageProvider>
         <WindowProvider>
           <MainDesktop onLogout={onLogoutMock} />
@@ -47,8 +56,12 @@ describe('MainDesktop', () => {
         expect(invokeMock).toHaveBeenCalledWith('load_session', expect.any(Object));
     });
 
-    // Profile icon is the first user icon inside XRAppBar
-    const userIconSVG = document.querySelectorAll('svg.lucide-user')[0];
+    // Wait for the SVG to render if it takes time
+    await waitFor(() => {
+      expect(container.querySelector('svg.lucide-user')).toBeInTheDocument();
+    });
+
+    const userIconSVG = container.querySelectorAll('svg.lucide-user')[0];
     if (userIconSVG && userIconSVG.parentElement) {
       fireEvent.click(userIconSVG.parentElement);
     }
