@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Send, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './TelegramSettings.module.css';
+import { isMissingSecureStorageKeyError } from '../../utils/secureStorage';
 
 // Standalone component
 
@@ -20,16 +21,20 @@ export function TelegramSettings() {
         try {
           const token = await invoke<string>('get_api_key', { service: 'telegram_bot' });
           setBotToken(token);
-        } catch {
-          // Ignore if no bot token is found
+        } catch (error) {
+          if (!isMissingSecureStorageKeyError(error)) {
+            toast.error(`Failed to load Telegram bot token: ${String(error)}`);
+          }
         }
 
         // Load Chat ID
         try {
           const id = await invoke<string>('get_api_key', { service: 'telegram_chat_id' });
           setChatId(id);
-        } catch {
-          // Ignore if no chat id is found
+        } catch (error) {
+          if (!isMissingSecureStorageKeyError(error)) {
+            toast.error(`Failed to load Telegram chat ID: ${String(error)}`);
+          }
         }
       } catch {
         toast.error('Failed to access secure storage');
