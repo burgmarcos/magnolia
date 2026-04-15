@@ -44,17 +44,17 @@ describe('MainDesktop', () => {
     invokeMock = tauriApi.invoke;
 
     // Setup ResizeObserver mock as it might be needed by some components
-    (globalThis as any).ResizeObserver = class ResizeObserver {
+    vi.stubGlobal('ResizeObserver', class ResizeObserver {
       observe() {}
       unobserve() {}
       disconnect() {}
-    };
+    });
   });
 
   afterEach(() => {
     console.error = originalConsoleError;
     console.log = originalConsoleLog;
-    delete (globalThis as any).ResizeObserver;
+    vi.unstubAllGlobals();
   });
 
   it('handles trigger_embedding_job error when initializing knowledge directory', async () => {
@@ -64,7 +64,7 @@ describe('MainDesktop', () => {
     // Mock implementations
     const testError = new Error('Embedding job failed');
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'load_session') return Promise.resolve(null);
+      if (cmd === 'load_session') return Promise.resolve({ windows: [], configs: {} });
       if (cmd === 'ensure_default_knowledge_dir') return Promise.resolve('/test/knowledge/path');
       if (cmd === 'index_local_folder') return Promise.resolve();
       if (cmd === 'trigger_embedding_job') return Promise.reject(testError);

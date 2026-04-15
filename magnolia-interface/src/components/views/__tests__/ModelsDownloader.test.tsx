@@ -12,10 +12,6 @@ vi.mock('react-hot-toast', () => ({
   default: {
     success: vi.fn(),
     error: vi.fn(),
-  },
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
   }
 }));
 
@@ -31,8 +27,6 @@ describe('ModelsDownloader', () => {
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(1024);
-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });
   });
