@@ -222,7 +222,13 @@ fn main() {
     // protocol before magnolia-hub creates its first surface, preventing the
     // wlr_xdg_surface_schedule_configure assertion failure.
     let mut hub = Command::new("cage")
-        .args(["-s", "--", "/bin/sh", "-c", "sleep 2 && exec /sbin/magnolia-hub"])
+        .args([
+            "-s",
+            "--",
+            "/bin/sh",
+            "-c",
+            "sleep 2 && exec /sbin/magnolia-hub",
+        ])
         .spawn()
         .expect("[Magnolia FATAL] Failed to launch cage/magnolia-hub");
 
@@ -253,7 +259,13 @@ fn main() {
                 );
                 thread::sleep(Duration::from_secs(5));
                 hub = Command::new("cage")
-                    .args(["-s", "--", "/bin/sh", "-c", "sleep 2 && exec /sbin/magnolia-hub"])
+                    .args([
+                        "-s",
+                        "--",
+                        "/bin/sh",
+                        "-c",
+                        "sleep 2 && exec /sbin/magnolia-hub",
+                    ])
                     .spawn()
                     .expect("[Magnolia FATAL] Failed to relaunch cage/magnolia-hub");
             }

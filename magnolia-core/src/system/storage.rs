@@ -189,10 +189,9 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
         "status": "pending",
         "requested_at": chrono::Utc::now().to_rfc3339()
     });
-    let payload = serde_json::to_string_pretty(&op)
-        .unwrap_or_else(|e| format!("serialization error: {e}"));
-    fs::write(&ops_path, payload)
-        .map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
+    let payload =
+        serde_json::to_string_pretty(&op).unwrap_or_else(|e| format!("serialization error: {e}"));
+    fs::write(&ops_path, payload).map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
 }
 
