@@ -46,13 +46,15 @@ pub async fn rebuild_index(user_id: String) -> Result<(), String> {
         let mut stmt = tx
             .prepare_cached("INSERT INTO file_index (name, path, type) VALUES (?, ?, ?)")
             .map_err(|e| e.to_string())?;
-        for entry in WalkDir::new(data_path).into_iter().filter_map(|e| e.ok()) {
+        for entry in WalkDir::new(data_path).into_iter() {
+            let entry = entry.map_err(|e| e.to_string())?;
             let path = entry.path().to_string_lossy().to_string();
             let name = entry.file_name().to_string_lossy().to_string();
             let is_dir = entry.file_type().is_dir();
             let file_type = if is_dir { "folder" } else { "file" };
 
-            let _ = stmt.execute(params![name, path, file_type]);
+            stmt.execute(params![name, path, file_type])
+                .map_err(|e| e.to_string())?;
         }
     }
 
