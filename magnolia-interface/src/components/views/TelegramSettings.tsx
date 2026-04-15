@@ -2,22 +2,9 @@ import { useState, useEffect } from 'react';
 import { Send, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import styles from './TelegramSettings.module.css';
+import { isMissingSecretError } from '../../utils/secureStorage';
 
 // Standalone component
-
-const isMissingSecretError = (error: unknown) => {
-  const message = String(error).toLowerCase();
-  const detail = message.includes(':') ? message.split(':').slice(1).join(':').trim() : message;
-
-  return [
-    'not found',
-    'no entry',
-    'no such',
-    'does not exist',
-    'item not found',
-    'credentials not found'
-  ].some((keyword) => detail.includes(keyword));
-};
 
 export function TelegramSettings() {
   const [botToken, setBotToken] = useState('');

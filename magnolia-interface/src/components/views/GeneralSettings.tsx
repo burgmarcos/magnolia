@@ -3,6 +3,7 @@ import { ChevronRight, Key, ShieldCheck } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import toast from 'react-hot-toast';
 import styles from './GeneralSettings.module.css';
+import { isMissingSecretError } from '../../utils/secureStorage';
 
 interface GeneralSettingsProps {
   onNavigate: (route: 'models' | 'telegram' | 'general' | 'knowledge') => void;
@@ -14,20 +15,6 @@ const WALLPAPERS = [
   { id: 'vibrant', name: 'Vibrant Abstract', url: '/src/assets/wallpapers/vibrant_abstract.png' },
   { id: 'soft', name: 'Soft Flow', url: '/wallpapers/soft_flow.svg' }
 ];
-
-const isMissingSecretError = (error: unknown) => {
-  const message = String(error).toLowerCase();
-  const detail = message.includes(':') ? message.split(':').slice(1).join(':').trim() : message;
-
-  return [
-    'not found',
-    'no entry',
-    'no such',
-    'does not exist',
-    'item not found',
-    'credentials not found'
-  ].some((keyword) => detail.includes(keyword));
-};
 
 export function GeneralSettings({ onNavigate, onWallpaperChange, currentWallpaper }: GeneralSettingsProps) {
   const [hfToken, setHfToken] = useState('');
