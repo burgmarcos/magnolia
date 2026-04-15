@@ -19,6 +19,11 @@ struct EmbeddingResponse {
     data: Vec<EmbeddingResponseData>,
 }
 
+fn embedding_endpoint() -> String {
+    std::env::var("MAGNOLIA_EMBEDDING_ENDPOINT")
+        .unwrap_or_else(|_| "http://127.0.0.1:8081/v1/embeddings".to_string())
+}
+
 pub async fn fetch_embedding(input: &str) -> Result<Vec<f32>, String> {
     let client = Client::new();
     let body = EmbeddingRequest {
@@ -28,7 +33,7 @@ pub async fn fetch_embedding(input: &str) -> Result<Vec<f32>, String> {
 
     // Default endpoint assuming llama-server is running on 8081 with --embedding flag
     let res = client
-        .post("http://127.0.0.1:8081/v1/embeddings")
+        .post(embedding_endpoint())
         .json(&body)
         .send()
         .await
@@ -316,10 +321,14 @@ mod sql_tests {
     use rusqlite::Connection;
     use std::fs;
     use std::path::PathBuf;
+    use std::sync::Mutex;
     use std::time::{SystemTime, UNIX_EPOCH};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpListener;
     use tokio::sync::oneshot;
+
+    const REQUEST_BUFFER_SIZE: usize = 4096;
+    static EMBEDDING_ENDPOINT_LOCK: Mutex<()> = Mutex::new(());
 
     fn temp_doc_path(prefix: &str) -> PathBuf {
         let nanos = SystemTime::now()
@@ -329,8 +338,10 @@ mod sql_tests {
         std::env::temp_dir().join(format!("{}_{}_{}.txt", prefix, std::process::id(), nanos))
     }
 
-    async fn start_mock_embedding_server() -> (oneshot::Sender<()>, tokio::task::JoinHandle<()>) {
-        let listener = TcpListener::bind("127.0.0.1:8081").await.unwrap();
+    async fn start_mock_embedding_server(
+    ) -> (String, oneshot::Sender<()>, tokio::task::JoinHandle<()>) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let endpoint = format!("http://{}/v1/embeddings", listener.local_addr().unwrap());
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel::<()>();
 
         let handle = tokio::spawn(async move {
@@ -341,7 +352,7 @@ mod sql_tests {
                     }
                     accepted = listener.accept() => {
                         let (mut socket, _) = accepted.unwrap();
-                        let mut req = vec![0u8; 4096];
+                        let mut req = vec![0u8; REQUEST_BUFFER_SIZE];
                         let read = socket.read(&mut req).await.unwrap_or(0);
                         if read == 0 {
                             continue;
@@ -367,12 +378,14 @@ mod sql_tests {
             }
         });
 
-        (shutdown_tx, handle)
+        (endpoint, shutdown_tx, handle)
     }
 
     #[tokio::test]
     async fn test_generate_document_embeddings_rowid_sync_and_atomicity() {
-        let (shutdown_tx, server_handle) = start_mock_embedding_server().await;
+        let _endpoint_guard = EMBEDDING_ENDPOINT_LOCK.lock().unwrap();
+        let (endpoint, shutdown_tx, server_handle) = start_mock_embedding_server().await;
+        std::env::set_var("MAGNOLIA_EMBEDDING_ENDPOINT", endpoint);
 
         // Scenario 1: successful inserts keep nodes and vec_nodes rowids in sync.
         let mut conn = Connection::open_in_memory().unwrap();
@@ -468,6 +481,7 @@ mod sql_tests {
 
         let _ = fs::remove_file(success_path);
         let _ = fs::remove_file(atomic_path);
+        std::env::remove_var("MAGNOLIA_EMBEDDING_ENDPOINT");
         let _ = shutdown_tx.send(());
         let _ = server_handle.await;
     }
