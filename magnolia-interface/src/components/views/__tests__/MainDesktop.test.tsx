@@ -44,7 +44,7 @@ describe('MainDesktop', () => {
     invokeMock = tauriApi.invoke;
 
     // Setup ResizeObserver mock as it might be needed by some components
-    (globalThis as any).ResizeObserver = class ResizeObserver {
+    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = class ResizeObserver {
       observe() {}
       unobserve() {}
       disconnect() {}
@@ -54,7 +54,7 @@ describe('MainDesktop', () => {
   afterEach(() => {
     console.error = originalConsoleError;
     console.log = originalConsoleLog;
-    delete (globalThis as any).ResizeObserver;
+    delete (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver;
   });
 
   it('handles trigger_embedding_job error when initializing knowledge directory', async () => {
