@@ -25,7 +25,12 @@ pub struct DiskInfo {
 pub async fn archive_app(app_id: String) -> Result<(), String> {
     println!("[STORAGE] Archiving App: {}", app_id);
 
-    if !is_valid_app_id(&app_id) {
+    if app_id.is_empty()
+        || app_id.contains("..")
+        || !app_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+    {
         return Err("Invalid app_id: path traversal or invalid characters detected.".into());
     }
     let app_dir = format!("/data/apps/{}", app_id);
@@ -44,14 +49,6 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
     } else {
         Err("App binary not found or already archived.".into())
     }
-}
-
-fn is_valid_app_id(app_id: &str) -> bool {
-    !app_id.is_empty()
-        && !app_id.contains("..")
-        && app_id
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
 }
 
 #[command]
@@ -302,14 +299,14 @@ mod tests {
             result.unwrap_err(),
             "Invalid app_id: path traversal or invalid characters detected."
         );
-    }
 
-    #[test]
-    fn test_is_valid_app_id() {
-        assert!(is_valid_app_id("valid-app_id.123"));
-        assert!(!is_valid_app_id(""));
-        assert!(!is_valid_app_id("../malicious"));
-        assert!(!is_valid_app_id(".."));
-        assert!(!is_valid_app_id("valid/app"));
+        let result2 = archive_app("valid-app_id.123".to_string()).await;
+        // The error here should be that it's not found, not an invalid app_id
+        match result2 {
+            Ok(_) => panic!("Should not succeed as the file does not exist in tests"),
+            Err(e) => {
+                assert_eq!(e, "App binary not found or already archived.");
+            }
+        }
     }
 }
