@@ -77,7 +77,7 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
     // Parse nmcli terse output: "yes:MyNetwork:85" or "no:Other:60"
     let active_line = stdout.lines().find(|line| line.starts_with("yes:"));
 
-    let (active_ssid, signal_strength) = if let Some(line) = active_line {
+    let (active_ssid, _signal_strength) = if let Some(line) = active_line {
         let parts: Vec<&str> = line.splitn(3, ':').collect();
         let ssid = parts.get(1).unwrap_or(&"").to_string();
         let signal = parts
@@ -140,9 +140,7 @@ pub async fn set_power_state(state: String) -> Result<(), String> {
     println!("[Magnolia] Setting Power State: {}", state);
     match state.as_str() {
         "reboot" => {
-            Command::new("/sbin/reboot")
-                .spawn()
-                .map_err(|e| e.to_string())?;
+            Command::new("/sbin/reboot").spawn().map_err(|e| e.to_string())?;
         }
         "shutdown" => {
             Command::new("/sbin/poweroff")
