@@ -15,14 +15,37 @@ const WALLPAPERS = [
   { id: 'soft', name: 'Soft Flow', url: '/wallpapers/soft_flow.svg' }
 ];
 
+const isMissingSecretError = (error: unknown) => {
+  const message = String(error).toLowerCase();
+  const detail = message.includes(':') ? message.split(':').slice(1).join(':').trim() : message;
+
+  return [
+    'not found',
+    'no entry',
+    'no such',
+    'does not exist',
+    'item not found',
+    'credentials not found'
+  ].some((keyword) => detail.includes(keyword));
+};
+
 export function GeneralSettings({ onNavigate, onWallpaperChange, currentWallpaper }: GeneralSettingsProps) {
   const [hfToken, setHfToken] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    invoke<string>('get_api_key', { service: 'huggingface' })
-      .then(setHfToken)
-      .catch(() => null);
+    const loadToken = async () => {
+      try {
+        const token = await invoke<string>('get_api_key', { service: 'huggingface' });
+        setHfToken(token);
+      } catch (error) {
+        if (!isMissingSecretError(error)) {
+          toast.error('Failed to load Hugging Face token from secure storage');
+        }
+      }
+    };
+
+    loadToken();
   }, []);
 
   const saveHfToken = async () => {

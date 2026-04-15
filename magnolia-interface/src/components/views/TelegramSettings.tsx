@@ -5,6 +5,20 @@ import styles from './TelegramSettings.module.css';
 
 // Standalone component
 
+const isMissingSecretError = (error: unknown) => {
+  const message = String(error).toLowerCase();
+  const detail = message.includes(':') ? message.split(':').slice(1).join(':').trim() : message;
+
+  return [
+    'not found',
+    'no entry',
+    'no such',
+    'does not exist',
+    'item not found',
+    'credentials not found'
+  ].some((keyword) => detail.includes(keyword));
+};
+
 export function TelegramSettings() {
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
@@ -20,16 +34,20 @@ export function TelegramSettings() {
         try {
           const token = await invoke<string>('get_api_key', { service: 'telegram_bot' });
           setBotToken(token);
-        } catch {
-          // Ignore if no bot token is found
+        } catch (error) {
+          if (!isMissingSecretError(error)) {
+            toast.error('Failed to load Telegram bot token from secure storage');
+          }
         }
 
         // Load Chat ID
         try {
           const id = await invoke<string>('get_api_key', { service: 'telegram_chat_id' });
           setChatId(id);
-        } catch {
-          // Ignore if no chat id is found
+        } catch (error) {
+          if (!isMissingSecretError(error)) {
+            toast.error('Failed to load Telegram chat id from secure storage');
+          }
         }
       } catch {
         toast.error('Failed to access secure storage');
