@@ -73,7 +73,7 @@ These stubs were replaced with real implementations:
 4. **Thermal monitoring** — scans all `/sys/class/thermal/thermal_zone*`
 5. **Screenshot capture** — proper error instead of mock data prefix
 6. **Partition detection** — parses `/proc/cmdline` + `/proc/mounts` for virtio
-7. **PIN verification** — Argon2 PHC hash with legacy SHA256 backward compatibility and on-success migration
+7. **PIN verification** — SHA256 hash against `/data/system/pin.hash` keystore
 8. **Partition management** — real fsck/mount/umount operations
 
 Remaining 13 stubs are complex features (P2P networking, Anthropic API, LLM throttling) — deferred until after boot works.
