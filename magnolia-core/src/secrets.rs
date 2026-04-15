@@ -1,4 +1,3 @@
-#[cfg(not(test))]
 use keyring::Entry;
 
 // Instead of relying on a real database or real keyring for tests, we should
@@ -55,10 +54,7 @@ fn get_password_impl(service: &str) -> Result<String, String> {
         if let Some(val) = k.borrow().get(service) {
             Ok(val.clone())
         } else {
-            Err(
-                "API Key not found or access denied: No matching entry found in secure storage"
-                    .to_string(),
-            )
+            Err("API Key not found or access denied: No matching entry found in secure storage".to_string())
         }
     })
 }
@@ -93,10 +89,7 @@ mod tests {
     #[test]
     fn test_get_api_key_not_found() {
         let get_res = get_api_key("nonexistent_service");
-        assert!(
-            get_res.is_err(),
-            "Expected error for nonexistent service API key"
-        );
+        assert!(get_res.is_err(), "Expected error for nonexistent service API key");
         assert_eq!(
             get_res.unwrap_err(),
             "API Key not found or access denied: No matching entry found in secure storage"
@@ -107,9 +100,6 @@ mod tests {
     fn test_set_api_key_error() {
         let set_res = set_api_key("simulate_error", "key");
         assert!(set_res.is_err(), "Expected error for simulate_error");
-        assert_eq!(
-            set_res.unwrap_err(),
-            "Failed to save key securely: mock error"
-        );
+        assert_eq!(set_res.unwrap_err(), "Failed to save key securely: mock error");
     }
 }
