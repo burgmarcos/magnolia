@@ -74,7 +74,7 @@ describe('ModelsDownloader', () => {
   it('handles download failure and reverts state', async () => {
     await act(async () => { render(<ModelsDownloader />); });
 
-    invokeMock.mockImplementation((cmd: string, args: any) => {
+    invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve([]);
       if (cmd === 'search_hf_models') return Promise.resolve({ id: 'meta-llama/Llama-2-7b', size_on_disk_bytes: 4000 });
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
