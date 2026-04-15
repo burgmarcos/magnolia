@@ -8,20 +8,12 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-vi.mock('../../layout/DesktopEnvironment', () => ({
+vi.mock('../../desktop/DesktopEnvironment', () => ({
   DesktopEnvironment: ({ children }: { children: React.ReactNode }) => <div data-testid="desktop-env">{children}</div>
 }));
 
-vi.mock('../../layout/XRNavigationBar', () => ({
+vi.mock('../../desktop/XRNavigationBar', () => ({
   XRNavigationBar: () => <div data-testid="xr-navigation-bar" />
-}));
-
-vi.mock('../../layout/XRAppBar', () => ({
-  XRAppBar: ({ onOpenProfile }: { onOpenProfile?: () => void }) => (
-    <button data-testid="open-profile" onClick={onOpenProfile}>
-      Open Profile
-    </button>
-  )
 }));
 
 describe('MainDesktop', () => {
@@ -41,31 +33,35 @@ describe('MainDesktop', () => {
     });
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      render(
-        <LanguageProvider>
-          <WindowProvider>
-            <MainDesktop onLogout={onLogoutMock} />
-          </WindowProvider>
-        </LanguageProvider>
-      );
 
-      await waitFor(() => {
+    render(
+      <LanguageProvider>
+        <WindowProvider>
+          <MainDesktop onLogout={onLogoutMock} />
+        </WindowProvider>
+      </LanguageProvider>
+    );
+
+    // Give it a moment to hydrate
+    await waitFor(() => {
         expect(invokeMock).toHaveBeenCalledWith('load_session', expect.any(Object));
-      });
+    });
 
-      fireEvent.click(screen.getByTestId('open-profile'));
-
-      const logoutBtn = await screen.findByText('Logout & Exit');
-      fireEvent.click(logoutBtn);
-
-      await waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith('save_session', expect.any(Object));
-        expect(consoleSpy).toHaveBeenCalledWith('Session archival failed during logout:', expect.any(Error));
-        expect(onLogoutMock).toHaveBeenCalled();
-      });
-    } finally {
-      consoleSpy.mockRestore();
+    // Profile icon is the first user icon inside XRAppBar
+    const userIconSVG = document.querySelectorAll('svg.lucide-user')[0];
+    if (userIconSVG && userIconSVG.parentElement) {
+      fireEvent.click(userIconSVG.parentElement);
     }
+
+    const logoutBtn = await screen.findByText('Logout & Exit');
+    fireEvent.click(logoutBtn);
+
+    await waitFor(() => {
+      expect(invokeMock).toHaveBeenCalledWith('save_session', expect.any(Object));
+      expect(consoleSpy).toHaveBeenCalledWith('Session archival failed during logout:', expect.any(Error));
+      expect(onLogoutMock).toHaveBeenCalled();
+    });
+
+    consoleSpy.mockRestore();
   });
 });
