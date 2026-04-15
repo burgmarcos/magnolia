@@ -33,7 +33,7 @@ export function TelegramSettings() {
           setChatId(id);
         } catch (error) {
           if (!isMissingSecretError(error)) {
-            toast.error('Failed to load Telegram chat id from secure storage');
+            toast.error('Failed to load Telegram chat ID from secure storage');
           }
         }
       } catch {

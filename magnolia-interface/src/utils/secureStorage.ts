@@ -19,6 +19,6 @@ export const isMissingSecretError = (error: unknown) => {
     return false;
   }
 
-  const missingKeywords = ['not found', 'no entry', 'no such', 'does not exist', 'item not found', 'credentials not found'];
+  const missingKeywords = ['not found', 'no entry', 'no such entry', 'does not exist', 'item not found', 'credentials not found'];
   return missingKeywords.some((keyword) => detail.includes(keyword));
 };
