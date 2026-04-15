@@ -77,16 +77,11 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
     // Parse nmcli terse output: "yes:MyNetwork:85" or "no:Other:60"
     let active_line = stdout.lines().find(|line| line.starts_with("yes:"));
 
-    let (active_ssid, _signal_strength) = if let Some(line) = active_line {
+    let active_ssid = if let Some(line) = active_line {
         let parts: Vec<&str> = line.splitn(3, ':').collect();
-        let ssid = parts.get(1).unwrap_or(&"").to_string();
-        let signal = parts
-            .get(2)
-            .and_then(|s| s.trim().parse::<u8>().ok())
-            .unwrap_or(0);
-        (ssid, signal)
+        parts.get(1).unwrap_or(&"").to_string()
     } else {
-        ("Disconnected".to_string(), 0)
+        "Disconnected".to_string()
     };
 
     // Get IP address
@@ -100,6 +95,19 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
         .next()
         .unwrap_or("0.0.0.0")
         .to_string();
+
+    // Parse WiFi signal strength from nmcli
+    let signal_strength = Command::new("nmcli")
+        .args(["-t", "-f", "active,signal", "dev", "wifi"])
+        .output()
+        .ok()
+        .and_then(|out| {
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .find(|line| line.starts_with("yes:"))
+                .and_then(|line| line.replace("yes:", "").trim().parse::<u8>().ok())
+        })
+        .unwrap_or(0);
 
     Ok(NetworkInfo {
         ssid: active_ssid,
