@@ -2,9 +2,9 @@ const extractErrorDetail = (message: string) =>
   message.includes(':') ? message.split(':').slice(1).join(':').trim() : message;
 
 export const isMissingSecretError = (error: unknown) => {
-  const message = String(error).toLowerCase();
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
 
-  const hasSecureStorageContext = ['api key', 'keyring', 'credential', 'secure storage'].some((marker) =>
+  const hasSecureStorageContext = ['keyring', 'credential', 'secure storage'].some((marker) =>
     message.includes(marker)
   );
 
