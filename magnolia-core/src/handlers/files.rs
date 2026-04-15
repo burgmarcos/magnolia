@@ -66,12 +66,13 @@ mod tests {
         fs::write(dir_path.join("a_file.txt"), b"hello").expect("Failed to write file");
         fs::write(dir_path.join("z_file.txt"), b"world!").expect("Failed to write file");
         fs::create_dir(dir_path.join("sub_dir")).expect("Failed to create dir");
+        fs::write(dir_path.join("sub_dir").join("nested.txt"), b"nested")
+            .expect("Failed to write nested file");
 
-        let result = list_directory(dir_path.to_string_lossy().to_string());
-        assert!(result.is_ok());
-
-        let entries = result.unwrap();
+        let entries = list_directory(dir_path.to_string_lossy().to_string())
+            .expect("Failed to list directory");
         assert_eq!(entries.len(), 3);
+        assert!(!entries.iter().any(|entry| entry.name == "nested.txt"));
 
         // Sorting logic: directories first, then alphabetical
         // 1. sub_dir (dir)
