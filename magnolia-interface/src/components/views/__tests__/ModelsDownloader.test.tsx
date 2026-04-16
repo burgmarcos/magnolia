@@ -23,19 +23,21 @@ describe('ModelsDownloader', () => {
     const tauriApi = await import('@tauri-apps/api/core');
     // @ts-expect-error - Mocking Tauri invoke
     invokeMock = tauriApi.invoke;
-    
+
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
+      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
+      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });
   });
 
   it('renders correctly and loads initial local models', async () => {
     render(<ModelsDownloader />);
-    
+
     expect(screen.getByText('Models')).toBeInTheDocument();
-    
+
     // Wait for the local models to load
     await waitFor(() => {
       expect(screen.getByText('model1.gguf')).toBeInTheDocument();
@@ -48,7 +50,8 @@ describe('ModelsDownloader', () => {
     // Configure mock for search failure mapping to empty state
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve([]);
-      if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
+      if (cmd === 'search_hf_models') return Promise.resolve([{ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 }]);
+      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });

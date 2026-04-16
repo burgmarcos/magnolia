@@ -1,4 +1,3 @@
-use chrono;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -24,6 +23,15 @@ pub struct DiskInfo {
 #[command]
 pub async fn archive_app(app_id: String) -> Result<(), String> {
     println!("[STORAGE] Archiving App: {}", app_id);
+
+    if app_id.is_empty()
+        || app_id.contains("..")
+        || !app_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
+    {
+        return Err("Invalid app_id: path traversal or invalid characters detected.".into());
+    }
     let app_dir = format!("/data/apps/{}", app_id);
 
     // Simulate cloud sync and deletion of heavy binaries
@@ -276,4 +284,28 @@ pub fn spawn_storage_pulse() {
             tokio::time::sleep(std::time::Duration::from_secs(60)).await;
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_archive_app_path_traversal() {
+        let result = archive_app("../malicious".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid app_id: path traversal or invalid characters detected."
+        );
+
+        let result2 = archive_app("valid-app_id.123".to_string()).await;
+        // The error here should be that it's not found, not an invalid app_id
+        match result2 {
+            Ok(_) => panic!("Should not succeed as the file does not exist in tests"),
+            Err(e) => {
+                assert_eq!(e, "App binary not found or already archived.");
+            }
+        }
+    }
 }
