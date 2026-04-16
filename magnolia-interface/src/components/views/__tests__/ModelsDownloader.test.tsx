@@ -45,16 +45,17 @@ describe('ModelsDownloader', () => {
   });
 
   it('shows skeleton loaders and empty state checks', async () => {
-    render(<ModelsDownloader />);
-
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     // Configure mock for search failure mapping to empty state
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve([]);
-      if (cmd === 'search_hf_models') return Promise.resolve([{ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 }]);
+      if (cmd === 'search_hf_models') return Promise.reject(new Error("Search failed"));
       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });
+
+    render(<ModelsDownloader />);
 
     const input = screen.getByPlaceholderText('Search for a model to download');
     fireEvent.change(input, { target: { value: 'llama' } });
@@ -62,7 +63,7 @@ describe('ModelsDownloader', () => {
 
     // Wait for search to complete and render the new UI
     await waitFor(() => {
-      expect(screen.getByText('Llama')).toBeInTheDocument();
+      expect(screen.getByText('No models found. Try searching for a HuggingFace Model ID.')).toBeInTheDocument();
     });
   });
 });
