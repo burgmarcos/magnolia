@@ -1,11 +1,18 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { ModelsDownloader } from '../ModelsDownloader.tsx';
+import toast from 'react-hot-toast';
 
 // Mock the Tauri api
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
-}));
+vi.mock('@tauri-apps/api/core', () => {
+  const mockInvoke = vi.fn();
+  return {
+    invoke: mockInvoke,
+    default: {
+      invoke: mockInvoke,
+    }
+  };
+});
 
 // We must also mock react-hot-toast otherwise it might complain
 vi.mock('react-hot-toast', () => ({
@@ -15,14 +22,13 @@ vi.mock('react-hot-toast', () => ({
   }
 }));
 
-describe('ModelsDownloader', () => {
+describe('ModelsDownloader - Local Models', () => {
   let invokeMock: Mock;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     const tauriApi = await import('@tauri-apps/api/core');
-    // @ts-expect-error - Mocking Tauri invoke
-    invokeMock = tauriApi.invoke;
+    invokeMock = tauriApi.invoke as Mock;
 
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
@@ -44,25 +50,16 @@ describe('ModelsDownloader', () => {
     });
   });
 
-  it('shows skeleton loaders and empty state checks', async () => {
-    render(<ModelsDownloader />);
-
-    // Configure mock for search failure mapping to empty state
+  it('shows error toast when failing to load local models', async () => {
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve([]);
-      if (cmd === 'search_hf_models') return Promise.resolve([{ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 }]);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+      if (cmd === 'get_local_models') return Promise.reject(new Error('Network error'));
       return Promise.resolve();
     });
 
-    const input = screen.getByPlaceholderText('Search for a model to download');
-    fireEvent.change(input, { target: { value: 'llama' } });
-    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 });
+    render(<ModelsDownloader />);
 
-    // Wait for search to complete and render the new UI
     await waitFor(() => {
-      expect(screen.getByText('Llama')).toBeInTheDocument();
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Failed to load local models'));
     });
   });
 });

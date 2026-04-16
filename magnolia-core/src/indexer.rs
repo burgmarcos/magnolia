@@ -43,7 +43,7 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
 
     // Instead of executing one-by-one, prepare statements for update and insert
     let mut update_stmt = tx
-        .prepare("UPDATE documents SET file_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE path = ?2")
+        .prepare("UPDATE documents SET file_hash = ?1 WHERE path = ?2")
         .map_err(|e| format!("Prepare update error: {}", e))?;
 
     let mut insert_stmt = tx
