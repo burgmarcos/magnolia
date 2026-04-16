@@ -34,14 +34,13 @@ if [ ! -f "${IMAGE}" ]; then
     exit 1
 fi
 
-if [ ! -f "${OVMF_CODE}" ]; then
+if [ ! -f "${OVMF_CODE}" ] || [ ! -f "${OVMF_VARS}" ]; then
     echo "[WARN] OVMF not found. Installing..."
     apt-get update -qq && apt-get install -y -qq ovmf qemu-system-x86
 fi
 
-if [ ! -f "${OVMF_VARS}" ]; then
-    echo "[FAIL] OVMF VARS not found: ${OVMF_VARS}"
-    echo "       Try: apt-get install ovmf"
+if [ ! -f "${OVMF_CODE}" ] || [ ! -f "${OVMF_VARS}" ]; then
+    echo "[FAIL] OVMF still not found after install attempt."
     exit 1
 fi
 
