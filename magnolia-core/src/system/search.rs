@@ -42,16 +42,18 @@ pub async fn rebuild_index(user_id: String) -> Result<(), String> {
 
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    for entry in WalkDir::new(data_path).into_iter().filter_map(|e| e.ok()) {
-        let path = entry.path().to_string_lossy().to_string();
-        let name = entry.file_name().to_string_lossy().to_string();
-        let is_dir = entry.file_type().is_dir();
-        let file_type = if is_dir { "folder" } else { "file" };
+    {
+        let mut stmt = tx
+            .prepare_cached("INSERT INTO file_index (name, path, type) VALUES (?, ?, ?)")
+            .map_err(|e| e.to_string())?;
+        for entry in WalkDir::new(data_path).into_iter().filter_map(|e| e.ok()) {
+            let path = entry.path().to_string_lossy().to_string();
+            let name = entry.file_name().to_string_lossy().to_string();
+            let is_dir = entry.file_type().is_dir();
+            let file_type = if is_dir { "folder" } else { "file" };
 
-        let _ = tx.execute(
-            "INSERT INTO file_index (name, path, type) VALUES (?, ?, ?)",
-            params![name, path, file_type],
-        );
+            let _ = stmt.execute(params![name, path, file_type]);
+        }
     }
 
     tx.commit().map_err(|e| e.to_string())?;
