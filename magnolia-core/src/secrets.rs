@@ -112,4 +112,24 @@ mod tests {
             "Failed to save key securely: mock error"
         );
     }
+
+    #[test]
+    fn test_get_api_key_error() {
+        let get_res = get_api_key("simulate_error");
+        assert!(get_res.is_err(), "Expected error for simulate_error");
+        assert_eq!(
+            get_res.unwrap_err(),
+            "Failed to access native keyring: mock error"
+        );
+    }
+
+    #[test]
+    fn test_get_api_key_integration() {
+        let service = "integration_service";
+        let key = "integration_key_secret";
+
+        set_api_key(service, key).expect("Setup failed");
+        let result = get_api_key(service).expect("Retrieve failed");
+        assert_eq!(result, key, "Integration test for get_api_key failed");
+    }
 }
