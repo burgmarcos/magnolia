@@ -1,3 +1,4 @@
+cat << 'INNER_EOF' > magnolia-core/src/system/api.rs
 use crate::system::error::ToBridgeResult;
 use crate::system::{cloud, partition, rauc, sync};
 use serde::{Deserialize, Serialize};
@@ -230,3 +231,4 @@ pub async fn detect_gpu() -> Result<GPUInfo, String> {
         requires_proprietary,
     })
 }
+INNER_EOF
