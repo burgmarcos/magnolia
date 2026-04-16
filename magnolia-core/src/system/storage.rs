@@ -54,7 +54,14 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
 pub async fn move_to_trash(file_path: String) -> Result<(), String> {
     println!("[STORAGE] Moving {} to .magnolia-trash...", file_path);
     let source = PathBuf::from(&file_path);
-    let filename = source
+    let canonical_source =
+        fs::canonicalize(&source).map_err(|_| "File not found or access denied".to_string())?;
+
+    if !canonical_source.starts_with("/data") {
+        return Err("Security error: Cannot move files outside of /data to trash.".to_string());
+    }
+
+    let filename = canonical_source
         .file_name()
         .ok_or("Invalid file path")?
         .to_str()
@@ -322,5 +329,19 @@ mod tests {
                 assert_eq!(e, "App binary not found or already archived.");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_move_to_trash_path_traversal() {
+        // Attempting to move a file outside of /data should fail
+        // Using /etc/passwd as it typically exists on Linux
+        // Even if it doesn't exist, canonicalize will fail which is expected behavior for invalid paths
+        let result = move_to_trash("/etc/passwd".to_string()).await;
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        assert!(
+            err_msg == "Security error: Cannot move files outside of /data to trash."
+                || err_msg == "File not found or access denied"
+        );
     }
 }
