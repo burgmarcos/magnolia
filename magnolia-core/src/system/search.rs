@@ -84,3 +84,31 @@ pub async fn search_mempalace(user_id: String, query: String) -> Result<Vec<Sear
 
     Ok(results)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_initialize_search_db_creates_table() {
+        let dir = tempdir().unwrap();
+        let conn = initialize_search_db(dir.path()).unwrap();
+
+        // Verify FTS5 table was created by inserting and querying
+        let result = conn.execute(
+            "INSERT INTO file_index (name, path, type) VALUES (?, ?, ?)",
+            rusqlite::params!["test.md", "/some/test.md", "file"],
+        );
+        assert!(result.is_ok(), "Should be able to insert into file_index");
+    }
+
+    #[test]
+    fn test_initialize_search_db_is_idempotent() {
+        let dir = tempdir().unwrap();
+        // Creating the DB twice should not fail (IF NOT EXISTS)
+        let _ = initialize_search_db(dir.path()).unwrap();
+        let conn2 = initialize_search_db(dir.path());
+        assert!(conn2.is_ok());
+    }
+}

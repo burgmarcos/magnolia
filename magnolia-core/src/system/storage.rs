@@ -358,4 +358,56 @@ mod tests {
                 || err_msg == "File not found or access denied"
         );
     }
+
+    #[tokio::test]
+    async fn test_manage_partition_rejects_slash_in_name() {
+        let result = manage_partition("../../etc/passwd".to_string(), PartitionAction::Check).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Invalid device name"));
+    }
+
+    #[tokio::test]
+    async fn test_manage_partition_rejects_special_chars() {
+        let result = manage_partition("vda1;rm -rf /".to_string(), PartitionAction::Check).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Invalid device name"));
+    }
+
+    #[tokio::test]
+    async fn test_manage_partition_rejects_empty_name() {
+        let result = manage_partition("".to_string(), PartitionAction::Check).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Invalid device name"));
+    }
+
+    #[tokio::test]
+    async fn test_manage_partition_rejects_spaces() {
+        let result = manage_partition("vda 1".to_string(), PartitionAction::Mount).await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Invalid device name"));
+    }
+
+    #[tokio::test]
+    async fn test_archive_app_empty_id() {
+        let result = archive_app("".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid app_id: path traversal detected."
+        );
+    }
+
+    #[tokio::test]
+    async fn test_archive_app_special_chars_rejected() {
+        let result = archive_app("app;malicious".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid app_id: path traversal detected."
+        );
+    }
 }

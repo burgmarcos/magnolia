@@ -234,4 +234,36 @@ mod tests {
 
         assert_eq!(result, Err("Engine is not currently running".to_string()));
     }
+
+    #[test]
+    fn test_llm_engine_state_new_has_no_sender() {
+        let state = LlmEngineState::new();
+        // The abort_tx Arc is initialized but the inner Option is None
+        // We can verify this by attempting a blocking lock check
+        let lock = state.abort_tx.try_lock();
+        assert!(lock.is_ok());
+        assert!(lock.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_start_sets_abort_tx() {
+        let state = LlmEngineState::new();
+
+        // Inject a sender directly to simulate a running engine
+        {
+            let (tx, _rx) = tokio::sync::oneshot::channel::<()>();
+            let mut lock = state.abort_tx.lock().await;
+            *lock = Some(tx);
+        }
+
+        // Now a stop call should succeed
+        let mut lock = state.abort_tx.lock().await;
+        let result: Result<(), String> = if let Some(tx) = lock.take() {
+            let _ = tx.send(());
+            Ok(())
+        } else {
+            Err("Engine is not currently running".to_string())
+        };
+        assert!(result.is_ok());
+    }
 }

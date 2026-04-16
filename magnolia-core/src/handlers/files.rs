@@ -95,4 +95,84 @@ mod tests {
         let err = result.unwrap_err();
         assert!(!err.is_empty());
     }
+
+    #[test]
+    fn test_read_text_file_success() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("hello.txt");
+        std::fs::write(&file_path, "hello world").unwrap();
+
+        let result = read_text_file(file_path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "hello world");
+    }
+
+    #[test]
+    fn test_read_text_file_not_found() {
+        let result = read_text_file("/nonexistent/path/file.txt".to_string());
+        assert!(result.is_err());
+        assert!(!result.unwrap_err().is_empty());
+    }
+
+    #[test]
+    fn test_write_text_file_success() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("output.txt");
+
+        let result = write_text_file(
+            file_path.to_string_lossy().to_string(),
+            "content".to_string(),
+        );
+        assert!(result.is_ok());
+        assert_eq!(std::fs::read_to_string(&file_path).unwrap(), "content");
+    }
+
+    #[test]
+    fn test_write_text_file_invalid_path() {
+        let result = write_text_file("/nonexistent/dir/file.txt".to_string(), "data".to_string());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_rename_file_success() {
+        let dir = tempdir().unwrap();
+        let old_path = dir.path().join("old.txt");
+        let new_path = dir.path().join("new.txt");
+        std::fs::write(&old_path, "data").unwrap();
+
+        let result = rename_file(
+            old_path.to_string_lossy().to_string(),
+            new_path.to_string_lossy().to_string(),
+        );
+        assert!(result.is_ok());
+        assert!(!old_path.exists());
+        assert!(new_path.exists());
+    }
+
+    #[test]
+    fn test_rename_file_source_not_found() {
+        let dir = tempdir().unwrap();
+        let result = rename_file(
+            dir.path().join("missing.txt").to_string_lossy().to_string(),
+            dir.path().join("target.txt").to_string_lossy().to_string(),
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete_file_success() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("to_delete.txt");
+        std::fs::write(&file_path, "bye").unwrap();
+
+        let result = delete_file(file_path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+        assert!(!file_path.exists());
+    }
+
+    #[test]
+    fn test_delete_file_not_found() {
+        let result = delete_file("/nonexistent/path/ghost.txt".to_string());
+        assert!(result.is_err());
+    }
 }

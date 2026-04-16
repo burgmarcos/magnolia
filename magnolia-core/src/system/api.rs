@@ -267,3 +267,61 @@ pub async fn detect_gpu() -> Result<String, String> {
     }
     Ok("UNKNOWN".to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_unlock_partition_correct_pin() {
+        let result = unlock_partition("1234".to_string()).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_unlock_partition_wrong_pin() {
+        let result = unlock_partition("0000".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Incorrect decryption password.");
+    }
+
+    #[tokio::test]
+    async fn test_get_system_update_status_returns_string() {
+        let result = get_system_update_status().await;
+        assert!(result.is_ok());
+        let status = result.unwrap();
+        assert!(!status.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_security_status_returns_string() {
+        let result = get_security_status().await;
+        assert!(result.is_ok());
+        let status = result.unwrap();
+        assert!(!status.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_commit_identity_empty_pin() {
+        let result = commit_identity("".to_string(), "some-recovery-key".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "PIN and Recovery Key cannot be empty");
+    }
+
+    #[tokio::test]
+    async fn test_commit_identity_empty_recovery_key() {
+        let result = commit_identity("1234".to_string(), "".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "PIN and Recovery Key cannot be empty");
+    }
+
+    #[tokio::test]
+    async fn test_generate_recovery_key_returns_mnemonic() {
+        let result = generate_recovery_key().await;
+        assert!(result.is_ok());
+        let mnemonic = result.unwrap();
+        // BIP39 24-word mnemonic produces 23 spaces (24 words)
+        let word_count = mnemonic.split_whitespace().count();
+        assert_eq!(word_count, 24);
+    }
+}

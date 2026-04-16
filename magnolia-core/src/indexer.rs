@@ -108,3 +108,101 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
 
     Ok(indexed_count)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusqlite::Connection;
+    use tempfile::tempdir;
+
+    fn create_test_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "
+            CREATE TABLE IF NOT EXISTS documents (
+                id TEXT PRIMARY KEY,
+                filename TEXT NOT NULL,
+                path TEXT UNIQUE NOT NULL,
+                file_hash TEXT UNIQUE NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            ",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn test_index_directory_invalid_path() {
+        let mut conn = create_test_db();
+        let result = index_directory(&mut conn, "/nonexistent/path/that/does/not/exist");
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid directory path");
+    }
+
+    #[test]
+    fn test_index_directory_indexes_md_and_txt_files() {
+        let dir = tempdir().unwrap();
+        std::fs::write(dir.path().join("notes.md"), "# Hello\n\nSome text").unwrap();
+        std::fs::write(dir.path().join("readme.txt"), "Plain text file").unwrap();
+        std::fs::write(dir.path().join("image.png"), b"\x89PNG").unwrap();
+
+        let mut conn = create_test_db();
+        let count = index_directory(&mut conn, dir.path().to_str().unwrap()).unwrap();
+
+        // Only .md and .txt files should be indexed
+        assert_eq!(count, 2);
+
+        let stored: Vec<String> = {
+            let mut stmt = conn
+                .prepare("SELECT filename FROM documents ORDER BY filename")
+                .unwrap();
+            stmt.query_map([], |row| row.get(0))
+                .unwrap()
+                .filter_map(|r| r.ok())
+                .collect()
+        };
+        assert_eq!(stored, vec!["notes.md", "readme.txt"]);
+    }
+
+    #[test]
+    fn test_index_directory_skips_unchanged_files() {
+        let dir = tempdir().unwrap();
+        std::fs::write(dir.path().join("doc.md"), "content").unwrap();
+
+        let mut conn = create_test_db();
+
+        // First indexing
+        let first = index_directory(&mut conn, dir.path().to_str().unwrap()).unwrap();
+        assert_eq!(first, 1);
+
+        // Second indexing — same file, no change
+        let second = index_directory(&mut conn, dir.path().to_str().unwrap()).unwrap();
+        assert_eq!(second, 0);
+    }
+
+    #[test]
+    fn test_index_directory_detects_changed_files() {
+        let dir = tempdir().unwrap();
+        let file = dir.path().join("doc.md");
+        std::fs::write(&file, "original content").unwrap();
+
+        let mut conn = create_test_db();
+        let first = index_directory(&mut conn, dir.path().to_str().unwrap()).unwrap();
+        assert_eq!(first, 1);
+
+        // Modify file content
+        std::fs::write(&file, "updated content").unwrap();
+
+        let second = index_directory(&mut conn, dir.path().to_str().unwrap()).unwrap();
+        assert_eq!(second, 1);
+    }
+
+    #[test]
+    fn test_index_directory_empty_dir() {
+        let dir = tempdir().unwrap();
+        let mut conn = create_test_db();
+        let count = index_directory(&mut conn, dir.path().to_str().unwrap()).unwrap();
+        assert_eq!(count, 0);
+    }
+}

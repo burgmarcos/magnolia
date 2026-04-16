@@ -286,6 +286,38 @@ pub struct SearchResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rusqlite::Connection;
+
+    fn create_test_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "
+            CREATE TABLE IF NOT EXISTS documents (
+                id TEXT PRIMARY KEY,
+                filename TEXT NOT NULL,
+                path TEXT UNIQUE NOT NULL,
+                file_hash TEXT UNIQUE NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS nodes (
+                rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+                document_id TEXT NOT NULL,
+                chunk_index INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                metadata TEXT,
+                FOREIGN KEY(document_id) REFERENCES documents(id)
+            );
+            CREATE TABLE IF NOT EXISTS edges (
+                id TEXT PRIMARY KEY,
+                source_node_id INTEGER NOT NULL,
+                target_node_id INTEGER NOT NULL,
+                relationship_type TEXT
+            );
+            ",
+        )
+        .unwrap();
+        conn
+    }
 
     #[tokio::test]
     async fn test_fetch_embedding_graceful_failure() {
@@ -298,5 +330,72 @@ mod tests {
             Ok(emb) => assert!(!emb.is_empty()),
             Err(e) => assert!(e.contains("Failed to fetch embedding") || e.contains("timeout")),
         }
+    }
+
+    #[test]
+    fn test_get_indexed_documents_empty() {
+        let conn = create_test_db();
+        let docs = get_indexed_documents(&conn).unwrap();
+        assert!(docs.is_empty());
+    }
+
+    #[test]
+    fn test_get_indexed_documents_returns_rows() {
+        let conn = create_test_db();
+        conn.execute(
+            "INSERT INTO documents (id, filename, path, file_hash) VALUES ('doc1', 'notes.md', '/path/notes.md', 'abc123')",
+            [],
+        )
+        .unwrap();
+
+        let docs = get_indexed_documents(&conn).unwrap();
+        assert_eq!(docs.len(), 1);
+        assert_eq!(docs[0].id, "doc1");
+        assert_eq!(docs[0].filename, "notes.md");
+        assert_eq!(docs[0].path, "/path/notes.md");
+    }
+
+    #[test]
+    fn test_get_graph_data_empty_db() {
+        let conn = create_test_db();
+        let graph = get_graph_data(&conn).unwrap();
+        assert!(graph.nodes.is_empty());
+        assert!(graph.edges.is_empty());
+    }
+
+    #[test]
+    fn test_get_graph_data_with_document_and_chunk() {
+        let conn = create_test_db();
+
+        conn.execute(
+            "INSERT INTO documents (id, filename, path, file_hash) VALUES ('d1', 'doc.md', '/doc.md', 'hash1')",
+            [],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO nodes (document_id, chunk_index, content) VALUES ('d1', 0, 'First chunk')",
+            [],
+        )
+        .unwrap();
+
+        let graph = get_graph_data(&conn).unwrap();
+
+        // One document node + one chunk node
+        assert_eq!(graph.nodes.len(), 2);
+
+        let doc_node = graph.nodes.iter().find(|n| n.type_name == "document");
+        assert!(doc_node.is_some());
+        assert_eq!(doc_node.unwrap().id, "d1");
+        assert_eq!(doc_node.unwrap().label, "doc.md");
+
+        let chunk_node = graph.nodes.iter().find(|n| n.type_name == "chunk");
+        assert!(chunk_node.is_some());
+        assert!(chunk_node.unwrap().label.contains("Chunk #0"));
+
+        // One edge: document -> chunk
+        assert_eq!(graph.edges.len(), 1);
+        assert_eq!(graph.edges[0].source, "d1");
+        assert_eq!(graph.edges[0].relationship, "contains");
     }
 }
