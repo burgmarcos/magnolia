@@ -1,6 +1,5 @@
 use rusqlite::{params, Connection};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use uuid::Uuid;
@@ -18,29 +17,6 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
     let tx = conn
         .transaction()
         .map_err(|e| format!("Transaction error: {}", e))?;
-
-    // Pre-fetch paths and hashes only for this directory to avoid N+1 queries
-    // and unbound memory loading
-    let mut existing_docs = HashMap::new();
-    {
-        // Use LIKE with the directory path to only fetch relevant documents
-        // Using || '%' correctly formats the pattern for SQLite
-        let mut stmt = tx
-            .prepare("SELECT path, file_hash FROM documents WHERE path LIKE ?1 || '%'")
-            .map_err(|e| format!("Prepare error: {}", e))?;
-
-        let path_str = path.to_string_lossy().to_string();
-        let rows = stmt
-            .query_map(params![path_str], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-            })
-            .map_err(|e| format!("Query error: {}", e))?;
-
-        for row in rows.flatten() {
-            let (path, hash) = row;
-            existing_docs.insert(path, hash);
-        }
-    }
 
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
@@ -60,14 +36,19 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
                     let file_path = entry.path().to_string_lossy().to_string();
                     let filename = entry.file_name().to_string_lossy().to_string();
 
-                    let existing_hash = existing_docs.get(&file_path);
+                    // Check if file already exists with same hash
+                    let existing_hash: rusqlite::Result<String> = tx.query_row(
+                        "SELECT file_hash FROM documents WHERE path = ?1",
+                        params![file_path],
+                        |row| row.get(0),
+                    );
 
                     match existing_hash {
-                        Some(hash) if *hash == file_hash => {
+                        Ok(hash) if hash == file_hash => {
                             // File exists and hasn't changed, skip
                             continue;
                         }
-                        Some(_) => {
+                        Ok(_) => {
                             // Hash changed, we update
                             tx.execute(
                                 "UPDATE documents SET file_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE path = ?2",
@@ -76,7 +57,7 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
                             indexed_count += 1;
                             // Optionally, we should invalidate/delete downstream `nodes` for this document_id
                         }
-                        None => {
+                        Err(_) => {
                             // New file
                             let new_id = Uuid::new_v4().to_string();
                             tx.execute(

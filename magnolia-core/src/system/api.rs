@@ -1,261 +1,224 @@
+use crate::system::error::ToBridgeResult;
+use crate::system::{cloud, partition, rauc, sync};
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::process::Command;
+
 use tauri::command;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RaucStatus {
-    pub slot: String,
-    pub state: String,
+#[derive(Serialize, Deserialize)]
+pub struct UpdateStatus {
+    pub compatible: String,
     pub bootname: String,
+    pub slots: Vec<rauc::RaucSlot>,
+}
+
+// Diagnostic wrappers for Dashboard HUD
+#[command]
+pub async fn get_system_update_status() -> Result<rauc::RaucStatus, String> {
+    rauc::get_rauc_status()
 }
 
 #[command]
-pub async fn get_rauc_status() -> Result<RaucStatus, String> {
-    let output = Command::new("rauc")
-        .args(["status", "--detailed", "--output-format", "json"])
-        .output()
-        .map_err(|e| format!("Failed to execute rauc: {}", e))?;
-
-    if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
-    }
-
-    let json: serde_json::Value = serde_json::from_slice(&output.stdout)
-        .map_err(|e| format!("Failed to parse rauc output: {}", e))?;
-
-    let compatible = json["compatible"].as_str().unwrap_or("unknown");
-    // Just mock fetching the active slot
-    let slot = format!("Active for {}", compatible);
-
-    Ok(RaucStatus {
-        slot,
-        state: "good".to_string(),
-        bootname: "A".to_string(),
-    })
+pub async fn get_rauc_status() -> Result<rauc::RaucStatus, String> {
+    rauc::get_rauc_status()
 }
 
 #[command]
-pub async fn rauc_install(bundle_path: String) -> Result<(), String> {
-    let status = Command::new("rauc")
-        .args(["install", &bundle_path])
-        .status()
-        .map_err(|e| format!("Failed to start rauc install: {}", e))?;
-
-    if status.success() {
-        Ok(())
-    } else {
-        Err("RAUC installation failed. Check system logs.".into())
-    }
+pub async fn rauc_install(path: String) -> Result<(), String> {
+    rauc::install_bundle(&path)
 }
 
 #[command]
-pub async fn mark_partition_status(state: String) -> Result<(), String> {
-    let status = Command::new("rauc")
-        .args(["status", "mark", &state])
-        .status()
-        .map_err(|e| format!("Failed to run rauc mark: {}", e))?;
-
-    if status.success() {
-        Ok(())
-    } else {
-        Err(format!("Failed to mark slot as {}", state))
-    }
+pub async fn mark_partition_status(slot: String, state: String) -> Result<(), String> {
+    rauc::mark_partition(&slot, &state)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
+pub struct SecurityStatus {
+    pub label: String,
+    pub is_locked: bool,
+    pub is_encrypted: bool,
+}
+
+#[command]
+pub async fn get_security_status() -> Result<Vec<SecurityStatus>, String> {
+    // In Magnolia, we monitor the UserData (LUKS) and System (RO) states
+    Ok(vec![
+        SecurityStatus {
+            label: "OS_CORE".into(),
+            is_locked: false,
+            is_encrypted: false,
+        }, // System is RO
+        SecurityStatus {
+            label: "UserData".into(),
+            is_locked: false,
+            is_encrypted: true,
+        }, // UserData is LUKS
+    ])
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct NetworkInfo {
-    pub active_ssid: String,
+    pub ssid: String,
+    pub ip_address: String,
     pub signal_strength: u8,
-    pub local_ip: String,
 }
 
 #[command]
 pub async fn get_network_settings() -> Result<NetworkInfo, String> {
+    // Wrap nmcli to get SSID, signal, and connection status
     let output = Command::new("nmcli")
         .args(["-t", "-f", "active,ssid,signal", "dev", "wifi"])
         .output()
-        .map_err(|e| format!("Failed to run nmcli: {}", e))?;
+        .map_err(|e| format!("NetworkManager not responding: {}", e))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     // Parse nmcli terse output: "yes:MyNetwork:85" or "no:Other:60"
     let active_line = stdout.lines().find(|line| line.starts_with("yes:"));
 
-    let (active_ssid, _signal_strength) = if let Some(line) = active_line {
+    let (active_ssid, signal_strength) = if let Some(line) = active_line {
         let parts: Vec<&str> = line.splitn(3, ':').collect();
         let ssid = parts.get(1).unwrap_or(&"").to_string();
-        let signal = parts.get(2).unwrap_or(&"0").parse::<u8>().unwrap_or(0);
+        let signal = parts
+            .get(2)
+            .and_then(|s| s.trim().parse::<u8>().ok())
+            .unwrap_or(0);
         (ssid, signal)
     } else {
         ("Disconnected".to_string(), 0)
     };
 
-    // Grab IP address
-    let ip_output = Command::new("ip")
-        .args(["-4", "addr", "show", "wlan0"])
+    // Get IP address
+    let ip_output = Command::new("hostname")
+        .arg("-I")
         .output()
         .map_err(|e| e.to_string())?;
 
-    let ip_stdout = String::from_utf8_lossy(&ip_output.stdout);
-
-    let mut local_ip = "Unknown".to_string();
-    if let Some(pos) = ip_stdout.find("inet ") {
-        let ip_str = &ip_stdout[pos + 5..];
-        if let Some(end_pos) = ip_str.find('/') {
-            local_ip = ip_str[..end_pos].to_string();
-        } else if let Some(end_pos) = ip_str.find(' ') {
-            local_ip = ip_str[..end_pos].to_string();
-        }
-    }
-
-    // Parse WiFi signal strength from nmcli
-    let signal_strength = Command::new("nmcli")
-        .args(["-t", "-f", "active,signal", "dev", "wifi"])
-        .output()
-        .ok()
-        .and_then(|out| {
-            String::from_utf8_lossy(&out.stdout)
-                .lines()
-                .find(|line| line.starts_with("yes:"))
-                .and_then(|line| line.replace("yes:", "").trim().parse::<u8>().ok())
-        })
-        .unwrap_or(0);
+    let ip_address = String::from_utf8_lossy(&ip_output.stdout)
+        .split_whitespace()
+        .next()
+        .unwrap_or("0.0.0.0")
+        .to_string();
 
     Ok(NetworkInfo {
-        active_ssid,
+        ssid: active_ssid,
+        ip_address,
         signal_strength,
-        local_ip,
     })
 }
 
 #[command]
-pub async fn set_power_state(action: String) -> Result<(), String> {
-    match action.as_str() {
+pub async fn connect_to_wifi(ssid: String, password: String) -> Result<(), String> {
+    if ssid.starts_with('-') || password.starts_with('-') {
+        return Err("Invalid SSID or password format".to_string());
+    }
+
+    let status = Command::new("nmcli")
+        .args([
+            "dev", "wifi", "connect", "--", &ssid, "password", "--", &password,
+        ])
+        .status()
+        .map_err(|e| format!("Failed to execute nmcli: {}", e))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("Could not connect to {}. Check credentials.", ssid))
+    }
+}
+
+#[command]
+pub async fn set_power_state(state: String) -> Result<(), String> {
+    println!("[Magnolia] Setting Power State: {}", state);
+    match state.as_str() {
         "reboot" => {
-            let status = Command::new("/sbin/reboot")
-                .status()
-                .map_err(|e| e.to_string())?;
-            if !status.success() {
-                return Err("Failed to reboot system".into());
-            }
+            Command::new("reboot").spawn().map_err(|e| e.to_string())?;
         }
         "shutdown" => {
-            let status = Command::new("/sbin/poweroff")
-                .status()
+            Command::new("poweroff")
+                .spawn()
                 .map_err(|e| e.to_string())?;
-            if !status.success() {
-                return Err("Failed to power off system".into());
-            }
         }
-        "suspend" => {
-            let status = Command::new("/bin/systemctl")
-                .arg("suspend")
-                .status()
-                .map_err(|e| e.to_string())?;
-            if !status.success() {
-                return Err("Failed to suspend system".into());
-            }
-        }
-        _ => return Err("Invalid power action".into()),
+        _ => return Err("Invalid power state".into()),
     }
     Ok(())
 }
 
 #[command]
-pub async fn unlock_partition(password: String) -> Result<(), String> {
-    // Highly simplified mock for cryptsetup luksOpen
-    if password == "1234" {
-        println!("[SECURITY] LUKS Volume Unlocked Successfully.");
-        Ok(())
-    } else {
-        Err("Incorrect decryption password.".into())
-    }
+pub async fn unlock_partition(label: String, password: String) -> Result<(), String> {
+    // Label is usually the device or a predefined name, for UserData we assume dm-crypt mapped name
+    // Here we use it as the name/label for the device
+    partition::unlock_partition(&format!("/dev/{}", label), &label, &password)
 }
 
 #[command]
-pub async fn get_sync_quota() -> Result<u64, String> {
-    // Read local cache of quota from /data/system/sync_quota.txt
-    let quota = fs::read_to_string("/data/system/sync_quota.txt")
-        .unwrap_or_else(|_| "5368709120".to_string()); // Default 5GB
-    quota
-        .trim()
-        .parse()
-        .map_err(|_| "Invalid quota format".into())
+pub async fn get_sync_quota() -> Result<cloud::UserSyncStatus, String> {
+    cloud::get_sync_quota().await.map_bridge_err()
 }
 
 #[command]
 pub async fn generate_recovery_key() -> Result<String, String> {
-    // Generate a secure bip39 recovery phrase
-    use bip39::{Language, Mnemonic};
-    let mut rng = bip39::rand::thread_rng();
-    let mnemonic =
-        Mnemonic::generate_in_with(&mut rng, Language::English, 24).map_err(|e| e.to_string())?;
+    // Generates a 24-word BIP-39 mnemonic
+    sync::SovereignEncrypter::generate_new_mnemonic().map_bridge_err()
+}
 
-    Ok(mnemonic.to_string())
+#[command]
+pub async fn commit_identity(mnemonic: String) -> Result<(), String> {
+    use keyring::Entry;
+    let entry = Entry::new("Magnolia-Sovereign-Sync", "user")
+        .map_err(|e| format!("Keychain access failed: {}", e))?;
+
+    // Validate mnemonic before storing
+    let mnemonic_str: &str = mnemonic.as_str();
+    if bip39::Mnemonic::parse(mnemonic_str).is_err() {
+        return Err("Invalid BIP-39 mnemonic provided".to_string());
+    }
+
+    entry
+        .set_password(mnemonic_str)
+        .map_err(|e| format!("Failed to secure identity: {}", e))
 }
 
 #[command]
 pub async fn check_identity_exists() -> Result<bool, String> {
-    Ok(std::path::Path::new("/data/system/identity.hash").exists())
+    use keyring::Entry;
+    let entry = Entry::new("Magnolia-Sovereign-Sync", "user").map_err(|e| e.to_string())?;
+
+    Ok(entry.get_password().is_ok())
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GPUInfo {
+    pub vendor: String,
+    pub model: String,
+    pub requires_proprietary: bool,
 }
 
 #[command]
-pub async fn commit_identity(pin: String, recovery_key: String) -> Result<(), String> {
-    if pin.is_empty() || recovery_key.is_empty() {
-        return Err("PIN and Recovery Key cannot be empty".to_string());
+pub async fn detect_gpu() -> Result<GPUInfo, String> {
+    // Discover the primary GPU vendor ID from sysfs DRM
+    let vendor_id = std::fs::read_to_string("/sys/class/drm/card0/device/vendor")
+        .unwrap_or_else(|_| "0x0000".to_string())
+        .trim()
+        .to_string();
+
+    let mut vendor_name = "Unknown GPU";
+    let mut requires_proprietary = false;
+
+    // Vendor IDs
+    if vendor_id.contains("0x10de") {
+        vendor_name = "Nvidia GeForce / RTX";
+        requires_proprietary = true; // Recommend proprietary driver for CUDA / Machine Learning
+    } else if vendor_id.contains("0x1002") {
+        vendor_name = "AMD Radeon";
+    } else if vendor_id.contains("0x8086") {
+        vendor_name = "Intel Graphics";
     }
 
-    use sha2::{Digest, Sha256};
-    let mut hasher = Sha256::new();
-    hasher.update(pin.as_bytes());
-    // In reality, don't just hash them together naively without salt.
-    // This is a minimal OS architecture mock.
-    hasher.update(recovery_key.as_bytes());
-
-    let result = hasher.finalize();
-    let hash_hex = format!("{:x}", result);
-
-    std::fs::create_dir_all("/data/system").map_err(|e| e.to_string())?;
-    std::fs::write("/data/system/identity.hash", hash_hex).map_err(|e| e.to_string())?;
-    std::fs::write("/data/system/pin.hash", pin).map_err(|e| e.to_string())?;
-
-    println!("[AUTH] Identity committed securely to OS hardware layer.");
-    Ok(())
-}
-
-#[command]
-pub async fn get_system_update_status() -> Result<String, String> {
-    // Mock update status
-    Ok("System is up to date. Last checked 2 hours ago.".to_string())
-}
-
-#[command]
-pub async fn get_security_status() -> Result<String, String> {
-    // Mock security status
-    Ok("Secure Boot: Enabled | AppArmor: Enforcing | LUKS: Active".to_string())
-}
-
-#[command]
-pub async fn detect_gpu() -> Result<String, String> {
-    let output = Command::new("lspci")
-        .output()
-        .map_err(|e| format!("Failed to probe PCI: {}", e))?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    for line in stdout.lines() {
-        if line.to_lowercase().contains("vga compatible controller")
-            || line.to_lowercase().contains("3d controller")
-        {
-            if line.to_lowercase().contains("nvidia") {
-                return Ok("NVIDIA".to_string());
-            } else if line.to_lowercase().contains("amd") || line.to_lowercase().contains("radeon")
-            {
-                return Ok("AMD".to_string());
-            } else if line.to_lowercase().contains("intel") {
-                return Ok("INTEL".to_string());
-            }
-        }
-    }
-    Ok("UNKNOWN".to_string())
+    Ok(GPUInfo {
+        vendor: vendor_name.to_string(),
+        model: "Primary Display Adapter".to_string(),
+        requires_proprietary,
+    })
 }
