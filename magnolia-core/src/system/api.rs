@@ -109,6 +109,19 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
         }
     }
 
+    // Parse WiFi signal strength from nmcli
+    let signal_strength = Command::new("nmcli")
+        .args(["-t", "-f", "active,signal", "dev", "wifi"])
+        .output()
+        .ok()
+        .and_then(|out| {
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .find(|line| line.starts_with("yes:"))
+                .and_then(|line| line.replace("yes:", "").trim().parse::<u8>().ok())
+        })
+        .unwrap_or(0);
+
     Ok(NetworkInfo {
         active_ssid,
         signal_strength,
@@ -120,22 +133,29 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
 pub async fn set_power_state(action: String) -> Result<(), String> {
     match action.as_str() {
         "reboot" => {
-            Command::new("systemctl")
-                .arg("reboot")
+            let status = Command::new("/sbin/reboot")
                 .status()
                 .map_err(|e| e.to_string())?;
+            if !status.success() {
+                return Err("Failed to reboot system".into());
+            }
         }
         "shutdown" => {
-            Command::new("systemctl")
-                .arg("poweroff")
+            let status = Command::new("/sbin/poweroff")
                 .status()
                 .map_err(|e| e.to_string())?;
+            if !status.success() {
+                return Err("Failed to power off system".into());
+            }
         }
         "suspend" => {
-            Command::new("systemctl")
+            let status = Command::new("/bin/systemctl")
                 .arg("suspend")
                 .status()
                 .map_err(|e| e.to_string())?;
+            if !status.success() {
+                return Err("Failed to suspend system".into());
+            }
         }
         _ => return Err("Invalid power action".into()),
     }

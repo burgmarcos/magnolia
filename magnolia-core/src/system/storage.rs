@@ -58,7 +58,7 @@ pub async fn move_to_trash(file_path: String) -> Result<(), String> {
         .file_name()
         .ok_or("Invalid file path")?
         .to_str()
-        .ok_or("File path is not valid UTF-8")?;
+        .unwrap();
 
     let trash_dir = PathBuf::from("/data/.magnolia-trash");
     if !trash_dir.exists() {
