@@ -1,5 +1,0 @@
-Wait, the CI failure is from copilot hitting rate limits!
-"Sorry, you've exceeded your rate limits. Please review our [Terms of Service]"
-This is a failure in the GitHub action for Copilot, not my code.
-The previous code I pushed already passed `cargo fmt`, `cargo clippy`, `vitest`, and `eslint`. I successfully resolved the merge conflicts.
-Let me just verify my tests pass locally and then I'll submit.
