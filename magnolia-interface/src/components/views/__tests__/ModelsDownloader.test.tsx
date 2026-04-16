@@ -16,11 +16,11 @@ vi.mock("react-hot-toast", () => ({
 }));
 
 // Mock HardwareFitChip so it doesn't cause any rendering issues
-vi.mock('../widgets/HardwareFitChip.tsx', () => ({
-  HardwareFitChip: () => <div data-testid="hardware-fit-chip"></div>
+vi.mock("../widgets/HardwareFitChip.tsx", () => ({
+  HardwareFitChip: () => <div data-testid="hardware-fit-chip"></div>,
 }));
 
-describe('ModelsDownloader', () => {
+describe("ModelsDownloader", () => {
   let invokeMock: Mock;
 
   beforeEach(async () => {
@@ -31,10 +31,10 @@ describe('ModelsDownloader', () => {
 
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
-      if (cmd === 'get_api_key') return Promise.resolve(null);
+      if (cmd === "get_local_models") return Promise.resolve(["model1.gguf"]);
+      if (cmd === "get_local_model_size_bytes") return Promise.resolve(4000);
+      if (cmd === "assess_model_fit") return Promise.resolve("Fits Perfectly");
+      if (cmd === "get_api_key") return Promise.resolve(null);
       return Promise.resolve();
     });
   });
@@ -69,8 +69,8 @@ describe('ModelsDownloader', () => {
     });
   });
 
-  it("shows skeleton loaders and empty state checks", async () => {
-    // Configure mock for search failure mapping to empty state
+  it("renders search results after a successful model search", async () => {
+    // Configure mock for an empty initial local model list and a successful search result
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === "get_local_models") return Promise.resolve([]);
       if (cmd === "search_hf_models")
@@ -95,32 +95,33 @@ describe('ModelsDownloader', () => {
     });
   });
 
-  it('shows huggingface 401 access denied error when search fails with 401', async () => {
+  it("shows huggingface 401 access denied error when search fails with 401", async () => {
     render(<ModelsDownloader />);
 
     // Wait for the initial load to finish before mocking
     await waitFor(() => {
-        expect(screen.getByText('model1.gguf')).toBeInTheDocument();
+      expect(screen.getByText("model1.gguf")).toBeInTheDocument();
     });
 
     // Get the mocked toast to check if the error is called
-    const toast = await import('react-hot-toast');
+    const toast = await import("react-hot-toast");
 
     // Configure mock for search failure mapping to empty state
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'search_hf_models') return Promise.reject(new Error('HTTP Status: 401 Unauthorized'));
+      if (cmd === "search_hf_models")
+        return Promise.reject(new Error("HTTP Status: 401 Unauthorized"));
       return Promise.resolve();
     });
 
-    const input = screen.getByPlaceholderText('Search for a model to download');
-    fireEvent.change(input, { target: { value: 'private-model' } });
-    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 });
+    const input = screen.getByPlaceholderText("Search for a model to download");
+    fireEvent.change(input, { target: { value: "private-model" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter", charCode: 13 });
 
     // Wait for the search state to pass and error to be shown
     await waitFor(() => {
       expect(toast.default.error).toHaveBeenCalledWith(
         "HuggingFace Access Denied. Please verify your API Key in System Hub.",
-        { duration: 5000 }
+        { duration: 5000 },
       );
     });
   });
