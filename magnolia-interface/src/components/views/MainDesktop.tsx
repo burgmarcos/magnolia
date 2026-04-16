@@ -108,6 +108,7 @@ export const MainDesktop = ({ onLogout }: { onLogout?: () => void }) => {
       import('@tauri-apps/api/core').then(({ invoke }) => {
         invoke<string>('ensure_default_knowledge_dir')
           .then((path) => {
+            // Ensure the directory is created and indexed before starting the embedding job
             localStorage.setItem('Magnolia-knowledge-path', path);
             invoke('index_local_folder', { path }).then(() => invoke('trigger_embedding_job')).catch(console.error);
           })
