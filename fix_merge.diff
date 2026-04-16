@@ -1,0 +1,61 @@
+--- magnolia-core/src/system/storage.rs
++++ magnolia-core/src/system/storage.rs
+@@ -32,32 +32,15 @@
+     {
+         return Err("Invalid app_id: path traversal or invalid characters detected.".into());
+     }
+-<<<<<<< HEAD
+-
+-    let base_dir = std::path::Path::new("/data/apps");
+-    let app_dir = base_dir.join(&app_id);
+-
+-    if !app_dir.starts_with(base_dir) {
+-        return Err("Path traversal detected.".into());
+-    }
+-=======
+
+     let base_dir = PathBuf::from("/data/apps");
+     let app_dir = base_dir.join(&app_id);
+->>>>>>> origin/main
++
++    if !app_dir.starts_with(&base_dir) {
++        return Err("Path traversal detected.".into());
++    }
+
+     // Simulate cloud sync and deletion of heavy binaries
+     let bin_path = app_dir.join("binary.AppImage");
+     if fs::metadata(&bin_path).is_ok() {
+-<<<<<<< HEAD
+-        println!("[STORAGE] Syncing {} to Sovereign Cloud...", bin_path.display());
+-=======
+         println!(
+             "[STORAGE] Syncing {} to Sovereign Cloud...",
+             bin_path.display()
+         );
+->>>>>>> origin/main
+         // Delete locally to conserve the 5GB cap
+         fs::remove_file(&bin_path).map_err(|e| e.to_string())?;
+         println!(
+@@ -73,22 +56,11 @@
+ pub async fn move_to_trash(file_path: String) -> Result<(), String> {
+     println!("[STORAGE] Moving {} to .magnolia-trash...", file_path);
+     let source = PathBuf::from(&file_path);
+-<<<<<<< HEAD
+-
+-    if !source.starts_with("/data/") {
+-        return Err("Permission denied: can only move files from /data/".into());
+-    }
+-    let filename = source
+-=======
+     let canonical_source =
+         fs::canonicalize(&source).map_err(|_| "File not found or access denied".to_string())?;
+
+     if !canonical_source.starts_with("/data") {
+         return Err("Security error: Cannot move files outside of /data to trash.".to_string());
+     }
+
+     let filename = canonical_source
+->>>>>>> origin/main
+         .file_name()
+         .ok_or("Invalid file path")?
+         .to_str()
