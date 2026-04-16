@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { useState, useEffect } from 'react';
 import { Search, ArrowDownToLine, Trash2, Key, ShieldCheck, RefreshCw, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,7 +73,7 @@ export function ModelsDownloader() {
     if (!hfToken) return toast.error('Enter a token first!');
     setIsSaving(true);
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+
       const msg = await invoke<string>('verify_hf_token', { token: hfToken });
       toast.success(msg);
     } catch (e) {
@@ -85,7 +86,7 @@ export function ModelsDownloader() {
   const saveHfToken = async () => {
     setIsSaving(true);
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+
       await invoke('set_api_key', { service: 'huggingface', key: hfToken });
       toast.success('Key saved securely');
     } catch (e) {
@@ -99,7 +100,7 @@ export function ModelsDownloader() {
     if (!searchQuery.trim()) return;
     setIsSearching(true);
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+
       const info = await invoke<{id: string, size_on_disk_bytes: number}>('search_hf_models', { modelId: searchQuery });
       const fitStatus = await invoke<string>('assess_model_fit', { modelSizeBytes: info.size_on_disk_bytes });
 
@@ -134,7 +135,7 @@ export function ModelsDownloader() {
   const downloadModel = async (model: ModelItem) => {
     setModels(prev => prev.map(m => m.id === model.id ? { ...m, status: 'downloading', progress: 0 } : m));
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
+
       // A full URL would normally be determined by the HF tree API
       const url = `https://huggingface.co/${model.id}/resolve/main/model.gguf`;
       const filename = `${model.id.replace('/', '_')}.gguf`;
