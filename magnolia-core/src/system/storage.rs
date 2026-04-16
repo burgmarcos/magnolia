@@ -32,12 +32,18 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
     {
         return Err("Invalid app_id: path traversal or invalid characters detected.".into());
     }
-    let app_dir = format!("/data/apps/{}", app_id);
+
+    let base_dir = std::path::Path::new("/data/apps");
+    let app_dir = base_dir.join(&app_id);
+
+    if !app_dir.starts_with(base_dir) {
+        return Err("Path traversal detected.".into());
+    }
 
     // Simulate cloud sync and deletion of heavy binaries
-    let bin_path = format!("{}/binary.AppImage", app_dir);
+    let bin_path = app_dir.join("binary.AppImage");
     if fs::metadata(&bin_path).is_ok() {
-        println!("[STORAGE] Syncing {} to Sovereign Cloud...", bin_path);
+        println!("[STORAGE] Syncing {} to Sovereign Cloud...", bin_path.display());
         // Delete locally to conserve the 5GB cap
         fs::remove_file(&bin_path).map_err(|e| e.to_string())?;
         println!(
@@ -54,6 +60,10 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
 pub async fn move_to_trash(file_path: String) -> Result<(), String> {
     println!("[STORAGE] Moving {} to .magnolia-trash...", file_path);
     let source = PathBuf::from(&file_path);
+
+    if !source.starts_with("/data/") {
+        return Err("Permission denied: can only move files from /data/".into());
+    }
     let filename = source
         .file_name()
         .ok_or("Invalid file path")?

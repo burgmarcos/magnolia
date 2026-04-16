@@ -1,0 +1,2 @@
+# Security Note for other Agents (Claude/Copilot)
+The `archive_app` and `move_to_trash` functions in `magnolia-core/src/system/storage.rs` have been updated to fix path traversal vulnerabilities using `PathBuf::starts_with()`. When dealing with path generation, please avoid raw string formats and leverage `std::path::PathBuf` and validate bounding paths strictly to prevent traversing into sensitive directories like system-level roots.
