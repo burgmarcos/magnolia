@@ -1,24 +1,21 @@
---- magnolia-core/src/system/storage.rs
-+++ magnolia-core/src/system/storage.rs
-@@ -159,13 +159,15 @@
-         "Security PIN not configured. Complete initial setup to set a PIN.".to_string()
-     })?;
+--- magnolia-core/src/system/api.rs
++++ magnolia-core/src/system/api.rs
+@@ -109,8 +109,8 @@
+     let re = Regex::new(r"inet\s+(\d+\.\d+\.\d+\.\d+)").unwrap();
+     let local_ip = re
+         .captures(&ip_stdout)
+-        .and_then(|cap| cap.get(1))
+-        .map_or("Unknown".to_string(), |m| m.as_str().to_string());
++        .and_then(|cap: regex::Captures| cap.get(1))
++        .map_or("Unknown".to_string(), |m: regex::Match| m.as_str().to_string());
 
--    // SHA256(pin + user_confirm) must match stored hash
--    let mut hasher = Sha256::new();
--    hasher.update(pin.as_bytes());
--    hasher.update(user_confirm.as_bytes());
--    let computed_hash = format!("{:x}", hasher.finalize());
-+    let parsed_hash = PasswordHash::new(stored_hash.trim()).map_err(|_| {
-+        "Stored PIN hash is corrupted or invalid format.".to_string()
-+    })?;
-
--    if computed_hash.trim() == stored_hash.trim() {
-+    let combined_secret = format!("{}{}", pin, user_confirm);
-+
-+    let is_valid = Argon2::default().verify_password(combined_secret.as_bytes(), &parsed_hash).is_ok();
-+
-+    if is_valid {
-         Ok(true)
-     } else {
-         Err("Security verification failed. Invalid PIN or Identity string.".to_string())
+     Ok(NetworkInfo {
+         active_ssid,
+@@ -168,7 +168,7 @@
+ pub async fn generate_recovery_key() -> Result<String, String> {
+     // Generate a secure bip39 recovery phrase
+     use bip39::{Language, Mnemonic};
+-    let mut rng = rand::thread_rng();
++    let mut rng = bip39::rand::thread_rng();
+     let mnemonic =
+         Mnemonic::generate_in_with(&mut rng, Language::English, 24).map_err(|e| e.to_string())?;

@@ -22,11 +22,6 @@ vi.mock('react-hot-toast', () => ({
   }
 }));
 
-// Mock HardwareFitChip so it doesn't cause any rendering issues
-vi.mock('../../HardwareFitChip.tsx', () => ({
-  HardwareFitChip: () => <div data-testid="hardware-fit-chip"></div>
-}));
-
 describe('ModelsDownloader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,19 +47,17 @@ describe('ModelsDownloader', () => {
   });
 
   it('shows skeleton loaders and empty state checks', async () => {
-    render(<ModelsDownloader />);
-
-    await waitFor(() => {
-      expect(screen.getByText('model1.gguf')).toBeInTheDocument();
-    });
-
     mockInvoke.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
+      if (cmd === 'get_local_models') return Promise.resolve([]);
       if (cmd === 'get_api_key') return Promise.resolve('mock-key');
+      // Some versions of the test used an array, let's look at the component code.
+      // It expects an object: {id: string, size_on_disk_bytes: number}
       if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });
+
+    render(<ModelsDownloader />);
 
     const input = screen.getByPlaceholderText('Search for a model to download');
     fireEvent.change(input, { target: { value: 'llama' } });
