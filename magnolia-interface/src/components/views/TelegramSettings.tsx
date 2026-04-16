@@ -21,7 +21,7 @@ export function TelegramSettings() {
           const token = await invoke<string>('get_api_key', { service: 'telegram_bot' });
           setBotToken(token);
         } catch {
-          console.log('No telegram bot token found');
+          // Ignored
         }
 
         // Load Chat ID
@@ -29,7 +29,7 @@ export function TelegramSettings() {
           const id = await invoke<string>('get_api_key', { service: 'telegram_chat_id' });
           setChatId(id);
         } catch {
-          console.log('No telegram chat id found');
+          // Ignored
         }
       } catch {
         toast.error('Failed to access secure storage');

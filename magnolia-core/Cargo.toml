@@ -61,4 +61,4 @@ opt-level = "z" # Optimize for size (use "s" or "3" for performance)
 strip = true # Strip symbols
 
 [dev-dependencies]
-tempfile = "3.10"
+tempfile = "3.10.1"

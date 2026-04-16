@@ -1,4 +1,4 @@
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug, PartialEq, Eq)]
 pub struct FileEntry {
     pub name: String,
     pub is_dir: bool,
@@ -95,7 +95,12 @@ mod tests {
 
     #[test]
     fn test_list_directory_nonexistent() {
-        let result = list_directory("/this/path/should/not/exist".to_string());
+        let dir = tempdir().unwrap();
+        let missing_path = dir.path().join("definitely-missing");
+
+        let result = list_directory(missing_path.to_string_lossy().to_string());
         assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(!err.is_empty());
     }
 }
