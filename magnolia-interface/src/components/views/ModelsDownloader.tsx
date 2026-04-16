@@ -102,7 +102,7 @@ export function ModelsDownloader() {
       const { invoke } = await import('@tauri-apps/api/core');
       const info = await invoke<{id: string, size_on_disk_bytes: number}>('search_hf_models', { modelId: searchQuery });
       const fitStatus = await invoke<string>('assess_model_fit', { modelSizeBytes: info.size_on_disk_bytes });
-      
+
       let fit: FitState = 'cannot-run';
       if (fitStatus === 'Fits Perfectly') fit = 'perfect';
       if (fitStatus === 'Needs Offload') fit = 'offload';
@@ -120,7 +120,7 @@ export function ModelsDownloader() {
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
       console.error("Search failed:", errorMsg);
-      
+
       if (errorMsg.includes("401")) {
         toast.error("HuggingFace Access Denied. Please verify your API Key in System Hub.", { duration: 5000 });
       } else {
@@ -138,9 +138,9 @@ export function ModelsDownloader() {
       // A full URL would normally be determined by the HF tree API
       const url = `https://huggingface.co/${model.id}/resolve/main/model.gguf`;
       const filename = `${model.id.replace('/', '_')}.gguf`;
-      
+
       toast.success(`Started downloading ${model.name}`);
-      
+
       await invoke('download_model_file', { url, filename });
 
       setModels(prev => prev.map(m => m.id === model.id ? { ...m, status: 'installed', progress: 100 } : m));
@@ -158,25 +158,25 @@ export function ModelsDownloader() {
     <div className={styles.container}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 className={styles.header} style={{ margin: 0 }}>Models</h2>
-        
+
         {/* Credentials Header Section - Compact Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <AnimatePresence>
             {showKeyInput && (
-              <motion.div 
+              <motion.div
                 initial={{ width: 0, opacity: 0 }}
                 animate={{ width: 'auto', opacity: 1 }}
                 exit={{ width: 0, opacity: 0 }}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--schemes-surface-container)', padding: '4px 12px', borderRadius: '12px', border: '1px solid var(--schemes-outline-variant)', overflow: 'hidden' }}
               >
-                <input 
+                <input
                   type="password"
                   placeholder="hf_..."
                   value={hfToken}
                   onChange={(e) => setHfToken(e.target.value)}
-                  style={{ 
-                    background: 'transparent', 
-                    border: 'none', 
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
                     color: 'var(--schemes-on-surface)',
                     fontSize: '12px',
                     width: '140px',
@@ -192,11 +192,11 @@ export function ModelsDownloader() {
               </motion.div>
             )}
           </AnimatePresence>
-          
-          <button 
+
+          <button
             onClick={() => setShowKeyInput(!showKeyInput)}
-            style={{ 
-              ...iconBtnStyle, 
+            style={{
+              ...iconBtnStyle,
               background: showKeyInput ? 'var(--schemes-primary-container)' : 'var(--schemes-surface-container)',
               border: '1px solid var(--schemes-outline-variant)',
               color: showKeyInput ? 'var(--schemes-on-primary-container)' : 'var(--schemes-on-surface-variant)',
@@ -206,10 +206,10 @@ export function ModelsDownloader() {
             <Key size={18} />
           </button>
 
-          <button 
+          <button
             onClick={() => {
-              window.dispatchEvent(new CustomEvent('Magnolia-open-app', { 
-                detail: { type: 'browser', title: 'Browser', url: "https://huggingface.co/settings/tokens" } 
+              window.dispatchEvent(new CustomEvent('Magnolia-open-app', {
+                detail: { type: 'browser', title: 'Browser', url: "https://huggingface.co/settings/tokens" }
               }));
             }}
             style={{ ...iconBtnStyle, color: 'var(--schemes-primary)', gap: '6px', width: 'auto', padding: '8px 12px' }}
@@ -218,12 +218,12 @@ export function ModelsDownloader() {
           </button>
         </div>
       </div>
-      
+
       {/* Search Bar matching Figma Node */}
       <div className={styles.searchContainer}>
         <Search size={20} color="var(--schemes-on-surface-variant)" className={styles.searchIcon} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           className={styles.searchInput}
           placeholder="Search for a model to download"
           value={searchQuery}
@@ -256,7 +256,7 @@ export function ModelsDownloader() {
                     <HardwareFitChip fitState={model.fit} />
                   </div>
                 </div>
-                
+
                 {/* Media/Action Buttons */}
                 <div className={styles.cardMedia}>
                   {model.status === 'available' || model.status === 'downloading' ? (
@@ -270,12 +270,12 @@ export function ModelsDownloader() {
                   )}
                 </div>
               </div>
-              
+
               {/* Download Progress Indicator (Wavy / Linear) */}
               {model.status === 'downloading' && model.progress !== undefined && (
                 <div className={styles.progressWrapper}>
-                  <div 
-                    className={styles.progressBar} 
+                  <div
+                    className={styles.progressBar}
                     style={{ width: `${model.progress}%` }}
                   />
                 </div>
