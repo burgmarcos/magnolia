@@ -54,11 +54,18 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
 pub async fn move_to_trash(file_path: String) -> Result<(), String> {
     println!("[STORAGE] Moving {} to .magnolia-trash...", file_path);
     let source = PathBuf::from(&file_path);
-    let filename = source
+    let canonical_source =
+        fs::canonicalize(&source).map_err(|_| "File not found or access denied".to_string())?;
+
+    if !canonical_source.starts_with("/data") {
+        return Err("Security error: Cannot move files outside of /data to trash.".to_string());
+    }
+
+    let filename = canonical_source
         .file_name()
         .ok_or("Invalid file path")?
         .to_str()
-        .unwrap();
+        .ok_or("Invalid unicode in file path")?;
 
     let trash_dir = PathBuf::from("/data/.magnolia-trash");
     if !trash_dir.exists() {
@@ -203,8 +210,23 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum PartitionAction {
+    #[serde(alias = "Check", alias = "check")]
+    Check,
+    #[serde(alias = "Mount", alias = "mount")]
+    Mount,
+    #[serde(alias = "Unmount", alias = "unmount")]
+    Unmount,
+    #[serde(alias = "Format", alias = "format")]
+    Format,
+    #[serde(alias = "Resize", alias = "resize")]
+    Resize,
+}
+
 #[command]
-pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
+pub async fn manage_partition(name: String, action: PartitionAction) -> Result<(), String> {
     // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
     // Reject path traversal sequences and any non-alphanumeric characters.
     if !name.chars().all(|c| c.is_ascii_alphanumeric()) {
@@ -214,9 +236,9 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
         ));
     }
 
-    println!("[STORAGE] Executing {} on {}", action, name);
-    match action.as_str() {
-        "check" => {
+    println!("[STORAGE] Executing {:?} on {}", action, name);
+    match action {
+        PartitionAction::Check => {
             // Run filesystem check (non-destructive)
             let status = Command::new("fsck")
                 .args(["-n", &format!("/dev/{}", name)])
@@ -228,7 +250,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Filesystem check reported issues on {}", name))
             }
         }
-        "mount" => {
+        PartitionAction::Mount => {
             let mount_point = format!("/mnt/{}", name);
             fs::create_dir_all(&mount_point).map_err(|e| e.to_string())?;
             let status = Command::new("mount")
@@ -241,7 +263,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to mount {}", name))
             }
         }
-        "unmount" => {
+        PartitionAction::Unmount => {
             // Using the device path with umount works here because we control the
             // mount table (all mounts go through the "mount" branch above to /mnt/{name}).
             let status = Command::new("umount")
@@ -254,7 +276,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to unmount {}", name))
             }
         }
-        _ => Err(format!("Unsupported partition action: {}", action)),
+        _ => Err(format!("Unsupported partition action: {:?}", action)),
     }
 }
 
@@ -307,5 +329,19 @@ mod tests {
                 assert_eq!(e, "App binary not found or already archived.");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_move_to_trash_path_traversal() {
+        // Attempting to move a file outside of /data should fail
+        // Using /etc/passwd as it typically exists on Linux
+        // Even if it doesn't exist, canonicalize will fail which is expected behavior for invalid paths
+        let result = move_to_trash("/etc/passwd".to_string()).await;
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        assert!(
+            err_msg == "Security error: Cannot move files outside of /data to trash."
+                || err_msg == "File not found or access denied"
+        );
     }
 }

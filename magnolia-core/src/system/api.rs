@@ -129,10 +129,18 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
     })
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum PowerState {
+    Reboot,
+    Shutdown,
+    Suspend,
+}
+
 #[command]
-pub async fn set_power_state(action: String) -> Result<(), String> {
-    match action.as_str() {
-        "reboot" => {
+pub async fn set_power_state(action: PowerState) -> Result<(), String> {
+    match action {
+        PowerState::Reboot => {
             let status = Command::new("/sbin/reboot")
                 .status()
                 .map_err(|e| e.to_string())?;
@@ -140,7 +148,7 @@ pub async fn set_power_state(action: String) -> Result<(), String> {
                 return Err("Failed to reboot system".into());
             }
         }
-        "shutdown" => {
+        PowerState::Shutdown => {
             let status = Command::new("/sbin/poweroff")
                 .status()
                 .map_err(|e| e.to_string())?;
@@ -148,7 +156,7 @@ pub async fn set_power_state(action: String) -> Result<(), String> {
                 return Err("Failed to power off system".into());
             }
         }
-        "suspend" => {
+        PowerState::Suspend => {
             let status = Command::new("/bin/systemctl")
                 .arg("suspend")
                 .status()
@@ -157,7 +165,6 @@ pub async fn set_power_state(action: String) -> Result<(), String> {
                 return Err("Failed to suspend system".into());
             }
         }
-        _ => return Err("Invalid power action".into()),
     }
     Ok(())
 }
