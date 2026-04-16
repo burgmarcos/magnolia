@@ -3,7 +3,6 @@ import { ChevronRight, Key, ShieldCheck } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import toast from 'react-hot-toast';
 import styles from './GeneralSettings.module.css';
-import { isMissingSecureStorageKeyError } from '../../utils/secureStorage';
 
 interface GeneralSettingsProps {
   onNavigate: (route: 'models' | 'telegram' | 'general' | 'knowledge') => void;
@@ -23,11 +22,7 @@ export function GeneralSettings({ onNavigate, onWallpaperChange, currentWallpape
   useEffect(() => {
     invoke<string>('get_api_key', { service: 'huggingface' })
       .then(setHfToken)
-      .catch((error) => {
-        if (!isMissingSecureStorageKeyError(error)) {
-          toast.error(`Failed to load HuggingFace token: ${String(error)}`);
-        }
-      });
+      .catch(() => null);
   }, []);
 
   const saveHfToken = async () => {
