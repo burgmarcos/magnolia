@@ -197,12 +197,17 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
 
 #[command]
 pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
-    // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
+    // Validate device name: must be non-empty, reasonably sized, and
+    // alphanumeric only (e.g. "vda1", "sdb2").
     // Reject path traversal sequences and any non-alphanumeric characters.
-    if !name.chars().all(|c| c.is_ascii_alphanumeric()) {
+    const MAX_DEVICE_NAME_LEN: usize = 64;
+    if name.is_empty()
+        || name.len() > MAX_DEVICE_NAME_LEN
+        || !name.chars().all(|c| c.is_ascii_alphanumeric())
+    {
         return Err(format!(
-            "Invalid device name '{}': must match [a-zA-Z0-9]+ only",
-            name
+            "Invalid device name '{}': must be 1-{} ASCII alphanumeric characters",
+            name, MAX_DEVICE_NAME_LEN
         ));
     }
 
