@@ -198,8 +198,8 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
         "status": "pending",
         "requested_at": chrono::Utc::now().to_rfc3339()
     });
-    let payload = serde_json::to_string_pretty(&op)
-        .map_err(|e| format!("Failed to serialize boot resize operation: {}", e))?;
+    let payload =
+        serde_json::to_string_pretty(&op).unwrap_or_else(|e| format!("serialization error: {e}"));
     fs::write(&ops_path, payload).map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
 }
@@ -208,16 +208,10 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
 pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
     // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
     // Reject path traversal sequences and any non-alphanumeric characters.
-    // Linux block device names are typically short (e.g. sda, nvme0n1p1);
-    // 64 is a conservative upper bound that still blocks suspiciously long input.
-    const MAX_DEVICE_NAME_LEN: usize = 64;
-    if name.is_empty()
-        || name.len() > MAX_DEVICE_NAME_LEN
-        || !name.chars().all(|c| c.is_ascii_alphanumeric())
-    {
+    if !name.chars().all(|c| c.is_ascii_alphanumeric()) {
         return Err(format!(
-            "Invalid device name '{}': must be 1-{} ASCII alphanumeric characters",
-            name, MAX_DEVICE_NAME_LEN
+            "Invalid device name '{}': must match [a-zA-Z0-9]+ only",
+            name
         ));
     }
 
