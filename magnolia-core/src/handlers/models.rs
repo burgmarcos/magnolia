@@ -96,8 +96,8 @@ pub fn get_local_model_size_bytes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::telemetry::HardwareSpecs;
     use crate::telemetry::set_mock_hardware_specs;
+    use crate::telemetry::HardwareSpecs;
 
     fn get_dummy_specs(total_ram: u64, total_vram: u64) -> HardwareSpecs {
         HardwareSpecs {
