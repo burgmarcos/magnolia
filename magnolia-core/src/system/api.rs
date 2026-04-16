@@ -82,7 +82,7 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
     // Parse nmcli terse output: "yes:MyNetwork:85" or "no:Other:60"
     let active_line = stdout.lines().find(|line| line.starts_with("yes:"));
 
-    let (active_ssid, signal_strength) = if let Some(line) = active_line {
+    let (active_ssid, _signal_strength) = if let Some(line) = active_line {
         let parts: Vec<&str> = line.splitn(3, ':').collect();
         let ssid = parts.get(1).unwrap_or(&"").to_string();
         let signal = parts.get(2).unwrap_or(&"0").parse::<u8>().unwrap_or(0);
