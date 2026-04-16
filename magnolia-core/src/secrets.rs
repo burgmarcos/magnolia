@@ -124,27 +124,12 @@ mod tests {
     }
 
     #[test]
-    fn test_get_api_key_round_trip() {
-        let service = "round_trip_service";
-        let key = "round_trip_key_secret";
+    fn test_get_api_key_integration() {
+        let service = "integration_service";
+        let key = "integration_key_secret";
 
         set_api_key(service, key).expect("Setup failed");
         let result = get_api_key(service).expect("Retrieve failed");
-        assert_eq!(result, key, "Round-trip test for get_api_key failed");
-    }
-
-    #[test]
-    fn test_set_api_key_only() {
-        let service = "isolated_set_service";
-        let key = "isolated_key";
-        let res = set_api_key(service, key);
-        assert!(res.is_ok(), "Failed to set API key in isolated test");
-        MOCK_KEYRING.with(|k| {
-            assert_eq!(
-                k.borrow().get(service).cloned(),
-                Some(key.to_string()),
-                "Key was not saved to the mock keyring"
-            );
-        });
+        assert_eq!(result, key, "Integration test for get_api_key failed");
     }
 }
