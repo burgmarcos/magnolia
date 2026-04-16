@@ -288,14 +288,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_connect_to_wifi_argument_injection() {
-        let result = connect_to_wifi("--password".to_string(), "foo".to_string()).await;
+        let result = connect_to_wifi("--flag".to_string(), "foo".to_string()).await;
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
             "Invalid SSID or password format: cannot start with '-'"
         );
 
-        let result = connect_to_wifi("MyNetwork".to_string(), "-secret".to_string()).await;
+        let result = connect_to_wifi("MyNetwork".to_string(), "-value".to_string()).await;
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
