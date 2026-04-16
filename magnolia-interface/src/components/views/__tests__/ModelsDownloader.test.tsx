@@ -27,6 +27,9 @@ describe('ModelsDownloader', () => {
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
+      if (cmd === 'get_all_local_models_info') return Promise.resolve([
+        { id: 'model1.gguf', name: 'model1.gguf', size_bytes: 4000, fit: 'perfect' }
+      ]);
       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
@@ -45,15 +48,19 @@ describe('ModelsDownloader', () => {
   });
 
   it('shows skeleton loaders and empty state checks', async () => {
-    render(<ModelsDownloader />);
-
     // Configure mock for search failure mapping to empty state
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve([]);
-      if (cmd === 'search_hf_models') return Promise.resolve([{ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 }]);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
+      if (cmd === 'get_all_local_models_info') return Promise.resolve([]);
+      if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
+    });
+
+    render(<ModelsDownloader />);
+
+    // Wait for initial empty state
+    await waitFor(() => {
+      expect(screen.getByText(/No models found/)).toBeInTheDocument();
     });
 
     const input = screen.getByPlaceholderText('Search for a model to download');
