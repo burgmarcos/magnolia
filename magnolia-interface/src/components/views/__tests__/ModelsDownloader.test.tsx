@@ -1,19 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ModelsDownloader } from '../ModelsDownloader.tsx';
+import * as tauriApiCore from '@tauri-apps/api/core';
 
-// Hoisted mock function
-const mockInvoke = vi.fn();
-
-vi.mock('@tauri-apps/api/core', () => {
-  return {
-    __esModule: true,
-    invoke: mockInvoke,
-    default: {
-      invoke: mockInvoke,
-    }
-  };
-});
+vi.mock('@tauri-apps/api/core');
 
 vi.mock('react-hot-toast', () => ({
   default: {
@@ -22,12 +12,16 @@ vi.mock('react-hot-toast', () => ({
   }
 }));
 
+// Mock HardwareFitChip so it doesn't cause any rendering issues
+vi.mock('../../widgets/HardwareFitChip.tsx', () => ({
+  HardwareFitChip: () => <div data-testid="hardware-fit-chip"></div>
+}));
+
 describe('ModelsDownloader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvoke.mockReset();
 
-    mockInvoke.mockImplementation((cmd: string) => {
+    vi.mocked(tauriApiCore.invoke).mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
@@ -47,12 +41,11 @@ describe('ModelsDownloader', () => {
   });
 
   it('shows skeleton loaders and empty state checks', async () => {
-    mockInvoke.mockImplementation((cmd: string) => {
+    vi.mocked(tauriApiCore.invoke).mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve([]);
       if (cmd === 'get_api_key') return Promise.resolve('mock-key');
-      // Some versions of the test used an array, let's look at the component code.
-      // It expects an object: {id: string, size_on_disk_bytes: number}
       if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
+      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });
@@ -65,7 +58,7 @@ describe('ModelsDownloader', () => {
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 });
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith('search_hf_models', expect.any(Object));
+      expect(tauriApiCore.invoke).toHaveBeenCalledWith('search_hf_models', expect.any(Object));
     });
 
     await waitFor(() => {
@@ -85,7 +78,7 @@ describe('ModelsDownloader', () => {
     const toast = await import('react-hot-toast');
 
     // Configure mock for search failure mapping to empty state
-    mockInvoke.mockImplementation((cmd: string) => {
+    vi.mocked(tauriApiCore.invoke).mockImplementation((cmd: string) => {
       if (cmd === 'search_hf_models') return Promise.reject(new Error('HTTP Status: 401 Unauthorized'));
       return Promise.resolve();
     });
