@@ -1,0 +1,44 @@
+--- magnolia-interface/src/components/views/__tests__/ModelsDownloader.test.tsx
++++ magnolia-interface/src/components/views/__tests__/ModelsDownloader.test.tsx
+@@ -14,19 +14,14 @@
+     error: vi.fn(),
+   },
+-<<<<<<< HEAD
+-}));
+-
+-// Mock HardwareFitChip so it doesn't cause any rendering issues
+-vi.mock('../widgets/HardwareFitChip.tsx', () => ({
+-  HardwareFitChip: () => <div data-testid="hardware-fit-chip"></div>
+-}));
+-
+-=======
+   toast: {
+     success: vi.fn(),
+     error: vi.fn(),
+   }
+ }));
+
+->>>>>>> origin/main
++// Mock HardwareFitChip so it doesn't cause any rendering issues
++vi.mock('../widgets/HardwareFitChip.tsx', () => ({
++  HardwareFitChip: () => <div data-testid="hardware-fit-chip"></div>
++}));
++
+ describe('ModelsDownloader', () => {
+   let invokeMock: Mock;
+@@ -60,14 +55,6 @@
+
+-<<<<<<< HEAD
+     invokeMock.mockImplementation((cmd: string) => {
+       if (cmd === "get_api_key") return Promise.resolve("");
+       if (cmd === "get_local_models")
+         return Promise.reject(new Error("Simulated failure"));
+-=======
+-    // Configure mock for search failure mapping to empty state
+-    invokeMock.mockImplementation((cmd: string) => {
+-      if (cmd === 'get_local_models') return Promise.resolve([]);
+-      if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
+-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+->>>>>>> origin/main
+       return Promise.resolve();
+     });
