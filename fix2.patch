@@ -1,0 +1,20 @@
+--- magnolia-core/src/system/storage.rs
++++ magnolia-core/src/system/storage.rs
+@@ -165,13 +165,11 @@
+         "Security PIN not configured. Complete initial setup to set a PIN.".to_string()
+     })?;
+
+-    // SHA256(pin + user_confirm) must match stored hash
+-    let mut hasher = Sha256::new();
+-    hasher.update(pin.as_bytes());
+-    hasher.update(user_confirm.as_bytes());
+-    let computed_hash = format!("{:x}", hasher.finalize());
++    use argon2::{password_hash::{PasswordHash, PasswordVerifier}, Argon2};
++    let parsed_hash = PasswordHash::new(stored_hash.trim()).map_err(|_| "Invalid stored PIN hash format".to_string())?;
++    let argon2 = Argon2::default();
+
+-    if computed_hash.trim() == stored_hash.trim() {
++    if argon2.verify_password(pin.as_bytes(), &parsed_hash).is_ok() {
+         Ok(true)
+     } else {
+         Err("Security verification failed. Invalid PIN or Identity string.".to_string())

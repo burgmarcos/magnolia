@@ -1,0 +1,64 @@
+--- magnolia-interface/src/components/views/__tests__/ModelsDownloaderSearch.test.tsx
++++ magnolia-interface/src/components/views/__tests__/ModelsDownloaderSearch.test.tsx
+@@ -5,17 +5,6 @@
+ import { ModelsDownloader } from '../ModelsDownloader.tsx';
+ import toast from 'react-hot-toast';
+
+-<<<<<<< HEAD:magnolia-interface/src/components/views/__tests__/ModelsDownloader.test.tsx
+-const mockInvoke = vi.fn();
+-=======
+-// Mock the Tauri api
+-vi.mock('@tauri-apps/api/core', () => {
+-  const mockInvoke = vi.fn();
+-  return {
+-    invoke: mockInvoke,
+-    default: {
+-      invoke: mockInvoke,
+-    }
+-  };
+-});
+->>>>>>> origin/main:magnolia-interface/src/components/views/__tests__/ModelsDownloaderSearch.test.tsx
++const mockInvoke = vi.fn();
+
+ vi.mock('@tauri-apps/api/core', () => {
+   return {
+     invoke: (...args: unknown[]) => mockInvoke(...args),
+   };
+@@ -34,16 +23,9 @@
+ describe('ModelsDownloader - Search Models', () => {
+   let invokeMock: Mock;
+
+-  beforeEach(() => {
++  beforeEach(async () => {
+     vi.clearAllMocks();
+-<<<<<<< HEAD:magnolia-interface/src/components/views/__tests__/ModelsDownloader.test.tsx
+-
+-    invokeMock = mockInvoke;
+-=======
+-    const tauriApi = await import('@tauri-apps/api/core');
+-    invokeMock = tauriApi.invoke as Mock;
+->>>>>>> origin/main:magnolia-interface/src/components/views/__tests__/ModelsDownloaderSearch.test.tsx
++    invokeMock = mockInvoke;
+
+     invokeMock.mockImplementation((cmd: string) => {
+       if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
+       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
+@@ -55,17 +37,12 @@
+   it('shows skeleton loaders and empty state checks', async () => {
+     render(<ModelsDownloader />);
+
+-<<<<<<< HEAD:magnolia-interface/src/components/views/__tests__/ModelsDownloader.test.tsx
+-    invokeMock.mockImplementation((cmd: string) => {
+-      if (cmd === 'get_local_models') return Promise.resolve([]);
+-=======
+     // Wait for initial render to settle
+     await waitFor(() => {
+       expect(screen.getByText('model1.gguf')).toBeInTheDocument();
+     });
+
+     // Configure mock for search
+     invokeMock.mockImplementation((cmd: string) => {
+->>>>>>> origin/main:magnolia-interface/src/components/views/__tests__/ModelsDownloaderSearch.test.tsx
+       if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
+       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
+       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
