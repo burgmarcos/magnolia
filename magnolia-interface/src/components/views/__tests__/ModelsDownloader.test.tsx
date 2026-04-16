@@ -52,15 +52,19 @@ describe('ModelsDownloader', () => {
   });
 
   it('shows skeleton loaders and empty state checks', async () => {
+    render(<ModelsDownloader />);
+
+    await waitFor(() => {
+      expect(screen.getByText('model1.gguf')).toBeInTheDocument();
+    });
+
     mockInvoke.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve([]);
+      if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
       if (cmd === 'get_api_key') return Promise.resolve('mock-key');
       if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });
-
-    render(<ModelsDownloader />);
 
     const input = screen.getByPlaceholderText('Search for a model to download');
     fireEvent.change(input, { target: { value: 'llama' } });
