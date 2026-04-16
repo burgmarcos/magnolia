@@ -213,19 +213,20 @@ pub async fn commit_identity(pin: String, recovery_key: String) -> Result<(), St
         return Err("PIN and Recovery Key cannot be empty".to_string());
     }
 
-    use sha2::{Digest, Sha256};
-    let mut hasher = Sha256::new();
-    hasher.update(pin.as_bytes());
-    // In reality, don't just hash them together naively without salt.
-    // This is a minimal OS architecture mock.
-    hasher.update(recovery_key.as_bytes());
-
-    let result = hasher.finalize();
-    let hash_hex = format!("{:x}", result);
+    use argon2::{
+        password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+        Argon2,
+    };
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    let pin_hash = argon2
+        .hash_password(pin.as_bytes(), &salt)
+        .map_err(|e| e.to_string())?
+        .to_string();
 
     std::fs::create_dir_all("/data/system").map_err(|e| e.to_string())?;
-    std::fs::write("/data/system/identity.hash", hash_hex).map_err(|e| e.to_string())?;
-    std::fs::write("/data/system/pin.hash", pin).map_err(|e| e.to_string())?;
+    std::fs::write("/data/system/identity.hash", &recovery_key).map_err(|e| e.to_string())?;
+    std::fs::write("/data/system/pin.hash", pin_hash).map_err(|e| e.to_string())?;
 
     println!("[AUTH] Identity committed securely to OS hardware layer.");
     Ok(())
