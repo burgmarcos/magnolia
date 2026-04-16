@@ -77,7 +77,6 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
     // Parse nmcli terse output: "yes:MyNetwork:85" or "no:Other:60"
     let active_line = stdout.lines().find(|line| line.starts_with("yes:"));
 
-    #[allow(unused_variables)]
     let (active_ssid, signal_strength) = if let Some(line) = active_line {
         let parts: Vec<&str> = line.splitn(3, ':').collect();
         let ssid = parts.get(1).unwrap_or(&"").to_string();
@@ -112,7 +111,9 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
 #[command]
 pub async fn connect_to_wifi(ssid: String, password: String) -> Result<(), String> {
     let status = Command::new("nmcli")
-        .args(["dev", "wifi", "connect", &ssid, "password", &password])
+        .args([
+            "dev", "wifi", "connect", "--", &ssid, "password", "--", &password,
+        ])
         .status()
         .map_err(|e| format!("Failed to execute nmcli: {}", e))?;
 
