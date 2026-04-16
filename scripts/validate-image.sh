@@ -326,8 +326,9 @@ echo ""
 if [ "${FAIL}" -eq 0 ]; then
     echo -e "[${GREEN}RESULT${NC}] Image is READY for QEMU boot testing."
     echo ""
-    echo "  Next step: scripts/test-boot.sh"
-    echo "  Or headless: scripts/test-boot.sh --headless"
+    SCRIPT_DIR=$(dirname "$0")
+    echo "  Next step: ${SCRIPT_DIR}/test-boot.sh"
+    echo "  Or headless: ${SCRIPT_DIR}/test-boot.sh --headless"
     exit 0
 else
     echo -e "[${RED}RESULT${NC}] Image has ${FAIL} FAILURE(s). Fix before booting."
