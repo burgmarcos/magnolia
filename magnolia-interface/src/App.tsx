@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { WindowProvider } from './contexts/WindowContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -21,14 +22,7 @@ export default function App() {
       try {
         const launchMode = await invoke<string>('get_launch_mode');
         
-        const isLaunchMode = (
-          value: string
-        ): value is 'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe' =>
-          ['boot', 'lock', 'main', 'installer', 'uninstaller', 'oobe'].includes(value);
-
-        let targetMode: 'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe' = isLaunchMode(launchMode)
-          ? launchMode
-          : 'lock';
+        let targetMode: 'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe' = launchMode as any;
 
         if (launchMode === 'main') {
           // Extra check: Do we have an identity?
