@@ -1,37 +1,44 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { ModelsDownloader } from '../ModelsDownloader.tsx';
 import toast from 'react-hot-toast';
 
+const { mockInvoke } = vi.hoisted(() => ({
+  mockInvoke: vi.fn()
+}));
+
 // Mock the Tauri api
-vi.mock('@tauri-apps/api/core', () => {
-  const mockInvoke = vi.fn();
-  return {
-    invoke: mockInvoke,
-    default: {
-      invoke: mockInvoke,
-    }
-  };
-});
+vi.mock('@tauri-apps/api/core', () => ({
+  __esModule: true,
+  invoke: mockInvoke,
+  default: { invoke: mockInvoke }
+}));
+
+const { mockToastError, mockToastSuccess } = vi.hoisted(() => ({
+  mockToastError: vi.fn(),
+  mockToastSuccess: vi.fn(),
+}));
 
 // We must also mock react-hot-toast otherwise it might complain
 vi.mock('react-hot-toast', () => ({
   default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  }
+    success: mockToastSuccess,
+    error: mockToastError,
+  },
+  success: mockToastSuccess,
+  error: mockToastError,
 }));
 
 describe('ModelsDownloader - Local Models', () => {
-  let invokeMock: Mock;
+  beforeAll(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    const tauriApi = await import('@tauri-apps/api/core');
-    invokeMock = tauriApi.invoke as Mock;
 
     // Default mock implementation for mount
-    invokeMock.mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
@@ -40,7 +47,9 @@ describe('ModelsDownloader - Local Models', () => {
   });
 
   it('renders correctly and loads initial local models', async () => {
-    render(<ModelsDownloader />);
+    await act(async () => {
+      render(<ModelsDownloader />);
+    });
 
     expect(screen.getByText('Models')).toBeInTheDocument();
 
@@ -51,15 +60,19 @@ describe('ModelsDownloader - Local Models', () => {
   });
 
   it('shows error toast when failing to load local models', async () => {
-    invokeMock.mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.reject(new Error('Network error'));
       return Promise.resolve();
     });
 
-    render(<ModelsDownloader />);
+    const toastErrorSpy = vi.spyOn(toast, 'error');
+
+    await act(async () => {
+      render(<ModelsDownloader />);
+    });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('Failed to load local models'));
+      expect(toastErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to load local models: Error: Network error'));
     });
   });
 });
