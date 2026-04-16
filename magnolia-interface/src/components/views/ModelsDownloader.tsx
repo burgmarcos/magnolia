@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from 'react';
 import { Search, ArrowDownToLine, Trash2, Key, ShieldCheck, RefreshCw, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
