@@ -101,19 +101,6 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
         .unwrap_or("0.0.0.0")
         .to_string();
 
-    // Parse WiFi signal strength from nmcli
-    let signal_strength = Command::new("nmcli")
-        .args(["-t", "-f", "active,signal", "dev", "wifi"])
-        .output()
-        .ok()
-        .and_then(|out| {
-            String::from_utf8_lossy(&out.stdout)
-                .lines()
-                .find(|line| line.starts_with("yes:"))
-                .and_then(|line| line.replace("yes:", "").trim().parse::<u8>().ok())
-        })
-        .unwrap_or(0);
-
     Ok(NetworkInfo {
         ssid: active_ssid,
         ip_address,
@@ -123,6 +110,10 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
 
 #[command]
 pub async fn connect_to_wifi(ssid: String, password: String) -> Result<(), String> {
+    if ssid.starts_with('-') || password.starts_with('-') {
+        return Err("Invalid SSID or password format".to_string());
+    }
+
     let status = Command::new("nmcli")
         .args(["dev", "wifi", "connect", &ssid, "password", &password])
         .status()
