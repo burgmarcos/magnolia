@@ -26,18 +26,24 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
 
     if app_id.is_empty()
         || app_id.contains("..")
+        || app_id == "."
         || !app_id
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
     {
-        return Err("Invalid app_id: path traversal or invalid characters detected.".into());
+        return Err("Invalid app_id: path traversal detected.".into());
     }
-    let app_dir = format!("/data/apps/{}", app_id);
+
+    let base_dir = PathBuf::from("/data/apps");
+    let app_dir = base_dir.join(&app_id);
 
     // Simulate cloud sync and deletion of heavy binaries
-    let bin_path = format!("{}/binary.AppImage", app_dir);
+    let bin_path = app_dir.join("binary.AppImage");
     if fs::metadata(&bin_path).is_ok() {
-        println!("[STORAGE] Syncing {} to Sovereign Cloud...", bin_path);
+        println!(
+            "[STORAGE] Syncing {} to Sovereign Cloud...",
+            bin_path.display()
+        );
         // Delete locally to conserve the 5GB cap
         fs::remove_file(&bin_path).map_err(|e| e.to_string())?;
         println!(
@@ -296,7 +302,14 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            "Invalid app_id: path traversal or invalid characters detected."
+            "Invalid app_id: path traversal detected."
+        );
+
+        let result_dot = archive_app(".".to_string()).await;
+        assert!(result_dot.is_err());
+        assert_eq!(
+            result_dot.unwrap_err(),
+            "Invalid app_id: path traversal detected."
         );
 
         let result2 = archive_app("valid-app_id.123".to_string()).await;
