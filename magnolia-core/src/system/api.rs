@@ -130,6 +130,28 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
 }
 
 #[command]
+pub async fn connect_to_wifi(ssid: String, password: String) -> Result<(), String> {
+    // Claude / Copilot Note:
+    // We prevent Argument Injection by rejecting inputs starting with `-`.
+    // While Command::new doesn't use a shell (preventing typical shell injection),
+    // nmcli could interpret `-` prefixed strings as malicious flags (e.g. --password).
+    if ssid.starts_with('-') || password.starts_with('-') {
+        return Err("Invalid SSID or password format: cannot start with '-'".to_string());
+    }
+
+    let status = Command::new("nmcli")
+        .args(["dev", "wifi", "connect", &ssid, "password", &password])
+        .status()
+        .map_err(|e| format!("Failed to execute nmcli: {}", e))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("Could not connect to {}. Check credentials.", ssid))
+    }
+}
+
+#[command]
 pub async fn set_power_state(action: String) -> Result<(), String> {
     match action.as_str() {
         "reboot" => {
@@ -258,4 +280,26 @@ pub async fn detect_gpu() -> Result<String, String> {
         }
     }
     Ok("UNKNOWN".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_connect_to_wifi_argument_injection() {
+        let result = connect_to_wifi("--password".to_string(), "foo".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid SSID or password format: cannot start with '-'"
+        );
+
+        let result = connect_to_wifi("MyNetwork".to_string(), "-secret".to_string()).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid SSID or password format: cannot start with '-'"
+        );
+    }
 }
