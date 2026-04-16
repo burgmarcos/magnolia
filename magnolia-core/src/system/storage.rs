@@ -165,8 +165,12 @@ pub async fn verify_security_action(pin: String, user_confirm: String) -> Result
         "Security PIN not configured. Complete initial setup to set a PIN.".to_string()
     })?;
 
-    use argon2::{password_hash::{PasswordHash, PasswordVerifier}, Argon2};
-    let parsed_hash = PasswordHash::new(stored_hash.trim()).map_err(|_| "Invalid stored PIN hash format".to_string())?;
+    use argon2::{
+        password_hash::{PasswordHash, PasswordVerifier},
+        Argon2,
+    };
+    let parsed_hash = PasswordHash::new(stored_hash.trim())
+        .map_err(|_| "Invalid stored PIN hash format".to_string())?;
     let argon2 = Argon2::default();
 
     if argon2.verify_password(pin.as_bytes(), &parsed_hash).is_ok() {

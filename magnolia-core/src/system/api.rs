@@ -212,7 +212,10 @@ pub async fn commit_identity(pin: String, recovery_key: String) -> Result<(), St
     };
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
-    let pin_hash = argon2.hash_password(pin.as_bytes(), &salt).map_err(|e| e.to_string())?.to_string();
+    let pin_hash = argon2
+        .hash_password(pin.as_bytes(), &salt)
+        .map_err(|e| e.to_string())?
+        .to_string();
 
     std::fs::create_dir_all("/data/system").map_err(|e| e.to_string())?;
     std::fs::write("/data/system/identity.hash", &recovery_key).map_err(|e| e.to_string())?;
