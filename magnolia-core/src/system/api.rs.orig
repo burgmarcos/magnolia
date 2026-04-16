@@ -1,3 +1,4 @@
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process::Command;
@@ -85,7 +86,11 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
     let (active_ssid, _signal_strength) = if let Some(line) = active_line {
         let parts: Vec<&str> = line.splitn(3, ':').collect();
         let ssid = parts.get(1).unwrap_or(&"").to_string();
-        let signal = parts.get(2).unwrap_or(&"0").parse::<u8>().unwrap_or(0);
+        let signal = parts
+            .get(2)
+            .unwrap_or(&"0")
+            .parse::<u8>()
+            .unwrap_or(0);
         (ssid, signal)
     } else {
         ("Disconnected".to_string(), 0)
@@ -98,16 +103,11 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
         .map_err(|e| e.to_string())?;
 
     let ip_stdout = String::from_utf8_lossy(&ip_output.stdout);
-
-    let mut local_ip = "Unknown".to_string();
-    if let Some(pos) = ip_stdout.find("inet ") {
-        let ip_str = &ip_stdout[pos + 5..];
-        if let Some(end_pos) = ip_str.find('/') {
-            local_ip = ip_str[..end_pos].to_string();
-        } else if let Some(end_pos) = ip_str.find(' ') {
-            local_ip = ip_str[..end_pos].to_string();
-        }
-    }
+    let re = Regex::new(r"inet\s+(\d+\.\d+\.\d+\.\d+)").unwrap();
+    let local_ip = re
+        .captures(&ip_stdout)
+        .and_then(|cap| cap.get(1))
+        .map_or("Unknown".to_string(), |m| m.as_str().to_string());
 
     Ok(NetworkInfo {
         active_ssid,
@@ -168,7 +168,7 @@ pub async fn get_sync_quota() -> Result<u64, String> {
 pub async fn generate_recovery_key() -> Result<String, String> {
     // Generate a secure bip39 recovery phrase
     use bip39::{Language, Mnemonic};
-    let mut rng = bip39::rand::thread_rng();
+    let mut rng = rand::thread_rng();
     let mnemonic =
         Mnemonic::generate_in_with(&mut rng, Language::English, 24).map_err(|e| e.to_string())?;
 
@@ -229,7 +229,8 @@ pub async fn detect_gpu() -> Result<String, String> {
         {
             if line.to_lowercase().contains("nvidia") {
                 return Ok("NVIDIA".to_string());
-            } else if line.to_lowercase().contains("amd") || line.to_lowercase().contains("radeon")
+            } else if line.to_lowercase().contains("amd")
+                || line.to_lowercase().contains("radeon")
             {
                 return Ok("AMD".to_string());
             } else if line.to_lowercase().contains("intel") {
