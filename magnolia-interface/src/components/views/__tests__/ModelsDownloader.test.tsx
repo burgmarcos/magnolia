@@ -26,9 +26,7 @@ describe('ModelsDownloader', () => {
 
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+      if (cmd === 'get_all_local_models_info') return Promise.resolve([{ name: 'model1.gguf', size_bytes: 4000, fit_status: 'Fits Perfectly' }]);
       return Promise.resolve();
     });
   });
@@ -49,14 +47,14 @@ describe('ModelsDownloader', () => {
 
     // Configure mock for search failure mapping to empty state
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve([]);
-      if (cmd === 'search_hf_models') return Promise.resolve([{ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 }]);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
+      if (cmd === 'get_all_local_models_info') return Promise.resolve([]);
+      if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });
 
     const input = screen.getByPlaceholderText('Search for a model to download');
+    await waitFor(() => expect(screen.getByText('Models')).toBeInTheDocument());
     fireEvent.change(input, { target: { value: 'llama' } });
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 });
 
