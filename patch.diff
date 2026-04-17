@@ -1,11 +1,11 @@
---- magnolia-core/src/system/api.rs
-+++ magnolia-core/src/system/api.rs
-@@ -81,7 +81,7 @@
-     // Parse nmcli terse output: "yes:MyNetwork:85" or "no:Other:60"
-     let active_line = stdout.lines().find(|line| line.starts_with("yes:"));
-
--    let (active_ssid, signal_strength) = if let Some(line) = active_line {
-+    let (active_ssid, _signal_strength) = if let Some(line) = active_line {
-         let parts: Vec<&str> = line.splitn(3, ':').collect();
-         let ssid = parts.get(1).unwrap_or(&"").to_string();
-         let signal = parts
+--- magnolia-core/src/system/storage.rs
++++ magnolia-core/src/system/storage.rs
+@@ -2,7 +2,7 @@
+ use chrono;
+ use serde::{Deserialize, Serialize};
+ use serde_json::Value;
+-use sha2::{Digest, Sha256};
++use argon2::{Argon2, PasswordHash, PasswordVerifier};
+ use std::fs;
+ use std::path::PathBuf;
+ use std::process::Command;

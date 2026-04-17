@@ -1,0 +1,39 @@
+--- magnolia-interface/src/components/views/__tests__/ModelsDownloader.test.tsx
++++ magnolia-interface/src/components/views/__tests__/ModelsDownloader.test.tsx
+@@ -31,14 +31,10 @@
+
+     // Default mock implementation for mount
+     invokeMock.mockImplementation((cmd: string) => {
+-<<<<<<< HEAD
+-      if (cmd === "get_local_models") return Promise.resolve(["model1.gguf"]);
+-=======
+       if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
+       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
+       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+       if (cmd === 'get_api_key') return Promise.resolve(null);
+->>>>>>> origin/main
+       return Promise.resolve();
+     });
+   });
+@@ -57,22 +53,10 @@
+   it("handles load local models failure", async () => {
+     const { default: toast } = await import("react-hot-toast");
+
+-<<<<<<< HEAD
+     invokeMock.mockImplementation((cmd: string) => {
+       if (cmd === "get_api_key") return Promise.resolve("");
+       if (cmd === "get_local_models")
+         return Promise.reject(new Error("Simulated failure"));
+-=======
+-    // Wait for the initial load to finish before mocking
+-    await waitFor(() => {
+-        expect(screen.getByText('model1.gguf')).toBeInTheDocument();
+-    });
+-
+-    // Configure mock for search
+-    invokeMock.mockImplementation((cmd: string) => {
+-      if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
+-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+->>>>>>> origin/main
+       return Promise.resolve();
+     });

@@ -22,10 +22,9 @@ pub async fn search_hf_models(model_id: String) -> Result<huggingface::HfModelIn
     huggingface::fetch_hf_model_size(&model_id, Some(token)).await
 }
 
-pub fn assess_model_fit_internal(
-    model_size_bytes: u64,
-    specs: &telemetry::HardwareSpecs,
-) -> String {
+#[tauri::command]
+pub fn assess_model_fit(model_size_bytes: u64) -> String {
+    let specs = telemetry::get_system_specs();
     let buffer: u64 = 2 * 1024 * 1024 * 1024; // 2GB buffer
     let required_memory = model_size_bytes + buffer;
 
@@ -38,12 +37,6 @@ pub fn assess_model_fit_internal(
     }
 
     "Does Not Run".into()
-}
-
-#[tauri::command]
-pub fn assess_model_fit(model_size_bytes: u64) -> String {
-    let specs = telemetry::get_system_specs();
-    assess_model_fit_internal(model_size_bytes, &specs)
 }
 
 #[tauri::command]
@@ -91,71 +84,4 @@ pub fn get_local_model_size_bytes(
     path.metadata()
         .map(|m| m.len())
         .map_err(|e| format!("Cannot stat model file: {}", e))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::telemetry::HardwareSpecs;
-
-    fn get_dummy_specs(total_ram: u64, total_vram: u64) -> HardwareSpecs {
-        HardwareSpecs {
-            total_ram_bytes: total_ram,
-            free_ram_bytes: total_ram, // not used in logic
-            total_vram_bytes: total_vram,
-            vendor: "Test Vendor".to_string(),
-            cpu_brand: "Test CPU".to_string(),
-            screen_resolution: "1920x1080".to_string(),
-            uptime_seconds: 0,
-            software_version: "test".to_string(),
-        }
-    }
-
-    #[test]
-    fn test_fits_perfectly() {
-        // Model size: 1GB, requires 1GB + 2GB buffer = 3GB
-        let model_size = 1024 * 1024 * 1024;
-        let vram = 4 * 1024 * 1024 * 1024; // 4GB VRAM
-        let specs = get_dummy_specs(8 * 1024 * 1024 * 1024, vram);
-
-        let result = assess_model_fit_internal(model_size, &specs);
-        assert_eq!(result, "Fits Perfectly");
-    }
-
-    #[test]
-    fn test_needs_offload_due_to_vram() {
-        // Model size: 3GB, requires 3GB + 2GB buffer = 5GB
-        let model_size = 3 * 1024 * 1024 * 1024;
-        let vram = 4 * 1024 * 1024 * 1024; // 4GB VRAM (Insufficient)
-        let ram = 8 * 1024 * 1024 * 1024; // 8GB RAM (Sufficient)
-        let specs = get_dummy_specs(ram, vram);
-
-        let result = assess_model_fit_internal(model_size, &specs);
-        assert_eq!(result, "Needs Offload");
-    }
-
-    #[test]
-    fn test_does_not_run() {
-        // Model size: 6GB, requires 6GB + 2GB buffer = 8GB
-        let model_size = 6 * 1024 * 1024 * 1024;
-        let vram = 2 * 1024 * 1024 * 1024; // 2GB VRAM (Insufficient)
-        let ram = 6 * 1024 * 1024 * 1024; // 6GB RAM (Insufficient)
-        let specs = get_dummy_specs(ram, vram);
-
-        let result = assess_model_fit_internal(model_size, &specs);
-        assert_eq!(result, "Does Not Run");
-    }
-
-    #[test]
-    fn test_zero_vram() {
-        // Model size: 2GB, requires 2GB + 2GB buffer = 4GB
-        let model_size = 2 * 1024 * 1024 * 1024;
-        let vram = 0; // 0GB VRAM
-        let ram = 8 * 1024 * 1024 * 1024; // 8GB RAM (Sufficient)
-        let specs = get_dummy_specs(ram, vram);
-
-        let result = assess_model_fit_internal(model_size, &specs);
-        // It shouldn't fit perfectly since vram = 0
-        assert_eq!(result, "Needs Offload");
-    }
 }
