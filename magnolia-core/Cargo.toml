@@ -59,3 +59,7 @@ codegen-units = 1 # Better optimization
 lto = true # Link Time Optimization
 opt-level = "z" # Optimize for size (use "s" or "3" for performance)
 strip = true # Strip symbols
+
+[[bin]]
+name = "run_bench"
+path = "src/bin_bench.rs"
