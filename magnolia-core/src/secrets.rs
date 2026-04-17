@@ -112,4 +112,17 @@ mod tests {
             "Failed to save key securely: mock error"
         );
     }
+
+    #[test]
+    fn test_set_api_key_update_existing() {
+        let service = "test_update_service";
+        let initial_key = "initial_key_123";
+        let updated_key = "updated_key_456";
+
+        assert!(set_api_key(service, initial_key).is_ok());
+        assert_eq!(get_api_key(service).unwrap(), initial_key);
+
+        assert!(set_api_key(service, updated_key).is_ok());
+        assert_eq!(get_api_key(service).unwrap(), updated_key);
+    }
 }
