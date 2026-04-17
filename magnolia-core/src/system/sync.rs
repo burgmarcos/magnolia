@@ -119,7 +119,11 @@ impl SovereignEncrypter {
         let sha256_hex = format!("{:x}", hasher.finalize());
 
         Ok(SyncMetadata {
-            file_name: source.file_name().unwrap().to_string_lossy().into(),
+            file_name: source
+                .file_name()
+                .ok_or_else(|| anyhow::anyhow!("Invalid source file name"))?
+                .to_string_lossy()
+                .into(),
             original_size: total_bytes,
             encrypted_size,
             sha256: sha256_hex,
