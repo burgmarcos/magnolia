@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { ModelsDownloader } from '../ModelsDownloader.tsx';
+import toast from 'react-hot-toast';
 
 // Mock the Tauri api
 vi.mock('@tauri-apps/api/core', () => ({
@@ -47,10 +48,15 @@ describe('ModelsDownloader', () => {
   it('shows skeleton loaders and empty state checks', async () => {
     render(<ModelsDownloader />);
 
-    // Configure mock for search failure mapping to empty state
+    // Wait for the local models to load before changing the mock
+    await waitFor(() => {
+      expect(screen.getByText('model1.gguf')).toBeInTheDocument();
+    });
+
+    // Configure mock for search
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'get_local_models') return Promise.resolve([]);
-      if (cmd === 'search_hf_models') return Promise.resolve([{ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 }]);
+      if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
       if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
@@ -63,6 +69,22 @@ describe('ModelsDownloader', () => {
     // Wait for search to complete and render the new UI
     await waitFor(() => {
       expect(screen.getByText('Llama')).toBeInTheDocument();
+    });
+  });
+
+  it('shows error toast when local models fail to load', async () => {
+    // Spy on the mocked toast.error function
+    const toastErrorSpy = vi.spyOn(toast, 'error');
+
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === 'get_local_models') return Promise.reject(new Error('Tauri connection failed'));
+      return Promise.resolve();
+    });
+
+    render(<ModelsDownloader />);
+
+    await waitFor(() => {
+      expect(toastErrorSpy).toHaveBeenCalledWith('Failed to load local models: Error: Tauri connection failed');
     });
   });
 });
