@@ -44,7 +44,7 @@ export function ModelsDownloader() {
         .then(token => { if(token) setHfToken(token); })
         .catch(console.error);
 
-      invoke<{name: string, size_bytes: number, fit_status: string}[]>('get_all_local_models_info')
+      invoke<{name: string, fit_status: string}[]>('get_all_local_models_info')
         .then(localModels => {
           const installed: ModelItem[] = localModels.map(info => {
             let fit: FitState = 'cannot-run';
