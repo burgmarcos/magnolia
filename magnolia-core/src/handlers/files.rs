@@ -50,3 +50,60 @@ pub fn open_file(path: String) -> Result<(), String> {
 pub fn open_external_url(url: String) -> Result<(), String> {
     opener::open(url).map_err(|e| e.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_list_directory() {
+        // Create a temporary directory
+        let dir = tempdir().unwrap();
+        let dir_path = dir.path();
+
+        // Create some subdirectories
+        let sub_dir_1 = dir_path.join("subdir1");
+        fs::create_dir(&sub_dir_1).unwrap();
+
+        let sub_dir_2 = dir_path.join("subdir2");
+        fs::create_dir(&sub_dir_2).unwrap();
+
+        // Create some files
+        let file_1 = dir_path.join("file1.txt");
+        fs::write(&file_1, "hello").unwrap();
+
+        let file_2 = dir_path.join("file2.txt");
+        fs::write(&file_2, "world!!").unwrap();
+
+        // Call list_directory
+        let entries = list_directory(dir_path.to_string_lossy().to_string()).unwrap();
+
+        // Check the length
+        assert_eq!(entries.len(), 4);
+
+        // Check the entries and sorting
+        // Directories should be first, sorted alphabetically
+        assert_eq!(entries[0].name, "subdir1");
+        assert!(entries[0].is_dir);
+
+        assert_eq!(entries[1].name, "subdir2");
+        assert!(entries[1].is_dir);
+
+        // Files should be next, sorted alphabetically
+        assert_eq!(entries[2].name, "file1.txt");
+        assert!(!entries[2].is_dir);
+        assert_eq!(entries[2].size, 5);
+
+        assert_eq!(entries[3].name, "file2.txt");
+        assert!(!entries[3].is_dir);
+        assert_eq!(entries[3].size, 7);
+    }
+
+    #[test]
+    fn test_list_directory_error() {
+        let result = list_directory("non_existent_directory_path".to_string());
+        assert!(result.is_err());
+    }
+}
