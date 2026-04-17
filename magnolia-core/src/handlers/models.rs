@@ -159,3 +159,50 @@ mod tests {
         assert_eq!(result, "Needs Offload");
     }
 }
+
+
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct LocalModelInfo {
+    pub name: String,
+    pub size_bytes: u64,
+    pub fit_status: String,
+}
+
+#[tauri::command]
+pub fn get_all_local_models_info(app: tauri::AppHandle) -> Result<Vec<LocalModelInfo>, String> {
+    use tauri::Manager;
+    let specs = crate::telemetry::get_system_specs();
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_dir = app_data_dir.join("models");
+
+    let mut models = Vec::new();
+
+    if models_dir.exists() && models_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(models_dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        if ext == "gguf" {
+                            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                                let size_bytes = path.metadata().map(|m| m.len()).unwrap_or(0);
+                                let fit_status = assess_model_fit_internal(size_bytes, &specs);
+                                models.push(LocalModelInfo {
+                                    name: name.to_string(),
+                                    size_bytes,
+                                    fit_status,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        let _ = std::fs::create_dir_all(&models_dir);
+    }
+
+    Ok(models)
+}
