@@ -73,31 +73,28 @@ describe('MainDesktop', () => {
     });
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      render(
-        <LanguageProvider>
-          <WindowProvider>
-            <MainDesktop onLogout={onLogoutMock} />
-          </WindowProvider>
-        </LanguageProvider>
-      );
 
-      await waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith('load_session', expect.any(Object));
-      });
+    render(
+      <LanguageProvider>
+        <WindowProvider>
+          <MainDesktop onLogout={onLogoutMock} />
+        </WindowProvider>
+      </LanguageProvider>
+    );
 
-      fireEvent.click(screen.getByTestId('open-profile'));
+    await waitFor(() => {
+      expect(invokeMock).toHaveBeenCalledWith('load_session', expect.any(Object));
+    });
 
-      const logoutBtn = await screen.findByText('Logout & Exit');
-      fireEvent.click(logoutBtn);
+    fireEvent.click(screen.getByTestId('open-profile'));
 
-      await waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith('save_session', expect.any(Object));
-        expect(consoleSpy).toHaveBeenCalledWith('Session archival failed during logout:', expect.any(Error));
-        expect(onLogoutMock).toHaveBeenCalled();
-      });
-    } finally {
-      consoleSpy.mockRestore();
-    }
+    const logoutBtn = await screen.findByText('Logout & Exit');
+    fireEvent.click(logoutBtn);
+
+    await waitFor(() => {
+      expect(invokeMock).toHaveBeenCalledWith('save_session', expect.any(Object));
+      expect(consoleSpy).toHaveBeenCalledWith('Session archival failed during logout:', expect.any(Error));
+      expect(onLogoutMock).toHaveBeenCalled();
+    });
   });
 });
