@@ -189,15 +189,22 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
         "status": "pending",
         "requested_at": chrono::Utc::now().to_rfc3339()
     });
-    let payload = serde_json::to_string_pretty(&op)
-        .unwrap_or_else(|e| format!("serialization error: {e}"));
-    fs::write(&ops_path, payload)
-        .map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
+    let payload =
+        serde_json::to_string_pretty(&op).unwrap_or_else(|e| format!("serialization error: {e}"));
+    fs::write(&ops_path, payload).map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
 }
 
+#[derive(serde::Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum PartitionAction {
+    Check,
+    Mount,
+    Unmount,
+}
+
 #[command]
-pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
+pub async fn manage_partition(name: String, action: PartitionAction) -> Result<(), String> {
     // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
     // Reject path traversal sequences and any non-alphanumeric characters.
     if !name.chars().all(|c| c.is_ascii_alphanumeric()) {
@@ -207,9 +214,9 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
         ));
     }
 
-    println!("[STORAGE] Executing {} on {}", action, name);
-    match action.as_str() {
-        "check" => {
+    println!("[STORAGE] Executing {:?} on {}", action, name);
+    match action {
+        PartitionAction::Check => {
             // Run filesystem check (non-destructive)
             let status = Command::new("fsck")
                 .args(["-n", &format!("/dev/{}", name)])
@@ -221,11 +228,11 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Filesystem check reported issues on {}", name))
             }
         }
-        "mount" => {
+        PartitionAction::Mount => {
             let mount_point = format!("/mnt/{}", name);
             fs::create_dir_all(&mount_point).map_err(|e| e.to_string())?;
             let status = Command::new("mount")
-                .args([&format!("/dev/{}", name), &mount_point])
+                .args([format!("/dev/{}", name), mount_point])
                 .status()
                 .map_err(|e| e.to_string())?;
             if status.success() {
@@ -234,11 +241,11 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to mount {}", name))
             }
         }
-        "unmount" => {
+        PartitionAction::Unmount => {
             // Using the device path with umount works here because we control the
             // mount table (all mounts go through the "mount" branch above to /mnt/{name}).
             let status = Command::new("umount")
-                .arg(&format!("/dev/{}", name))
+                .arg(format!("/dev/{}", name))
                 .status()
                 .map_err(|e| e.to_string())?;
             if status.success() {
@@ -247,7 +254,6 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to unmount {}", name))
             }
         }
-        _ => Err(format!("Unsupported partition action: {}", action)),
     }
 }
 
