@@ -12,10 +12,10 @@ const MagnoliaInstallerFlow = lazy(() => import('./components/views/MagnoliaInst
 const MagnoliaUninstallFlow = lazy(() => import('./components/views/MagnoliaUninstallFlow').then(m => ({ default: m.SovereignUninstallFlow })));
 const SovereignOOBE = lazy(() => import('./components/views/SovereignOOBE').then(m => ({ default: m.SovereignOOBE })));
 
-type LaunchMode = 'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe';
+type AppMode = 'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe';
 
 export default function App() {
-  const [mode, setMode] = useState<LaunchMode>('boot');
+  const [mode, setMode] = useState<AppMode>('boot');
 
   useEffect(() => {
     // Check launch mode from Tauri backend
@@ -23,7 +23,7 @@ export default function App() {
       try {
         const launchMode = await invoke<string>('get_launch_mode');
         
-        let targetMode: LaunchMode = launchMode as LaunchMode;
+        let targetMode: AppMode = launchMode as AppMode;
 
         if (launchMode === 'main') {
           // Extra check: Do we have an identity?
