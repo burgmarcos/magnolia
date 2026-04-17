@@ -32,9 +32,7 @@ describe('ModelsDownloader - Local Models', () => {
 
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+      if (cmd === 'get_all_local_models_info') return Promise.resolve([{ id: 'model1.gguf', size_bytes: 4000, fit_status: 'Fits Perfectly' }]);
       return Promise.resolve();
     });
   });
@@ -52,7 +50,7 @@ describe('ModelsDownloader - Local Models', () => {
 
   it('shows error toast when failing to load local models', async () => {
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.reject(new Error('Network error'));
+      if (cmd === 'get_all_local_models_info') return Promise.reject(new Error('Network error'));
       return Promise.resolve();
     });
 

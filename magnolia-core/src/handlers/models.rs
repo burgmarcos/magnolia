@@ -93,6 +93,50 @@ pub fn get_local_model_size_bytes(
         .map_err(|e| format!("Cannot stat model file: {}", e))
 }
 
+#[derive(serde::Serialize)]
+pub struct LocalModelInfo {
+    pub id: String,
+    pub size_bytes: u64,
+    pub fit_status: String,
+}
+
+#[tauri::command]
+pub fn get_all_local_models_info(app: tauri::AppHandle) -> Result<Vec<LocalModelInfo>, String> {
+    use tauri::Manager;
+    let specs = telemetry::get_system_specs();
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_dir = app_data_dir.join("models");
+
+    let mut models_info = Vec::new();
+
+    if models_dir.exists() && models_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(&models_dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(ext) = path.extension() {
+                        if ext == "gguf" {
+                            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                                let size_bytes = path.metadata().map(|m| m.len()).unwrap_or(0);
+                                let fit_status = assess_model_fit_internal(size_bytes, &specs);
+                                models_info.push(LocalModelInfo {
+                                    id: name.to_string(),
+                                    size_bytes,
+                                    fit_status,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        let _ = std::fs::create_dir_all(&models_dir);
+    }
+
+    Ok(models_info)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
