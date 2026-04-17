@@ -81,18 +81,25 @@ pub async fn generate_document_embeddings(conn: &mut Connection) -> Result<usize
                 .filter(|s| !s.trim().is_empty())
                 .collect();
 
+            let mut document_chunks_to_insert = Vec::new();
+
             for (idx, chunk) in chunks.iter().enumerate() {
                 // Get vector from local API
                 if let Ok(emb) = fetch_embedding(chunk).await {
-                    let tx = conn.transaction().map_err(|e| e.to_string())?;
-
                     // sqlite-vec directly accepts a JSON string format containing floats `[0.1, 0.2, ...]`!
                     let emb_json = serde_json::to_string(&emb).map_err(|e| e.to_string())?;
+                    document_chunks_to_insert.push((idx as u32, chunk.to_string(), emb_json));
+                }
+            }
 
+            if !document_chunks_to_insert.is_empty() {
+                let tx = conn.transaction().map_err(|e| e.to_string())?;
+
+                for (idx, chunk, emb_json) in document_chunks_to_insert {
                     // Insert to physical table
                     tx.execute(
                         "INSERT INTO nodes (document_id, chunk_index, content) VALUES (?1, ?2, ?3)",
-                        params![doc_id, idx as u32, chunk],
+                        params![doc_id, idx, chunk],
                     )
                     .map_err(|e| e.to_string())?;
 
@@ -105,9 +112,9 @@ pub async fn generate_document_embeddings(conn: &mut Connection) -> Result<usize
                     )
                     .map_err(|e| e.to_string())?;
 
-                    tx.commit().map_err(|e| e.to_string())?;
                     total_chunks_embedded += 1;
                 }
+                tx.commit().map_err(|e| e.to_string())?;
             }
         }
     }
