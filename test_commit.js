@@ -1,1 +1,0 @@
-console.log("If the frontend calls commit_identity with { mnemonic: mnemonic.join(' ') }, how does it map to `pin` and `recovery_key` in Rust? Oh wait, does the frontend pass `pin: '1234', recovery_key: mnemonic.join(' ')`? No, the code says `await invoke('commit_identity', { mnemonic: mnemonic.join(' ') });`... Let's look at SoveignOOBE.tsx in full.");

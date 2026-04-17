@@ -1,5 +1,0 @@
-🔒 [Security Fix] Prevent path traversal in `move_to_trash`
-
-🎯 What: A path traversal vulnerability existed in `move_to_trash` within `magnolia-core/src/system/storage.rs`. While the destination was safe, the source path (`file_path`) lacked validation.
-⚠️ Risk: An attacker or malicious user process could supply an absolute path (like `/etc/passwd` or `/etc/shadow`) or relative paths with `..`, resulting in the unprivileged removal/moving of critical system files to the trash. This acts as an unintended privileged exfiltration vector or local DoS.
-🛡️ Solution: Updated `move_to_trash` to run `fs::canonicalize` on the source path. We then verify if the resulting true path begins with `/data`, ensuring it only moves files belonging to user and app spaces. A test has also been added to ensure files outside `/data` fail to be moved to the trash bin.
