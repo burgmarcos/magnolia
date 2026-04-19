@@ -1,5 +1,5 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { ModelsDownloader } from '../ModelsDownloader.tsx';
 import toast from 'react-hot-toast';
 
@@ -34,14 +34,16 @@ describe('ModelsDownloader - Local Models', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
+  afterAll(() => {
+    vi.restoreAllMocks();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Default mock implementation for mount
     mockInvoke.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+      if (cmd === 'get_all_local_models_info') return Promise.resolve([{ name: 'model1.gguf', fit_status: 'Fits Perfectly' }]);
       return Promise.resolve();
     });
   });
@@ -61,7 +63,7 @@ describe('ModelsDownloader - Local Models', () => {
 
   it('shows error toast when failing to load local models', async () => {
     mockInvoke.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.reject(new Error('Network error'));
+      if (cmd === 'get_all_local_models_info') return Promise.reject(new Error('Network error'));
       return Promise.resolve();
     });
 

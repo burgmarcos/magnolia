@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, type Mock } from 'vitest';
 import { ModelsDownloader } from '../ModelsDownloader.tsx';
 
 // Mock the Tauri api
@@ -24,6 +24,14 @@ vi.mock('react-hot-toast', () => ({
 describe('ModelsDownloader - Search Models', () => {
   let invokeMock: Mock;
 
+  beforeAll(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
+  });
+
   beforeEach(async () => {
     vi.clearAllMocks();
     const tauriApi = await import('@tauri-apps/api/core');
@@ -31,15 +39,15 @@ describe('ModelsDownloader - Search Models', () => {
 
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_local_models') return Promise.resolve(['model1.gguf']);
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
-      if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
+      if (cmd === 'get_all_local_models_info') return Promise.resolve([{ name: 'model1.gguf', fit_status: 'Fits Perfectly' }]);
       return Promise.resolve();
     });
   });
 
-  it('shows skeleton loaders and empty state checks', async () => {
-    render(<ModelsDownloader />);
+  it('searches for a model and renders the result', async () => {
+    await act(async () => {
+      render(<ModelsDownloader />);
+    });
 
     // Wait for initial render to settle
     await waitFor(() => {
@@ -49,7 +57,6 @@ describe('ModelsDownloader - Search Models', () => {
     // Configure mock for search
     invokeMock.mockImplementation((cmd: string) => {
       if (cmd === 'search_hf_models') return Promise.resolve({ id: 'TheBloke/Llama', size_on_disk_bytes: 4000 });
-      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(4000);
       if (cmd === 'assess_model_fit') return Promise.resolve('Fits Perfectly');
       return Promise.resolve();
     });

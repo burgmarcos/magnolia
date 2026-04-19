@@ -46,6 +46,12 @@ pub fn assess_model_fit(model_size_bytes: u64) -> String {
     assess_model_fit_internal(model_size_bytes, &specs)
 }
 
+#[derive(serde::Serialize)]
+pub struct LocalModelInfo {
+    pub name: String,
+    pub fit_status: String,
+}
+
 #[tauri::command]
 pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     use tauri::Manager;
@@ -74,6 +80,22 @@ pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     }
 
     Ok(models)
+}
+
+#[tauri::command]
+pub fn get_all_local_models_info(app: tauri::AppHandle) -> Result<Vec<LocalModelInfo>, String> {
+    let models = get_local_models(app.clone())?;
+    let mut infos = Vec::with_capacity(models.len());
+    let specs = crate::telemetry::get_system_specs();
+
+    for name in models {
+        let fit_status = match get_local_model_size_bytes(app.clone(), name.clone()) {
+            Ok(size_bytes) => assess_model_fit_internal(size_bytes, &specs),
+            Err(_) => "Does Not Run".to_string(),
+        };
+        infos.push(LocalModelInfo { name, fit_status });
+    }
+    Ok(infos)
 }
 
 #[tauri::command]
