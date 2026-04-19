@@ -1,71 +1,152 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { MainDesktop } from '../MainDesktop';
+import { MainDesktop } from '../MainDesktop.tsx';
 import { WindowProvider } from '../../../contexts/WindowContext';
 import { LanguageProvider } from '../../../context/LanguageContext';
+import { PreferencesProvider } from '../../../context/PreferencesContext';
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
+// Mock Tauri api
+vi.mock('@tauri-apps/api/core', () => {
+  const mockInvoke = vi.fn();
+  return {
+    invoke: mockInvoke,
+    default: { invoke: mockInvoke }
+  };
+});
+
+// Mock Tauri event API
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn().mockReturnValue(Promise.resolve(vi.fn()))
 }));
 
-vi.mock('../../layout/DesktopEnvironment', () => ({
-  DesktopEnvironment: ({ children }: { children: React.ReactNode }) => <div data-testid="desktop-env">{children}</div>
-}));
-
-vi.mock('../../layout/XRNavigationBar', () => ({
-  XRNavigationBar: () => <div data-testid="xr-navigation-bar" />
-}));
-
-vi.mock('../../layout/XRAppBar', () => ({
-  XRAppBar: ({ onOpenProfile }: { onOpenProfile?: () => void }) => (
-    <button data-testid="open-profile" onClick={onOpenProfile}>
-      Open Profile
-    </button>
-  )
+// Mock react-hot-toast
+vi.mock('react-hot-toast', () => ({
+  default: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+  Toaster: () => <div data-testid="toaster" />
 }));
 
 describe('MainDesktop', () => {
   let invokeMock: Mock;
-  const onLogoutMock = vi.fn();
 
   beforeEach(async () => {
     vi.clearAllMocks();
     const tauriApi = await import('@tauri-apps/api/core');
     invokeMock = tauriApi.invoke as Mock;
-  });
 
-  it('calls onLogout even if save_session fails', async () => {
-    invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'save_session') return Promise.reject(new Error('save_session failed'));
-      return Promise.resolve({ windows: [], configs: {} }); // Mock load_session response
+    // Default implementation returns sensible empty values
+    invokeMock.mockImplementation((cmd) => {
+      if (cmd === 'get_local_models') return Promise.resolve([]);
+      if (cmd === 'get_local_model_size_bytes') return Promise.resolve(0);
+      return Promise.resolve();
     });
 
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
+    // Silence error logs
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  const renderDesktop = async (mockOnLogout: Mock) => {
+    await act(async () => {
       render(
-        <LanguageProvider>
-          <WindowProvider>
-            <MainDesktop onLogout={onLogoutMock} />
-          </WindowProvider>
-        </LanguageProvider>
+        <PreferencesProvider>
+          <LanguageProvider>
+            <WindowProvider>
+              <MainDesktop onLogout={mockOnLogout} />
+            </WindowProvider>
+          </LanguageProvider>
+        </PreferencesProvider>
       );
+    });
+  };
 
-      await waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith('load_session', expect.any(Object));
-      });
+  it('handles save_session failure gracefully during logout', async () => {
+    const mockOnLogout = vi.fn();
 
-      fireEvent.click(screen.getByTestId('open-profile'));
+    // Mock the invoke call to fail when saving session
+    invokeMock.mockImplementation((cmd) => {
+      if (cmd === 'save_session') {
+        return Promise.reject(new Error('Test failure'));
+      }
+      if (cmd === 'get_local_models') return Promise.resolve([]);
+      return Promise.resolve();
+    });
 
-      const logoutBtn = await screen.findByText('Logout & Exit');
-      fireEvent.click(logoutBtn);
+    await renderDesktop(mockOnLogout);
 
-      await waitFor(() => {
-        expect(invokeMock).toHaveBeenCalledWith('save_session', expect.any(Object));
-        expect(consoleSpy).toHaveBeenCalledWith('Session archival failed during logout:', expect.any(Error));
-        expect(onLogoutMock).toHaveBeenCalled();
-      });
-    } finally {
-      consoleSpy.mockRestore();
-    }
+    // Find the profile button by its container class structure
+    const profileContainers = document.querySelectorAll('div[class*="leadingIcon"]');
+    expect(profileContainers.length).toBeGreaterThan(0);
+
+    await act(async () => {
+      fireEvent.click(profileContainers[0]);
+    });
+
+    // Find and click the logout button
+    const logoutButton = screen.getByText('Logout & Exit');
+
+    await act(async () => {
+      fireEvent.click(logoutButton);
+    });
+
+    // Wait for the async invoke inside logout to finish
+    await waitFor(() => {
+      // Assert invoke was called
+      expect(invokeMock).toHaveBeenCalledWith('save_session', expect.anything());
+
+      // Assert onLogout was still called despite the failure
+      expect(mockOnLogout).toHaveBeenCalled();
+
+      // Console error should have been called logging the failure
+      expect(console.error).toHaveBeenCalledWith(
+        "Session archival failed during logout:",
+        expect.any(Error)
+      );
+    });
+  });
+
+  it('handles save_session success correctly during logout', async () => {
+    const mockOnLogout = vi.fn();
+
+    // Mock the invoke call to succeed when saving session
+    invokeMock.mockImplementation((cmd) => {
+      if (cmd === 'save_session') {
+        return Promise.resolve();
+      }
+      if (cmd === 'get_local_models') return Promise.resolve([]);
+      return Promise.resolve();
+    });
+
+    await renderDesktop(mockOnLogout);
+
+    // Open profile menu
+    const profileContainers = document.querySelectorAll('div[class*="leadingIcon"]');
+
+    await act(async () => {
+      fireEvent.click(profileContainers[0]);
+    });
+
+    // Find and click the logout button
+    const logoutButton = screen.getByText('Logout & Exit');
+
+    await act(async () => {
+      fireEvent.click(logoutButton);
+    });
+
+    // Wait for the async invoke inside logout to finish
+    await waitFor(() => {
+      // Assert invoke was called
+      expect(invokeMock).toHaveBeenCalledWith('save_session', expect.anything());
+
+      // Assert onLogout was still called
+      expect(mockOnLogout).toHaveBeenCalled();
+
+      // Console error should not have been called for session failure
+      expect(console.error).not.toHaveBeenCalledWith(
+        "Session archival failed during logout:",
+        expect.any(Error)
+      );
+    });
   });
 });
