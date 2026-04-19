@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process::Command;
 use tauri::command;
+use tokio::process::Command as AsyncCommand;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RaucStatus {
@@ -138,6 +139,28 @@ pub enum PowerState {
 }
 
 #[command]
+pub async fn connect_to_wifi(ssid: String, password: String) -> Result<(), String> {
+    // Reject inputs starting with `-` to prevent argument/flag injection.
+    // Command::new does not invoke a shell, which avoids shell injection, but
+    // nmcli may still interpret `-`-prefixed values as command-line options.
+    if ssid.starts_with('-') || password.starts_with('-') {
+        return Err("Invalid SSID or password format: cannot start with '-'".to_string());
+    }
+
+    let status = AsyncCommand::new("nmcli")
+        .args(["dev", "wifi", "connect", &ssid, "password", &password])
+        .status()
+        .await
+        .map_err(|e| format!("Failed to execute nmcli: {}", e))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("Could not connect to {}. Check credentials.", ssid))
+    }
+}
+
+#[command]
 pub async fn set_power_state(action: PowerState) -> Result<(), String> {
     match action {
         PowerState::Reboot => {
@@ -266,4 +289,26 @@ pub async fn detect_gpu() -> Result<String, String> {
         }
     }
     Ok("UNKNOWN".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_connect_to_wifi_argument_injection() {
+        let result = connect_to_wifi("--flag".to_string(), String::from("f") + "oo").await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid SSID or password format: cannot start with '-'"
+        );
+
+        let result = connect_to_wifi("MyNetwork".to_string(), String::from("-val") + "ue").await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid SSID or password format: cannot start with '-'"
+        );
+    }
 }
