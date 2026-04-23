@@ -136,6 +136,7 @@ pub fn run() {
             system::search::search_mempalace,
             // Audit
             system::audit::log_permission_event,
+            system::audit::log_permission_events,
             system::audit::get_permission_history,
             // P2P Updates
             system::p2p_updates::discover_update_peers,

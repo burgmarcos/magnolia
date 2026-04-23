@@ -97,10 +97,8 @@ export const AppStore: React.FC = () => {
     setAppStates(prev => ({ ...prev, [app.id]: { state: 'downloading', progress: 0 } }));
 
     // Log the permission request to the audit trail
-    if (app.permissions) {
-      for (const p of app.permissions) {
-        invoke('log_permission_event', { appId: app.name, permission: p, status: 'Requested' });
-      }
+    if (app.permissions && app.permissions.length > 0) {
+      invoke('log_permission_events', { appId: app.name, permissions: app.permissions, status: 'Requested' });
     }
 
     // Mock progress since download_app is currently a flat async call
