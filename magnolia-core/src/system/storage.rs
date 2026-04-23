@@ -19,6 +19,20 @@ pub struct DiskInfo {
     pub filesystem: String,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub enum PartitionAction {
+    #[serde(rename = "check", alias = "Check")]
+    Check,
+    #[serde(rename = "mount", alias = "Mount")]
+    Mount,
+    #[serde(rename = "unmount", alias = "Unmount")]
+    Unmount,
+    #[serde(rename = "format", alias = "Format")]
+    Format,
+    #[serde(rename = "resize", alias = "Resize")]
+    Resize,
+}
+
 #[command]
 pub async fn archive_app(app_id: String) -> Result<(), String> {
     println!("[STORAGE] Archiving App: {}", app_id);
