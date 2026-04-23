@@ -231,12 +231,6 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
     Ok(())
 }
 
-    #[serde(alias = "Format", alias = "format")]
-    Format,
-    #[serde(alias = "Resize", alias = "resize")]
-    Resize,
-}
-
 #[command]
 pub async fn manage_partition(name: String, action: PartitionAction) -> Result<(), String> {
     // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
