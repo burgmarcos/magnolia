@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -31,15 +30,19 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
     {
-        return Err("Invalid app_id: path traversal or invalid characters detected.".into());
+        return Err("Invalid app_id: path traversal detected.".into());
     }
 
-    let app_dir = format!("/data/apps/{}", app_id);
+    let base_dir = PathBuf::from("/data/apps");
+    let app_dir = base_dir.join(&app_id);
 
     // Simulate cloud sync and deletion of heavy binaries
-    let bin_path = format!("{}/binary.AppImage", app_dir);
+    let bin_path = app_dir.join("binary.AppImage");
     if fs::metadata(&bin_path).is_ok() {
-        println!("[STORAGE] Syncing {} to Sovereign Cloud...", bin_path);
+        println!(
+            "[STORAGE] Syncing {} to Sovereign Cloud...",
+            bin_path.display()
+        );
         // Delete locally to conserve the 5GB cap
         fs::remove_file(&bin_path).map_err(|e| e.to_string())?;
         println!(
@@ -56,11 +59,18 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
 pub async fn move_to_trash(file_path: String) -> Result<(), String> {
     println!("[STORAGE] Moving {} to .magnolia-trash...", file_path);
     let source = PathBuf::from(&file_path);
-    let filename = source
+    let canonical_source =
+        fs::canonicalize(&source).map_err(|_| "File not found or access denied".to_string())?;
+
+    if !canonical_source.starts_with("/data") {
+        return Err("Security error: Cannot move files outside of /data to trash.".to_string());
+    }
+
+    let filename = canonical_source
         .file_name()
         .ok_or("Invalid file path")?
         .to_str()
-        .unwrap();
+        .ok_or("Invalid unicode in file path")?;
 
     let trash_dir = PathBuf::from("/data/.magnolia-trash");
     if !trash_dir.exists() {
@@ -168,13 +178,15 @@ pub async fn verify_security_action(pin: String, user_confirm: String) -> Result
         "Security PIN not configured. Complete initial setup to set a PIN.".to_string()
     })?;
 
-    // SHA256(pin + user_confirm) must match stored hash
-    let mut hasher = Sha256::new();
-    hasher.update(pin.as_bytes());
-    hasher.update(user_confirm.as_bytes());
-    let computed_hash = format!("{:x}", hasher.finalize());
+    use argon2::{
+        password_hash::{PasswordHash, PasswordVerifier},
+        Argon2,
+    };
+    let parsed_hash = PasswordHash::new(stored_hash.trim())
+        .map_err(|_| "Invalid stored PIN hash format".to_string())?;
+    let argon2 = Argon2::default();
 
-    if computed_hash.trim() == stored_hash.trim() {
+    if argon2.verify_password(pin.as_bytes(), &parsed_hash).is_ok() {
         Ok(true)
     } else {
         Err("Security verification failed. Invalid PIN or Identity string.".to_string())
@@ -205,8 +217,23 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum PartitionAction {
+    #[serde(alias = "Check", alias = "check")]
+    Check,
+    #[serde(alias = "Mount", alias = "mount")]
+    Mount,
+    #[serde(alias = "Unmount", alias = "unmount")]
+    Unmount,
+    #[serde(alias = "Format", alias = "format")]
+    Format,
+    #[serde(alias = "Resize", alias = "resize")]
+    Resize,
+}
+
 #[command]
-pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
+pub async fn manage_partition(name: String, action: PartitionAction) -> Result<(), String> {
     // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
     // Reject path traversal sequences and any non-alphanumeric characters.
     if !name.chars().all(|c| c.is_ascii_alphanumeric()) {
@@ -216,9 +243,9 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
         ));
     }
 
-    println!("[STORAGE] Executing {} on {}", action, name);
-    match action.as_str() {
-        "check" => {
+    println!("[STORAGE] Executing {:?} on {}", action, name);
+    match action {
+        PartitionAction::Check => {
             // Run filesystem check (non-destructive)
             let status = Command::new("fsck")
                 .args(["-n", &format!("/dev/{}", name)])
@@ -230,7 +257,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Filesystem check reported issues on {}", name))
             }
         }
-        "mount" => {
+        PartitionAction::Mount => {
             let mount_point = format!("/mnt/{}", name);
             fs::create_dir_all(&mount_point).map_err(|e| e.to_string())?;
             let status = Command::new("mount")
@@ -243,7 +270,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to mount {}", name))
             }
         }
-        "unmount" => {
+        PartitionAction::Unmount => {
             // Using the device path with umount works here because we control the
             // mount table (all mounts go through the "mount" branch above to /mnt/{name}).
             let status = Command::new("umount")
@@ -256,7 +283,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to unmount {}", name))
             }
         }
-        _ => Err(format!("Unsupported partition action: {}", action)),
+        _ => Err(format!("Unsupported partition action: {:?}", action)),
     }
 }
 
@@ -298,7 +325,14 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            "Invalid app_id: path traversal or invalid characters detected."
+            "Invalid app_id: path traversal detected."
+        );
+
+        let result_dot = archive_app(".".to_string()).await;
+        assert!(result_dot.is_err());
+        assert_eq!(
+            result_dot.unwrap_err(),
+            "Invalid app_id: path traversal detected."
         );
 
         let result2 = archive_app("valid-app_id.123".to_string()).await;
@@ -309,5 +343,19 @@ mod tests {
                 assert_eq!(e, "App binary not found or already archived.");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_move_to_trash_path_traversal() {
+        // Attempting to move a file outside of /data should fail
+        // Using /etc/passwd as it typically exists on Linux
+        // Even if it doesn't exist, canonicalize will fail which is expected behavior for invalid paths
+        let result = move_to_trash("/etc/passwd".to_string()).await;
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        assert!(
+            err_msg == "Security error: Cannot move files outside of /data to trash."
+                || err_msg == "File not found or access denied"
+        );
     }
 }
