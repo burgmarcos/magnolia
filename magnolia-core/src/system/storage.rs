@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use std::ffi::OsStr;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::command;
 
@@ -25,13 +26,14 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
     println!("[STORAGE] Archiving App: {}", app_id);
 
     if app_id.is_empty()
-        || app_id.contains("..")
+        || Path::new(&app_id).file_name() != Some(OsStr::new(&app_id))
         || !app_id
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
     {
         return Err("Invalid app_id: path traversal or invalid characters detected.".into());
     }
+
     let app_dir = format!("/data/apps/{}", app_id);
 
     // Simulate cloud sync and deletion of heavy binaries
