@@ -20,6 +20,21 @@ pub struct DiskInfo {
     pub filesystem: String,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub enum PartitionAction {
+    #[serde(rename = "check", alias = "Check")]
+    Check,
+    #[serde(rename = "mount", alias = "Mount")]
+    Mount,
+    #[serde(rename = "unmount", alias = "Unmount")]
+    Unmount,
+    #[serde(rename = "format", alias = "Format")]
+    Format,
+    #[serde(rename = "resize", alias = "Resize")]
+    Resize,
+}
+
+
 #[command]
 pub async fn archive_app(app_id: String) -> Result<(), String> {
     println!("[STORAGE] Archiving App: {}", app_id);
@@ -204,7 +219,7 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
 }
 
 #[command]
-pub async fn manage_partition(name: String, action: String) -> Result<(), String> {
+pub async fn manage_partition(name: String, action: PartitionAction) -> Result<(), String> {
     // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
     // Reject path traversal sequences and any non-alphanumeric characters.
     if !name.chars().all(|c| c.is_ascii_alphanumeric()) {
@@ -214,9 +229,9 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
         ));
     }
 
-    println!("[STORAGE] Executing {} on {}", action, name);
-    match action.as_str() {
-        "check" => {
+    println!("[STORAGE] Executing {:?} on {}", action, name);
+    match action {
+        PartitionAction::Check => {
             // Run filesystem check (non-destructive)
             let status = Command::new("fsck")
                 .args(["-n", &format!("/dev/{}", name)])
@@ -228,7 +243,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Filesystem check reported issues on {}", name))
             }
         }
-        "mount" => {
+        PartitionAction::Mount => {
             let mount_point = format!("/mnt/{}", name);
             fs::create_dir_all(&mount_point).map_err(|e| e.to_string())?;
             let status = Command::new("mount")
@@ -241,7 +256,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to mount {}", name))
             }
         }
-        "unmount" => {
+        PartitionAction::Unmount => {
             // Using the device path with umount works here because we control the
             // mount table (all mounts go through the "mount" branch above to /mnt/{name}).
             let status = Command::new("umount")
@@ -254,7 +269,7 @@ pub async fn manage_partition(name: String, action: String) -> Result<(), String
                 Err(format!("Failed to unmount {}", name))
             }
         }
-        _ => Err(format!("Unsupported partition action: {}", action)),
+        _ => Err(format!("Unsupported partition action: {:?}", action)),
     }
 }
 
