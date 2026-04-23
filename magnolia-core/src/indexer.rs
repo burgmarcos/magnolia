@@ -14,7 +14,6 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
 
     let mut indexed_count = 0;
 
-    // We'll wrap insertions in a transaction for massive speed improvements
     let tx = conn
         .transaction()
         .map_err(|e| format!("Transaction error: {}", e))?;
@@ -23,8 +22,6 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
     // and unbound memory loading
     let mut existing_docs = HashMap::new();
     {
-        // Use LIKE with the directory path to only fetch relevant documents
-        // Using || '%' correctly formats the pattern for SQLite
         let mut stmt = tx
             .prepare("SELECT path, file_hash FROM documents WHERE path LIKE ?1 || '%'")
             .map_err(|e| format!("Prepare error: {}", e))?;
@@ -41,6 +38,16 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
             existing_docs.insert(path, hash);
         }
     }
+
+    // Explicitly prepare statements once instead of N times, avoiding N+1 compile costs
+    let mut update_stmt = tx
+        .prepare(
+            "UPDATE documents SET file_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE path = ?2",
+        )
+        .map_err(|e| format!("Prepare update error: {}", e))?;
+    let mut insert_stmt = tx
+        .prepare("INSERT INTO documents (id, filename, path, file_hash) VALUES (?1, ?2, ?3, ?4)")
+        .map_err(|e| format!("Prepare insert error: {}", e))?;
 
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
@@ -60,6 +67,8 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
                     let file_path = entry.path().to_string_lossy().to_string();
                     let filename = entry.file_name().to_string_lossy().to_string();
 
+                    // Optimize the N+1 SELECT query by checking an in-memory hash map.
+                    // This is populated by a single SELECT query before the loop.
                     let existing_hash = existing_docs.get(&file_path);
 
                     match existing_hash {
@@ -69,20 +78,17 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
                         }
                         Some(_) => {
                             // Hash changed, we update
-                            tx.execute(
-                                "UPDATE documents SET file_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE path = ?2",
-                                params![file_hash, file_path]
-                            ).map_err(|e| format!("DB Update error: {}", e))?;
+                            update_stmt
+                                .execute(params![file_hash, file_path])
+                                .map_err(|e| format!("DB Update error: {}", e))?;
                             indexed_count += 1;
-                            // Optionally, we should invalidate/delete downstream `nodes` for this document_id
                         }
                         None => {
                             // New file
                             let new_id = Uuid::new_v4().to_string();
-                            tx.execute(
-                                "INSERT INTO documents (id, filename, path, file_hash) VALUES (?1, ?2, ?3, ?4)",
-                                params![new_id, filename, file_path, file_hash]
-                            ).map_err(|e| format!("DB Insert error: {}", e))?;
+                            insert_stmt
+                                .execute(params![new_id, filename, file_path, file_hash])
+                                .map_err(|e| format!("DB Insert error: {}", e))?;
                             indexed_count += 1;
                         }
                     }
@@ -90,6 +96,10 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
             }
         }
     }
+
+    // Explicitly drop prepared statements to allow transaction to commit
+    drop(update_stmt);
+    drop(insert_stmt);
 
     tx.commit()
         .map_err(|e| format!("Failed to commit index: {}", e))?;

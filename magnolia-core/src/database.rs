@@ -45,7 +45,8 @@ fn run_migrations(conn: &mut Connection) -> Result<()> {
             filename TEXT NOT NULL,
             path TEXT UNIQUE NOT NULL,
             file_hash TEXT UNIQUE NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS nodes (
