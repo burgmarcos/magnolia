@@ -20,7 +20,7 @@ pub struct DiskInfo {
     pub filesystem: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub enum PartitionAction {
     #[serde(rename = "check", alias = "Check")]
     Check,
