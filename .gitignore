@@ -35,3 +35,17 @@ Cargo.lock
 node_modules/
 dist/
 build/
+
+# Temporary files from previous agents
+fix.patch
+fix2.patch
+fix_lint.patch
+fix_plan*.md
+plan.md
+pr_desc*.txt
+pr_description.txt
+test_argon2.rs
+test_commit.*
+test_perf.rs
+test_plan.md
+*.orig
