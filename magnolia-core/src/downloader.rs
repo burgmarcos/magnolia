@@ -42,7 +42,7 @@ pub async fn download_model(app: AppHandle, url: String, filename: String) -> Re
         return Err(format!("Download failed with status: {}", res.status()));
     }
 
-    let total_size = res.content_length().unwrap_or(1); // Default to 1 to prevent division by 0 UI bugs
+    let total_size = res.content_length().unwrap_or(1).max(1); // Default to 1 to prevent division by 0 UI bugs
 
     let mut file = File::create(&file_path)
         .await
@@ -60,7 +60,7 @@ pub async fn download_model(app: AppHandle, url: String, filename: String) -> Re
             .map_err(|e| format!("File write error: {}", e))?;
 
         downloaded += chunk.len() as u64;
-        let percentage = (downloaded as f64 / total_size as f64) * 100.0;
+        let percentage = ((downloaded as f64 / total_size as f64) * 100.0).min(100.0);
 
         // Emit events back to the UI, throttle to only emit on > 1% changes to avoid UI thread spam
         if percentage - last_percentage_emit > 1.0 || downloaded == total_size {
