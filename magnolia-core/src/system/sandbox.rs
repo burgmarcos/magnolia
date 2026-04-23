@@ -1,5 +1,6 @@
 use std::env;
 
+
 use std::process::Command;
 
 pub struct BrowserConfig {
@@ -27,9 +28,7 @@ impl SovereignSandbox {
         }
     }
 
-    /// Spawns the WPE browser inside a Bubblewrap container.
-    /// This limits filesystem access to only what is required for GPU/Wayland.
-    pub fn spawn_browser(&self) -> Result<(), String> {
+    pub fn build_command(&self, xdg_runtime_dir: Option<&str>) -> Command {
         let mut cmd = Command::new("bwrap");
 
         // 1. Basic Isolation
@@ -70,10 +69,10 @@ impl SovereignSandbox {
         cmd.arg("/dev/dri");
 
         // Map Wayland Socket (if present)
-        if let Ok(runtime_dir) = env::var("XDG_RUNTIME_DIR") {
+        if let Some(runtime_dir) = xdg_runtime_dir {
             cmd.arg("--bind");
-            cmd.arg(&runtime_dir);
-            cmd.arg(&runtime_dir);
+            cmd.arg(runtime_dir);
+            cmd.arg(runtime_dir);
         }
 
         // 5. Ephemeral Home
@@ -100,6 +99,15 @@ impl SovereignSandbox {
         cmd.arg("wpe-webkit-kiosk");
         cmd.arg(&self.target_url);
 
+        cmd
+    }
+
+    /// Spawns the WPE browser inside a Bubblewrap container.
+    /// This limits filesystem access to only what is required for GPU/Wayland.
+    pub fn spawn_browser(&self) -> Result<(), String> {
+        let xdg = env::var("XDG_RUNTIME_DIR").ok();
+        let mut cmd = self.build_command(xdg.as_deref());
+
         println!(
             "[Magnolia] Launching Sandboxed View [{}] -> {}",
             self.label, self.target_url
@@ -115,4 +123,79 @@ impl SovereignSandbox {
 pub fn spawn_sandboxed_app(config: BrowserConfig) -> Result<(), String> {
     let sandbox = SovereignSandbox::new(&config.label, &config.url);
     sandbox.spawn_browser()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+
+    #[test]
+    fn test_get_default_browser_config() {
+        let config = get_default_browser_config();
+        assert_eq!(config.label, "Magnolia Dashboard");
+        assert_eq!(config.url, "http://localhost:5173");
+    }
+
+    #[test]
+    fn test_sovereign_sandbox_new() {
+        let sandbox = SovereignSandbox::new("My App", "https://example.com");
+        assert_eq!(sandbox.label, "My App");
+        assert_eq!(sandbox.target_url, "https://example.com");
+    }
+
+    #[test]
+    fn test_build_command_args() {
+        let sandbox = SovereignSandbox::new("My App", "https://example.com");
+        let cmd = sandbox.build_command(None);
+        let cmd_str = format!("{:?}", cmd);
+
+        assert!(cmd_str.contains("\"bwrap\""));
+        assert!(cmd_str.contains("\"--unshare-all\""));
+        assert!(cmd_str.contains("\"--share-net\""));
+        assert!(cmd_str.contains("\"--new-session\""));
+
+        assert!(cmd_str.contains("\"--ro-bind\""));
+        assert!(cmd_str.contains("\"/usr\""));
+        assert!(cmd_str.contains("\"/lib\""));
+        assert!(cmd_str.contains("\"/lib64\""));
+        assert!(cmd_str.contains("\"/bin\""));
+        assert!(cmd_str.contains("\"/sbin\""));
+        assert!(cmd_str.contains("\"/etc/resolv.conf\""));
+
+        assert!(cmd_str.contains("\"--dev\""));
+        assert!(cmd_str.contains("\"/dev\""));
+        assert!(cmd_str.contains("\"--proc\""));
+        assert!(cmd_str.contains("\"/proc\""));
+
+        assert!(cmd_str.contains("\"--dev-bind\""));
+        assert!(cmd_str.contains("\"/dev/dri\""));
+
+        assert!(cmd_str.contains("\"--dir\""));
+        assert!(cmd_str.contains("\"/home/sandbox\""));
+        assert!(cmd_str.contains("\"--setenv\""));
+        assert!(cmd_str.contains("\"HOME\""));
+
+        assert!(cmd_str.contains("\"wpe-webkit-kiosk\""));
+        assert!(cmd_str.contains("\"https://example.com\""));
+    }
+
+    #[test]
+    fn test_build_command_xdg() {
+        let sandbox = SovereignSandbox::new("My App", "https://example.com");
+        let cmd = sandbox.build_command(Some("/tmp/test_xdg_runtime"));
+        let args: Vec<String> = cmd.get_args().map(|s| s.to_string_lossy().to_string()).collect();
+
+        assert!(args.contains(&"--bind".to_string()));
+        assert!(args.contains(&"/tmp/test_xdg_runtime".to_string()));
+    }
+
+    #[test]
+    fn test_build_command_no_xdg() {
+        let sandbox = SovereignSandbox::new("My App", "https://example.com");
+        let cmd = sandbox.build_command(None);
+        let args: Vec<String> = cmd.get_args().map(|s| s.to_string_lossy().to_string()).collect();
+
+        assert!(!args.contains(&"--bind".to_string()));
+    }
 }
