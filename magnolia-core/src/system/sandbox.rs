@@ -1,6 +1,5 @@
 use std::env;
 
-
 use std::process::Command;
 
 pub struct BrowserConfig {
@@ -129,7 +128,6 @@ pub fn spawn_sandboxed_app(config: BrowserConfig) -> Result<(), String> {
 mod tests {
     use super::*;
 
-
     #[test]
     fn test_get_default_browser_config() {
         let config = get_default_browser_config();
@@ -184,7 +182,10 @@ mod tests {
     fn test_build_command_xdg() {
         let sandbox = SovereignSandbox::new("My App", "https://example.com");
         let cmd = sandbox.build_command(Some("/tmp/test_xdg_runtime"));
-        let args: Vec<String> = cmd.get_args().map(|s| s.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = cmd
+            .get_args()
+            .map(|s| s.to_string_lossy().to_string())
+            .collect();
 
         assert!(args.contains(&"--bind".to_string()));
         assert!(args.contains(&"/tmp/test_xdg_runtime".to_string()));
@@ -194,7 +195,10 @@ mod tests {
     fn test_build_command_no_xdg() {
         let sandbox = SovereignSandbox::new("My App", "https://example.com");
         let cmd = sandbox.build_command(None);
-        let args: Vec<String> = cmd.get_args().map(|s| s.to_string_lossy().to_string()).collect();
+        let args: Vec<String> = cmd
+            .get_args()
+            .map(|s| s.to_string_lossy().to_string())
+            .collect();
 
         assert!(!args.contains(&"--bind".to_string()));
     }
