@@ -231,21 +231,6 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
     Ok(())
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum PartitionAction {
-    #[serde(alias = "Check", alias = "check")]
-    Check,
-    #[serde(alias = "Mount", alias = "mount")]
-    Mount,
-    #[serde(alias = "Unmount", alias = "unmount")]
-    Unmount,
-    #[serde(alias = "Format", alias = "format")]
-    Format,
-    #[serde(alias = "Resize", alias = "resize")]
-    Resize,
-}
-
 #[command]
 pub async fn manage_partition(name: String, action: PartitionAction) -> Result<(), String> {
     // Validate device name: must be alphanumeric only (e.g. "vda1", "sdb2").
