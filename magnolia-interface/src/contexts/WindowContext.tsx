@@ -22,25 +22,27 @@ interface WindowContextType {
 const WindowContext = createContext<WindowContextType | undefined>(undefined);
 
 export const WindowProvider = ({ children }: { children: ReactNode }) => {
-  const [activeWindows, setActiveWindows] = useState<WindowInstance[]>([]);
+  const [activeWindowsMap, setActiveWindowsMap] = useState<Map<WindowType, WindowInstance>>(new Map());
   const [windowConfigs, setWindowConfigs] = useState<Record<string, Record<string, unknown>>>({});
+
+  const activeWindows = Array.from(activeWindowsMap.values());
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     invoke<{ windows: WindowInstance[], configs: Record<string, Record<string, unknown>> }>('load_session', { userId: 'default_user' })
       .then(res => {
         if (res) {
-          setActiveWindows(res.windows);
+          setActiveWindowsMap(new Map(res.windows.map(w => [w.type, w])));
           setWindowConfigs(res.configs);
         } else {
           // Fallback to initial state if no session exists
-          setActiveWindows([{ id: 'chat-main', title: 'Assistant', type: 'chat' }]);
+          setActiveWindowsMap(new Map([['chat', { id: 'chat-main', title: 'Assistant', type: 'chat' }]]));
         }
         setIsHydrated(true);
       })
       .catch((e) => {
         console.error("Failed to load session:", e);
-        setActiveWindows([{ id: 'chat-main', title: 'Assistant', type: 'chat' }]);
+        setActiveWindowsMap(new Map([['chat', { id: 'chat-main', title: 'Assistant', type: 'chat' }]]));
         setIsHydrated(true);
       });
   }, []);
@@ -60,16 +62,14 @@ export const WindowProvider = ({ children }: { children: ReactNode }) => {
   }, [activeWindows, windowConfigs, isHydrated]);
 
   const openWindow = useCallback((type: WindowType, title: string, config?: Record<string, unknown>) => {
-    setActiveWindows(prev => {
-      const existingIndex = prev.findIndex(w => w.type === type);
+    setActiveWindowsMap(prev => {
+      const next = new Map(prev);
+      const existing = next.get(type);
       
-      if (existingIndex !== -1) {
-        const existing = prev[existingIndex];
-        const updated = [...prev];
-        updated.splice(existingIndex, 1);
-        updated.push({ ...existing, isMinimized: false });
-        
-        return updated;
+      if (existing) {
+        next.delete(type); // Removing and re-adding brings it to the end of insertion order (highest z-index)
+        next.set(type, { ...existing, isMinimized: false });
+        return next;
       }
 
       let id = `${type}-${Date.now()}`;
@@ -84,17 +84,29 @@ export const WindowProvider = ({ children }: { children: ReactNode }) => {
       // LOG EVENT: Gain focus
       invoke('log_usage_event', { appId: title, eventType: 'gain_focus' }).catch(console.error);
 
-      return [...prev, { id, title, type }];
+      next.set(type, { id, title, type });
+      return next;
     });
   }, []);
 
   const closeWindow = useCallback((id: string) => {
-    setActiveWindows(prev => {
-      const closing = prev.find(w => w.id === id);
-      if (closing) {
-        invoke('log_usage_event', { appId: closing.title, eventType: 'lose_focus' }).catch(console.error);
+    setActiveWindowsMap(prev => {
+      // Find the window type by ID
+      let closingType: WindowType | undefined;
+      for (const [type, w] of prev.entries()) {
+        if (w.id === id) {
+          closingType = type;
+          invoke('log_usage_event', { appId: w.title, eventType: 'lose_focus' }).catch(console.error);
+          break;
+        }
       }
-      return prev.filter(w => w.id !== id);
+
+      if (closingType) {
+        const next = new Map(prev);
+        next.delete(closingType);
+        return next;
+      }
+      return prev;
     });
     setWindowConfigs(prev => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -104,9 +116,25 @@ export const WindowProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const toggleMinimize = useCallback((id: string) => {
-    setActiveWindows(prev => prev.map(w => 
-      w.id === id ? { ...w, isMinimized: !w.isMinimized } : w
-    ));
+    setActiveWindowsMap(prev => {
+      let targetType: WindowType | undefined;
+      let targetWindow: WindowInstance | undefined;
+
+      for (const [type, w] of prev.entries()) {
+        if (w.id === id) {
+          targetType = type;
+          targetWindow = w;
+          break;
+        }
+      }
+
+      if (targetType && targetWindow) {
+        const next = new Map(prev);
+        next.set(targetType, { ...targetWindow, isMinimized: !targetWindow.isMinimized });
+        return next;
+      }
+      return prev;
+    });
   }, []);
 
   return (
