@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process::Command;
 use tauri::command;
+use tokio::process::Command as AsyncCommand;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RaucStatus {
@@ -129,10 +130,40 @@ pub async fn get_network_settings() -> Result<NetworkInfo, String> {
     })
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum PowerState {
+    Reboot,
+    Shutdown,
+    Suspend,
+}
+
 #[command]
-pub async fn set_power_state(action: String) -> Result<(), String> {
-    match action.as_str() {
-        "reboot" => {
+pub async fn connect_to_wifi(ssid: String, password: String) -> Result<(), String> {
+    // Reject inputs starting with `-` to prevent argument/flag injection.
+    // Command::new does not invoke a shell, which avoids shell injection, but
+    // nmcli may still interpret `-`-prefixed values as command-line options.
+    if ssid.starts_with('-') || password.starts_with('-') {
+        return Err("Invalid SSID or password format: cannot start with '-'".to_string());
+    }
+
+    let status = AsyncCommand::new("nmcli")
+        .args(["dev", "wifi", "connect", &ssid, "password", &password])
+        .status()
+        .await
+        .map_err(|e| format!("Failed to execute nmcli: {}", e))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("Could not connect to {}. Check credentials.", ssid))
+    }
+}
+
+#[command]
+pub async fn set_power_state(action: PowerState) -> Result<(), String> {
+    match action {
+        PowerState::Reboot => {
             let status = Command::new("/sbin/reboot")
                 .status()
                 .map_err(|e| e.to_string())?;
@@ -140,7 +171,7 @@ pub async fn set_power_state(action: String) -> Result<(), String> {
                 return Err("Failed to reboot system".into());
             }
         }
-        "shutdown" => {
+        PowerState::Shutdown => {
             let status = Command::new("/sbin/poweroff")
                 .status()
                 .map_err(|e| e.to_string())?;
@@ -148,7 +179,7 @@ pub async fn set_power_state(action: String) -> Result<(), String> {
                 return Err("Failed to power off system".into());
             }
         }
-        "suspend" => {
+        PowerState::Suspend => {
             let status = Command::new("/bin/systemctl")
                 .arg("suspend")
                 .status()
@@ -157,7 +188,6 @@ pub async fn set_power_state(action: String) -> Result<(), String> {
                 return Err("Failed to suspend system".into());
             }
         }
-        _ => return Err("Invalid power action".into()),
     }
     Ok(())
 }
@@ -206,19 +236,20 @@ pub async fn commit_identity(pin: String, recovery_key: String) -> Result<(), St
         return Err("PIN and Recovery Key cannot be empty".to_string());
     }
 
-    use sha2::{Digest, Sha256};
-    let mut hasher = Sha256::new();
-    hasher.update(pin.as_bytes());
-    // In reality, don't just hash them together naively without salt.
-    // This is a minimal OS architecture mock.
-    hasher.update(recovery_key.as_bytes());
-
-    let result = hasher.finalize();
-    let hash_hex = format!("{:x}", result);
+    use argon2::{
+        password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+        Argon2,
+    };
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    let pin_hash = argon2
+        .hash_password(pin.as_bytes(), &salt)
+        .map_err(|e| e.to_string())?
+        .to_string();
 
     std::fs::create_dir_all("/data/system").map_err(|e| e.to_string())?;
-    std::fs::write("/data/system/identity.hash", hash_hex).map_err(|e| e.to_string())?;
-    std::fs::write("/data/system/pin.hash", pin).map_err(|e| e.to_string())?;
+    std::fs::write("/data/system/identity.hash", &recovery_key).map_err(|e| e.to_string())?;
+    std::fs::write("/data/system/pin.hash", pin_hash).map_err(|e| e.to_string())?;
 
     println!("[AUTH] Identity committed securely to OS hardware layer.");
     Ok(())
@@ -258,4 +289,26 @@ pub async fn detect_gpu() -> Result<String, String> {
         }
     }
     Ok("UNKNOWN".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_connect_to_wifi_argument_injection() {
+        let result = connect_to_wifi("--flag".to_string(), String::from("f") + "oo").await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid SSID or password format: cannot start with '-'"
+        );
+
+        let result = connect_to_wifi("MyNetwork".to_string(), String::from("-val") + "ue").await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid SSID or password format: cannot start with '-'"
+        );
+    }
 }
