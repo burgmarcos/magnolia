@@ -1,51 +1,27 @@
-import { useState, useEffect, Suspense, lazy, type ComponentType } from 'react';
+import { useState, useEffect, lazy, type ComponentType } from 'react';
 import { extractThemeFromImage } from '../../utils/theme';
 import { DesktopEnvironment } from '../layout/DesktopEnvironment';
 import { XRAppBar } from '../layout/XRAppBar';
 import { AppWindow } from '../AppWindow';
-import { SettingsLayout } from '../layout/SettingsLayout';
 import { XRNavigationBar } from '../layout/XRNavigationBar';
 import { AppsDrawer } from '../layout/AppsDrawer';
 import { NotificationsPanel } from '../layout/NotificationsPanel';
-import { RegionalSettings } from './RegionalSettings';
 import { GlobalSearchOverlay } from '../layout/GlobalSearchOverlay';
 import { 
   Settings, MessageSquare, Info, CloudRain, CalendarDays, 
   Calculator, Globe, FolderOpen, FileText, Package, Clock, Music 
 } from 'lucide-react';
-
-import { Toaster, toast } from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
+import { AnimatePresence } from 'framer-motion';
 import { useWindows } from '../../contexts/WindowContext';
 import type { WindowType } from '../../contexts/WindowContext';
+import { ProfileMenu } from './ProfileMenu';
+import { WindowContentRenderer } from './WindowContentRenderer';
+import { SettingsRouter, type SettingsRoute } from './SettingsRouter';
 
-const ChatInterface = lazy(() => import('./ChatInterface').then(m => ({ default: m.ChatInterface })));
-const AboutSystem = lazy(() => import('./AboutSystem').then(m => ({ default: m.AboutSystem })));
-const WeatherApp = lazy(() => import('./WeatherApp.tsx').then(m => ({ default: m.WeatherApp })));
-const CalendarApp = lazy(() => import('./CalendarApp.tsx').then(m => ({ default: m.CalendarApp })));
-const CalculatorApp = lazy(() => import('./CalculatorApp.tsx').then(m => ({ default: m.CalculatorApp })));
-const BrowserApp = lazy(() => import('./BrowserApp.tsx').then(m => ({ default: m.BrowserApp })));
-const FileManagerApp = lazy(() => import('./FileManagerApp.tsx').then(m => ({ default: m.FileManagerApp })));
-const FileEditor = lazy(() => import('./FileEditor.tsx').then(m => ({ default: m.FileEditor })));
-const KnowledgeGraphView = lazy(() => import('./KnowledgeGraphView.tsx').then(m => ({ default: m.KnowledgeGraphView })));
-const TelegramSettings = lazy(() => import('./TelegramSettings.tsx').then(m => ({ default: m.TelegramSettings })));
-const PersonalizationSettings = lazy(() => import('./PersonalizationSettings.tsx').then(m => ({ default: m.PersonalizationSettings })));
-const ModelsDownloader = lazy(() => import('./ModelsDownloader.tsx').then(m => ({ default: m.ModelsDownloader })));
-const KnowledgeWorkspace = lazy(() => import('./KnowledgeWorkspace.tsx').then(m => ({ default: m.KnowledgeWorkspace })));
 const SystemUpdatesView = lazy(() => import('./SystemUpdates.tsx').then(m => ({ default: m.SystemUpdates })));
-const SecurityManagerView = lazy(() => import('./SecurityManager.tsx').then(m => ({ default: m.SecurityManager })));
-const SystemDashboardHUD = lazy(() => import('./SystemDashboardHUD.tsx').then(m => ({ default: m.SystemDashboardHUD })));
-const AppStore = lazy(() => import('./AppStore.tsx').then(m => ({ default: m.AppStore })));
-const SystemPreferencesView = lazy(() => import('./SystemPreferences.tsx').then(m => ({ default: m.SystemPreferences })));
-const ConnectivitySettingsView = lazy(() => import('./ConnectivitySettings.tsx').then(m => ({ default: m.ConnectivitySettings })));
-const LifestyleSettingsView = lazy(() => import('./LifestyleSettings.tsx').then(m => ({ default: m.LifestyleSettings })));
-const ClockApp = lazy(() => import('./ClockApp.tsx').then(m => ({ default: m.ClockApp })));
-const MediaApp = lazy(() => import('./MediaApp.tsx').then(m => ({ default: m.MediaApp })));
-const PDFReader = lazy(() => import('./PDFReader.tsx').then(m => ({ default: m.PDFReader })));
-const PrivacyAuditView = lazy(() => import('./PrivacyAuditView.tsx').then(m => ({ default: m.PrivacyAuditView })));
-const StorageSettingsView = lazy(() => import('./StorageSettings.tsx').then(m => ({ default: m.StorageSettings })));
+import { SettingsLayout } from '../layout/SettingsLayout';
 
-type SettingsRoute = 'general' | 'models' | 'telegram' | 'knowledge' | 'graph' | 'search' | 'palette' | 'updates' | 'security' | 'preferences' | 'connectivity' | 'lifestyle' | 'regional' | 'privacy' | 'storage';
 type NavTabRoute = 'apps' | 'home' | 'updates';
 
 const WINDOW_METADATA: Record<string, { icon: ComponentType<{ size?: number; color?: string }>, color: string }> = {
@@ -69,7 +45,11 @@ export const MainDesktop = ({ onLogout }: { onLogout?: () => void }) => {
   
   const [activeSettingsView, setActiveSettingsView] = useState<SettingsRoute>('general');
   const [activeNavTab, setActiveNavTab] = useState<NavTabRoute>('home');
-  const [wallpaper, setWallpaper] = useState<string | undefined>(undefined);
+  const [wallpaper, setWallpaper] = useState<string | undefined>(() => {
+    // Initialize state directly from localStorage to avoid setting state in effect
+    const saved = localStorage.getItem('Magnolia-wallpaper');
+    return saved || undefined;
+  });
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -94,54 +74,6 @@ export const MainDesktop = ({ onLogout }: { onLogout?: () => void }) => {
 
     return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, [wallpaper]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('Magnolia-wallpaper');
-    if (saved) {
-      setWallpaper(saved);
-    } else {
-      setWallpaper('/wallpapers/vivid_nebula_4k_v006_no_text.png');
-    }
-
-    const savedPath = localStorage.getItem('Magnolia-knowledge-path');
-    if (!savedPath) {
-      import('@tauri-apps/api/core').then(({ invoke }) => {
-        invoke<string>('ensure_default_knowledge_dir')
-          .then((path) => {
-            // Ensure the directory is created and indexed before starting the embedding job
-            localStorage.setItem('Magnolia-knowledge-path', path);
-            invoke('index_local_folder', { path }).then(() => invoke('trigger_embedding_job')).catch(console.error);
-          })
-          .catch(console.error);
-      });
-    }
-
-    const gpuCheck = localStorage.getItem('Magnolia-gpu-checked');
-    if (!gpuCheck) {
-      import('@tauri-apps/api/core').then(({ invoke }) => {
-        invoke<{vendor: string, model: string, requires_proprietary: boolean}>('detect_gpu')
-          .then((gpu) => {
-            if (gpu.requires_proprietary) {
-              toast.custom((t) => (
-                <div style={{ background: 'var(--schemes-surface)', padding: '16px', borderRadius: '16px', boxShadow: 'var(--elevation-light-4)', border: '1px solid var(--schemes-outline)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '24px' }}>🚀</span>
-                    <h3 style={{ margin: 0, fontWeight: 700, color: 'var(--schemes-primary)' }}>{gpu.vendor} Detected</h3>
-                  </div>
-                  <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: 'var(--schemes-on-surface)' }}>Would you like to unlock maximum CUDA AI acceleration by safely downloading proprietary algorithms?</p>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <button onClick={() => toast.dismiss(t.id)} style={{ padding: '8px 16px', borderRadius: '8px', background: 'transparent', color: 'var(--schemes-primary)', border: 'none', cursor: 'pointer' }}>Dismiss</button>
-                    <button onClick={() => { toast.dismiss(t.id); toast.success('Initializing Driver Package...'); }} style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--schemes-primary)', color: 'var(--schemes-on-primary)', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Download Drivers</button>
-                  </div>
-                </div>
-              ), { duration: Infinity });
-            }
-            localStorage.setItem('Magnolia-gpu-checked', 'true');
-          })
-          .catch(console.error);
-      });
-    }
-  }, []);
 
   const handleSetWallpaper = (url: string) => {
     setWallpaper(url);
@@ -181,70 +113,7 @@ export const MainDesktop = ({ onLogout }: { onLogout?: () => void }) => {
       />
 
       {showProfileMenu && (
-        <div 
-          onClick={() => setShowProfileMenu(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
-        >
-          <motion.div 
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              position: 'fixed',
-              top: '72px',
-              left: '24px',
-              width: '240px',
-              background: 'var(--schemes-surface-container)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: '24px',
-              padding: '8px',
-              boxShadow: 'var(--elevation-light-4)',
-              border: '1px solid var(--schemes-outline-variant)',
-              zIndex: 9999
-            }}
-          >
-            <div style={{ padding: '16px', borderBottom: '1px solid var(--schemes-outline-variant)' }}>
-              <p style={{ margin: 0, fontWeight: 600, color: 'var(--schemes-on-surface)' }}>Magnolia Admin</p>
-              <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--schemes-on-surface-variant)' }}>Magnolia Dashboard User</p>
-            </div>
-            <button 
-              onClick={async () => {
-                // Immediate Steel Persistence before logout
-                import('@tauri-apps/api/core').then(async ({ invoke }) => {
-                  try {
-                    await invoke('save_session', { 
-                      userId: 'default_user', 
-                      state: { windows: activeWindows, configs: windowConfigs } 
-                    });
-                  } catch (e) {
-                    console.error("Session archival failed during logout:", e);
-                  }
-                  onLogout?.();
-                });
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: '16px',
-                color: 'var(--schemes-error)',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 600,
-                marginTop: '4px'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--schemes-error-container)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              Logout & Exit
-            </button>
-          </motion.div>
-        </div>
+        <ProfileMenu onClose={() => setShowProfileMenu(false)} onLogout={onLogout} />
       )}
       
       {showNotifications && (
@@ -277,61 +146,15 @@ export const MainDesktop = ({ onLogout }: { onLogout?: () => void }) => {
                 undefined
               }
             >
-              <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: 'var(--schemes-primary)' }}>Initializing App Layer...</div>}>
-                {window.type === 'chat' && <ChatInterface />}
-                {window.type === 'about' && <AboutSystem />}
-                {window.type === 'weather' && <WeatherApp />}
-                {window.type === 'calendar' && <CalendarApp />}
-                {window.type === 'calculator' && <CalculatorApp />}
-                {window.type === 'browser' && <BrowserApp initialUrl={windowConfigs[window.id]?.url as string | undefined} />}
-                {window.type === 'files' && <FileManagerApp />}
-                {window.type === 'appstore' && <AppStore />}
-                {window.type === 'editor' && (
-                  <FileEditor 
-                    filename={(windowConfigs[window.id]?.filename as string) || 'untitled.md'}
-                    content={(windowConfigs[window.id]?.content as string) || ''}
-                    onSave={(newContent) => {
-                      if (windowConfigs[window.id]?.path) {
-                        import('@tauri-apps/api/core').then(({ invoke }) => {
-                          invoke('write_text_file', { path: windowConfigs[window.id].path, content: newContent })
-                            .then(() => toast.success('File saved'))
-                            .catch(() => toast.error('Save failed'));
-                        });
-                      }
-                    }}
-                    onClose={() => closeWindow(window.id)}
-                  />
-                )}
-                {window.type === 'clock' && <ClockApp />}
-                {window.type === 'media' && <MediaApp />}
-                {window.type === 'pdf' && (
-                  <PDFReader 
-                    url={windowConfigs[window.id]?.url as string} 
-                    title={windowConfigs[window.id]?.title as string} 
-                  />
-                )}
-              </Suspense>
+              <WindowContentRenderer window={window} windowConfigs={windowConfigs} closeWindow={closeWindow} />
               
               {window.type === 'settings' && (
-                <SettingsLayout 
-                  activeSettingsTab={activeSettingsView} 
-                  onTabChange={(tab: string) => setActiveSettingsView(tab as SettingsRoute)}
-                >
-                  {activeSettingsView === 'general' && <SystemDashboardHUD />}
-                  {activeSettingsView === 'palette' && <PersonalizationSettings onWallpaperChange={handleSetWallpaper} currentWallpaper={wallpaper} />}
-                  {activeSettingsView === 'models' && <ModelsDownloader />}
-                  {activeSettingsView === 'preferences' && <SystemPreferencesView />}
-                  {activeSettingsView === 'connectivity' && <ConnectivitySettingsView />}
-                  {activeSettingsView === 'lifestyle' && <LifestyleSettingsView />}
-                  {activeSettingsView === 'regional' && <RegionalSettings />}
-                  {activeSettingsView === 'privacy' && <PrivacyAuditView />}
-                  {activeSettingsView === 'storage' && <StorageSettingsView />}
-                  {activeSettingsView === 'knowledge' && <KnowledgeWorkspace />}
-                  {activeSettingsView === 'graph' && <KnowledgeGraphView />}
-                  {activeSettingsView === 'telegram' && <TelegramSettings />}
-                  {activeSettingsView === 'updates' && <SystemUpdatesView />}
-                  {activeSettingsView === 'security' && <SecurityManagerView />}
-                </SettingsLayout>
+                <SettingsRouter
+                  activeSettingsView={activeSettingsView}
+                  setActiveSettingsView={setActiveSettingsView}
+                  wallpaper={wallpaper}
+                  handleSetWallpaper={handleSetWallpaper}
+                />
               )}
             </AppWindow>
           ))}
