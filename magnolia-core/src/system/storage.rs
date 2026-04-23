@@ -34,7 +34,6 @@ pub enum PartitionAction {
     Resize,
 }
 
-
 #[command]
 pub async fn archive_app(app_id: String) -> Result<(), String> {
     println!("[STORAGE] Archiving App: {}", app_id);
