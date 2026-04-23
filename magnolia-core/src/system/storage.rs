@@ -19,17 +19,18 @@ pub struct DiskInfo {
     pub filesystem: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum PartitionAction {
-    #[serde(rename = "check", alias = "Check")]
+    #[serde(alias = "Check", alias = "check")]
     Check,
-    #[serde(rename = "mount", alias = "Mount")]
+    #[serde(alias = "Mount", alias = "mount")]
     Mount,
-    #[serde(rename = "unmount", alias = "Unmount")]
+    #[serde(alias = "Unmount", alias = "unmount")]
     Unmount,
-    #[serde(rename = "format", alias = "Format")]
+    #[serde(alias = "Format", alias = "format")]
     Format,
-    #[serde(rename = "resize", alias = "Resize")]
+    #[serde(alias = "Resize", alias = "resize")]
     Resize,
 }
 
@@ -229,21 +230,6 @@ pub async fn request_boot_resize(name: String) -> Result<(), String> {
         serde_json::to_string_pretty(&op).unwrap_or_else(|e| format!("serialization error: {e}"));
     fs::write(&ops_path, payload).map_err(|e| format!("Failed to schedule boot resize: {}", e))?;
     Ok(())
-}
-
-#[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum PartitionAction {
-    #[serde(alias = "Check", alias = "check")]
-    Check,
-    #[serde(alias = "Mount", alias = "mount")]
-    Mount,
-    #[serde(alias = "Unmount", alias = "unmount")]
-    Unmount,
-    #[serde(alias = "Format", alias = "format")]
-    Format,
-    #[serde(alias = "Resize", alias = "resize")]
-    Resize,
 }
 
 #[command]
