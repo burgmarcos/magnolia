@@ -46,18 +46,37 @@ function forceLayout(
   const damping = 0.85;
   const velocities = new Map(nodeIds.map(id => [id, { vx: 0, vy: 0 }]));
 
+  // Pre-resolve object references to avoid map lookups in the simulation loop
+  const resolvedNodes = nodeIds.map(id => ({
+    p: positions.get(id)!,
+    v: velocities.get(id)!
+  }));
+
+  const resolvedEdges = edgePairs.map(edge => {
+    const a = positions.get(edge.source);
+    const b = positions.get(edge.target);
+    const vA = velocities.get(edge.source);
+    const vB = velocities.get(edge.target);
+    return { a, b, vA, vB };
+  }).filter((e): e is {
+    a: { x: number; y: number };
+    b: { x: number; y: number };
+    vA: { vx: number; vy: number };
+    vB: { vx: number; vy: number }
+  } => !!(e.a && e.b && e.vA && e.vB));
+
   for (let iter = 0; iter < iterations; iter++) {
     // Repulsion between all pairs
     for (let i = 0; i < n; i++) {
       for (let j = i + 1; j < n; j++) {
-        const a = positions.get(nodeIds[i])!;
-        const b = positions.get(nodeIds[j])!;
+        const a = resolvedNodes[i].p;
+        const b = resolvedNodes[j].p;
         const dx = a.x - b.x;
         const dy = a.y - b.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
         const force = repulsion / (dist * dist);
-        const vA = velocities.get(nodeIds[i])!;
-        const vB = velocities.get(nodeIds[j])!;
+        const vA = resolvedNodes[i].v;
+        const vB = resolvedNodes[j].v;
         vA.vx += (dx / dist) * force;
         vA.vy += (dy / dist) * force;
         vB.vx -= (dx / dist) * force;
@@ -65,23 +84,16 @@ function forceLayout(
       }
     }
     // Attraction along edges
-    for (const { source, target } of edgePairs) {
-      const a = positions.get(source);
-      const b = positions.get(target);
-      if (!a || !b) continue;
+    for (const { a, b, vA, vB } of resolvedEdges) {
       const dx = b.x - a.x;
       const dy = b.y - a.y;
-      const vA = velocities.get(source)!;
-      const vB = velocities.get(target)!;
       vA.vx += dx * attraction;
       vA.vy += dy * attraction;
       vB.vx -= dx * attraction;
       vB.vy -= dy * attraction;
     }
     // Apply velocities with damping
-    for (const id of nodeIds) {
-      const p = positions.get(id)!;
-      const v = velocities.get(id)!;
+    for (const { p, v } of resolvedNodes) {
       v.vx *= damping;
       v.vy *= damping;
       p.x = Math.max(50, Math.min(width - 50, p.x + v.vx));
