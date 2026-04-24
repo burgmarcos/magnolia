@@ -22,7 +22,7 @@ export function GeneralSettings({ onNavigate, onWallpaperChange, currentWallpape
   useEffect(() => {
     invoke<string>('get_api_key', { service: 'huggingface' })
       .then(setHfToken)
-      .catch(() => {});
+      .catch(() => console.log('HuggingFace token not found'));
   }, []);
 
   const saveHfToken = async () => {

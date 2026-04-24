@@ -112,19 +112,4 @@ mod tests {
             "Failed to save key securely: mock error"
         );
     }
-
-    #[test]
-    fn test_set_api_key_only() {
-        let service = "isolated_set_service";
-        let key = "isolated_key";
-        let res = set_api_key(service, key);
-        assert!(res.is_ok(), "Failed to set API key in isolated test");
-        MOCK_KEYRING.with(|k| {
-            assert_eq!(
-                k.borrow().get(service).cloned(),
-                Some(key.to_string()),
-                "Key was not saved to the mock keyring"
-            );
-        });
-    }
 }

@@ -45,7 +45,6 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
             "UPDATE documents SET file_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE path = ?2",
         )
         .map_err(|e| format!("Prepare update error: {}", e))?;
-
     let mut insert_stmt = tx
         .prepare("INSERT INTO documents (id, filename, path, file_hash) VALUES (?1, ?2, ?3, ?4)")
         .map_err(|e| format!("Prepare insert error: {}", e))?;

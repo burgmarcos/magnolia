@@ -15,20 +15,8 @@ export function BrowserApp({ initialUrl }: BrowserProps) {
   const [historyIndex, setHistoryIndex] = useState(initialUrl ? 0 : -1);
   const [searchEngine, setSearchEngine] = useState(() => localStorage.getItem('Magnolia-search-engine'));
   // Use internal iframe instead of floating native window to respect OS layering
-  const toSafeHttpUrl = (raw: string): string | null => {
-    try {
-      const parsed = new URL(raw);
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        return parsed.toString();
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
   const navigate = (targetUrl?: string) => {
-    let target = (targetUrl || inputValue).trim();
+    let target = targetUrl || inputValue;
     if (!target.includes('.') && !target.startsWith('http')) {
       const engineUrl = searchEngine === 'google' ? 'https://www.google.com/search?q=' :
                        searchEngine === 'bing' ? 'https://www.bing.com/search?q=' :
@@ -38,19 +26,13 @@ export function BrowserApp({ initialUrl }: BrowserProps) {
       target = 'https://' + target;
     }
 
-    const safeTarget = toSafeHttpUrl(target);
-    if (!safeTarget) {
-      setIsLoading(false);
-      return;
-    }
-
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(safeTarget);
+    newHistory.push(target);
     
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    setUrl(safeTarget);
-    setInputValue(safeTarget);
+    setUrl(target);
+    setInputValue(target);
     setIsLoading(true);
   };
 

@@ -60,7 +60,6 @@ pub fn run() {
             handlers::models::assess_model_fit,
             handlers::models::get_local_models,
             handlers::models::get_local_model_size_bytes,
-            handlers::models::get_all_local_models_info,
             // LLM engine
             handlers::llm::start_local_engine,
             handlers::llm::stop_local_engine,

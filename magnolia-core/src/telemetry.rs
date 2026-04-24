@@ -14,26 +14,7 @@ pub struct HardwareSpecs {
     pub software_version: String,
 }
 
-#[cfg(test)]
-thread_local! {
-    static MOCK_HARDWARE_SPECS: std::cell::RefCell<Option<HardwareSpecs>> = std::cell::RefCell::new(None);
-}
-
-#[cfg(test)]
-pub fn set_mock_hardware_specs(specs: Option<HardwareSpecs>) {
-    MOCK_HARDWARE_SPECS.with(|mock| {
-        *mock.borrow_mut() = specs;
-    });
-}
-
 pub fn get_system_specs() -> HardwareSpecs {
-    #[cfg(test)]
-    {
-        if let Some(specs) = MOCK_HARDWARE_SPECS.with(|mock| mock.borrow().clone()) {
-            return specs;
-        }
-    }
-
     let mut sys = System::new_all();
     sys.refresh_all(); // Includes CPU info data refresh
 

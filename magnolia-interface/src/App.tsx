@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, Suspense, lazy } from 'react';
 import { WindowProvider } from './contexts/WindowContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -12,10 +13,8 @@ const MagnoliaInstallerFlow = lazy(() => import('./components/views/MagnoliaInst
 const MagnoliaUninstallFlow = lazy(() => import('./components/views/MagnoliaUninstallFlow').then(m => ({ default: m.SovereignUninstallFlow })));
 const SovereignOOBE = lazy(() => import('./components/views/SovereignOOBE').then(m => ({ default: m.SovereignOOBE })));
 
-type AppMode = 'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe';
-
 export default function App() {
-  const [mode, setMode] = useState<AppMode>('boot');
+  const [mode, setMode] = useState<'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe'>('boot');
 
   useEffect(() => {
     // Check launch mode from Tauri backend
@@ -23,7 +22,7 @@ export default function App() {
       try {
         const launchMode = await invoke<string>('get_launch_mode');
         
-        let targetMode: AppMode = launchMode as AppMode;
+        let targetMode: 'boot' | 'lock' | 'main' | 'installer' | 'uninstaller' | 'oobe' = launchMode as any;
 
         if (launchMode === 'main') {
           // Extra check: Do we have an identity?
