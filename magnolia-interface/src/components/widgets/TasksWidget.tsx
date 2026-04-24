@@ -3,6 +3,7 @@ import { Minus, Plus, Check } from 'lucide-react';
 import styles from './TasksWidget.module.css';
 
 export function TasksWidget() {
+  const [newTaskText, setNewTaskText] = useState('');
   const [tasks, setTasks] = useState([
     { id: 1, text: 'Design System mapping', completed: true },
     { id: 2, text: 'Build XRAppBar', completed: true },
@@ -10,6 +11,17 @@ export function TasksWidget() {
     { id: 4, text: 'Tasks Widget State', completed: false },
     { id: 5, text: 'App Windows Layout', completed: false },
   ]);
+
+  const addTask = () => {
+    if (newTaskText.trim()) {
+      setTasks([...tasks, { id: Date.now(), text: newTaskText.trim(), completed: false }]);
+      setNewTaskText('');
+    }
+  };
+
+  const clearAll = () => {
+    setTasks([]);
+  };
 
   const toggleTask = (id: number) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
@@ -48,11 +60,21 @@ export function TasksWidget() {
 
       <div className={styles.actions}>
         <div className={styles.divider} />
+        <div className={styles.inputRow}>
+          <input
+            type="text"
+            className={styles.input}
+            placeholder="New task..."
+            value={newTaskText}
+            onChange={(e) => setNewTaskText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addTask()}
+          />
+        </div>
         <div className={styles.buttonsRow}>
-          <button className={styles.secondaryButton}>
+          <button className={styles.secondaryButton} onClick={clearAll}>
             Clear
           </button>
-          <button className={styles.primaryButton}>
+          <button className={styles.primaryButton} onClick={addTask}>
             <Plus size={18} style={{ marginRight: '8px' }} />
             Add todo
           </button>
