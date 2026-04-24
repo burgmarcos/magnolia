@@ -46,12 +46,6 @@ pub fn assess_model_fit(model_size_bytes: u64) -> String {
     assess_model_fit_internal(model_size_bytes, &specs)
 }
 
-#[derive(serde::Serialize)]
-pub struct LocalModelInfo {
-    pub name: String,
-    pub fit_status: String,
-}
-
 #[tauri::command]
 pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     use tauri::Manager;
@@ -83,22 +77,6 @@ pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-pub fn get_all_local_models_info(app: tauri::AppHandle) -> Result<Vec<LocalModelInfo>, String> {
-    let models = get_local_models(app.clone())?;
-    let mut infos = Vec::with_capacity(models.len());
-    let specs = crate::telemetry::get_system_specs();
-
-    for name in models {
-        let fit_status = match get_local_model_size_bytes(app.clone(), name.clone()) {
-            Ok(size_bytes) => assess_model_fit_internal(size_bytes, &specs),
-            Err(_) => "Does Not Run".to_string(),
-        };
-        infos.push(LocalModelInfo { name, fit_status });
-    }
-    Ok(infos)
-}
-
-#[tauri::command]
 pub fn get_local_model_size_bytes(
     app: tauri::AppHandle,
     model_name: String,
@@ -118,7 +96,6 @@ pub fn get_local_model_size_bytes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::telemetry::set_mock_hardware_specs;
     use crate::telemetry::HardwareSpecs;
 
     fn get_dummy_specs(total_ram: u64, total_vram: u64) -> HardwareSpecs {
@@ -180,31 +157,5 @@ mod tests {
         let result = assess_model_fit_internal(model_size, &specs);
         // It shouldn't fit perfectly since vram = 0
         assert_eq!(result, "Needs Offload");
-    }
-
-    #[test]
-    fn test_assess_model_fit() {
-        // Mock the hardware specs
-        let vram = 4 * 1024 * 1024 * 1024; // 4GB VRAM
-        let specs = get_dummy_specs(8 * 1024 * 1024 * 1024, vram); // 8GB RAM
-        set_mock_hardware_specs(Some(specs));
-
-        // Test Fits Perfectly
-        let model_size = 1024 * 1024 * 1024; // 1GB
-        let result = assess_model_fit(model_size);
-        assert_eq!(result, "Fits Perfectly");
-
-        // Test Needs Offload
-        let model_size = 3 * 1024 * 1024 * 1024; // 3GB
-        let result = assess_model_fit(model_size);
-        assert_eq!(result, "Needs Offload");
-
-        // Test Does Not Run
-        let model_size = 7 * 1024 * 1024 * 1024; // 7GB (7 + 2 = 9 > 8GB RAM)
-        let result = assess_model_fit(model_size);
-        assert_eq!(result, "Does Not Run");
-
-        // Clear the mock
-        set_mock_hardware_specs(None);
     }
 }

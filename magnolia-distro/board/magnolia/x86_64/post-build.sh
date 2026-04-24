@@ -66,40 +66,12 @@ if ls ${MESA_DRI_SRC} 1>/dev/null 2>&1; then
     cd -
 fi
 
-# 6. Provide libGL.so.1 for WebKitGTK compatibility
-# Priority:
-#   (a) Real libGL.so.1 from libglvnd GLX dispatch (>40KB) — use it
-#   (b) Symlink libOpenGL.so.0 as libGL.so.1 — WebKit on Wayland uses EGL for GL contexts;
-#       GLX entry points aren't needed. libOpenGL provides all OpenGL core/compat symbols
-#       and routes draws through libGLdispatch → Mesa softpipe (real rendering, not noop).
-#   (c) Compiled noop stub — LAST RESORT. Renders BLACK (every draw call is a noop).
+# 6. Install stub libGL.so.1 for WebKitGTK compatibility
+# WebKitGTK unconditionally dlopen()s libGL.so.1 and crashes (SIGABRT) if not found.
+# This stub provides minimal GL API so WebKit can initialize and fall back to software rendering.
 STUB_GL="${BOARD_DIR}/stub-libGL.c"
-EXISTING_LIBGL="${TARGET_DIR}/usr/lib/libGL.so.1"
-LIBOPENGL_REAL="${TARGET_DIR}/usr/lib/libOpenGL.so.0.0.0"
-
-# Detect if an existing libGL.so.1 is our 22KB stub vs a real library
-EXISTING_IS_STUB=0
-if [ -e "${EXISTING_LIBGL}" ]; then
-    LIBGL_SIZE=$(stat -L -c %s "${EXISTING_LIBGL}" 2>/dev/null || echo 0)
-    if [ "${LIBGL_SIZE}" -lt 40000 ]; then
-        EXISTING_IS_STUB=1
-    fi
-fi
-
-if [ -e "${EXISTING_LIBGL}" ] && [ "${EXISTING_IS_STUB}" = "0" ]; then
-    echo "[Magnolia] Real libGL.so.1 present (>40KB, from libglvnd GLX) — leaving in place."
-elif [ -e "${LIBOPENGL_REAL}" ]; then
-    echo "[Magnolia] Wiring libGL.so.1 → libOpenGL.so.0.0.0 (libglvnd vendor-neutral OpenGL)."
-    # Remove any prior stub artifacts so the symlink takes effect
-    rm -f "${TARGET_DIR}/usr/lib/libGL.so.1.0.0"
-    rm -f "${TARGET_DIR}/usr/lib/libGL.so.1"
-    rm -f "${TARGET_DIR}/usr/lib/libGL.so"
-    cd "${TARGET_DIR}/usr/lib"
-    ln -sf libOpenGL.so.0.0.0 libGL.so.1
-    ln -sf libGL.so.1 libGL.so
-    cd -
-elif [ -f "${STUB_GL}" ] && [ -x "${HOST_DIR}/bin/x86_64-buildroot-linux-gnu-gcc" ]; then
-    echo "[Magnolia WARNING] No libOpenGL.so.0 — installing noop stub (display will render BLACK)."
+if [ -f "${STUB_GL}" ] && [ -x "${HOST_DIR}/bin/x86_64-buildroot-linux-gnu-gcc" ]; then
+    echo "[Magnolia] Building stub libGL.so.1..."
     "${HOST_DIR}/bin/x86_64-buildroot-linux-gnu-gcc" -shared -fPIC -O2 \
         -o "${TARGET_DIR}/usr/lib/libGL.so.1.0.0" \
         "${STUB_GL}" -Wl,-soname,libGL.so.1
@@ -107,17 +79,10 @@ elif [ -f "${STUB_GL}" ] && [ -x "${HOST_DIR}/bin/x86_64-buildroot-linux-gnu-gcc
     ln -sf libGL.so.1.0.0 libGL.so.1
     ln -sf libGL.so.1 libGL.so
     cd -
+elif [ -f "${TARGET_DIR}/usr/lib/libGL.so.1" ]; then
+    echo "[Magnolia] libGL.so.1 already present."
 else
-    echo "[Magnolia WARNING] No libGL.so available. WebKitGTK may crash."
+    echo "[Magnolia WARNING] No libGL.so stub built. WebKitGTK may crash."
 fi
-
-# 7. GL stack verification — dumps what's actually on disk so we can diagnose from build log.
-echo "[Magnolia] === GL stack verification ==="
-for pat in "libGL*" "libEGL*" "libOpenGL*" "libGLdispatch*" "libGLESv*" "libgbm*"; do
-    ls -la "${TARGET_DIR}/usr/lib/"${pat} 2>/dev/null || true
-done
-echo "[Magnolia] === DRI drivers ==="
-ls -la "${TARGET_DIR}/usr/lib/dri/" 2>/dev/null || echo "[Magnolia WARNING] /usr/lib/dri missing"
-echo "[Magnolia] === End GL stack ==="
 
 echo "[Magnolia] Post-Build Bundle Complete."

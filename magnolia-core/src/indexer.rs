@@ -14,6 +14,7 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
 
     let mut indexed_count = 0;
 
+    // We'll wrap insertions in a transaction for massive speed improvements
     let tx = conn
         .transaction()
         .map_err(|e| format!("Transaction error: {}", e))?;
@@ -40,15 +41,6 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
             existing_docs.insert(path, hash);
         }
     }
-
-    // Instead of executing one-by-one, prepare statements for update and insert
-    let mut update_stmt = tx
-        .prepare("UPDATE documents SET file_hash = ?1 WHERE path = ?2")
-        .map_err(|e| format!("Prepare update error: {}", e))?;
-
-    let mut insert_stmt = tx
-        .prepare("INSERT INTO documents (id, filename, path, file_hash) VALUES (?1, ?2, ?3, ?4)")
-        .map_err(|e| format!("Prepare insert error: {}", e))?;
 
     for entry in WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
         if entry.file_type().is_file() {
@@ -77,18 +69,20 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
                         }
                         Some(_) => {
                             // Hash changed, we update
-                            update_stmt
-                                .execute(params![file_hash, file_path])
-                                .map_err(|e| format!("DB Update error: {}", e))?;
+                            tx.execute(
+                                "UPDATE documents SET file_hash = ?1, updated_at = CURRENT_TIMESTAMP WHERE path = ?2",
+                                params![file_hash, file_path]
+                            ).map_err(|e| format!("DB Update error: {}", e))?;
                             indexed_count += 1;
                             // Optionally, we should invalidate/delete downstream `nodes` for this document_id
                         }
                         None => {
                             // New file
                             let new_id = Uuid::new_v4().to_string();
-                            insert_stmt
-                                .execute(params![new_id, filename, file_path, file_hash])
-                                .map_err(|e| format!("DB Insert error: {}", e))?;
+                            tx.execute(
+                                "INSERT INTO documents (id, filename, path, file_hash) VALUES (?1, ?2, ?3, ?4)",
+                                params![new_id, filename, file_path, file_hash]
+                            ).map_err(|e| format!("DB Insert error: {}", e))?;
                             indexed_count += 1;
                         }
                     }
@@ -96,9 +90,6 @@ pub fn index_directory(conn: &mut Connection, dir_path: &str) -> Result<usize, S
             }
         }
     }
-
-    drop(update_stmt);
-    drop(insert_stmt);
 
     tx.commit()
         .map_err(|e| format!("Failed to commit index: {}", e))?;

@@ -6,9 +6,6 @@ on:
   #   branches: [ main ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   build-iso:
     runs-on: ubuntu-latest
@@ -31,11 +28,10 @@ jobs:
         with:
           path: |
             ../buildroot-dl
-            ../buildroot/dl
             ../buildroot/output/host
             ../buildroot/output/build
             ~/.buildroot-ccache
-          key: buildroot-${{ hashFiles('magnolia-distro/configs/magnolia_x86_64_defconfig', 'magnolia-distro/package/**', 'magnolia-core/Cargo.lock', 'magnolia-supervisor/Cargo.lock') }}
+          key: buildroot-${{ hashFiles('magnolia-distro/configs/magnolia_x86_64_defconfig', 'magnolia-distro/package/**') }}
           restore-keys: buildroot-
 
       - name: Setup Buildroot
@@ -46,20 +42,6 @@ jobs:
         run: |
           cd ../buildroot
           make BR2_EXTERNAL=$GITHUB_WORKSPACE/magnolia-distro magnolia_x86_64_defconfig
-
-      - name: Pre-fetch Cargo dependencies
-        run: |
-          # Populate the Buildroot cargo offline cache before the build.
-          # Buildroot sets CARGO_HOME=$(BR2_DL_DIR)/br-cargo-home. The default
-          # BR2_DL_DIR is $(TOPDIR)/dl = ../buildroot/dl (relative to GITHUB_WORKSPACE).
-          CARGO_HOME_BR="$GITHUB_WORKSPACE/../buildroot/dl/br-cargo-home"
-          mkdir -p "$CARGO_HOME_BR"
-          CARGO_HOME="$CARGO_HOME_BR" cargo fetch \
-            --manifest-path magnolia-core/Cargo.toml --locked
-          if [ -f magnolia-supervisor/Cargo.lock ]; then
-            CARGO_HOME="$CARGO_HOME_BR" cargo fetch \
-              --manifest-path magnolia-supervisor/Cargo.toml --locked
-          fi
 
       - name: Build Magnolia ISO (Multi-threaded)
         run: |
