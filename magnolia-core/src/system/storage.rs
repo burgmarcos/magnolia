@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::ffi::OsStr;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::command;
 
@@ -41,6 +42,7 @@ pub async fn archive_app(app_id: String) -> Result<(), String> {
     if app_id.is_empty()
         || app_id.contains("..")
         || app_id == "."
+        || Path::new(&app_id).file_name() != Some(OsStr::new(&app_id))
         || !app_id
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.')
