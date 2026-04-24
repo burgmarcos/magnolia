@@ -14,12 +14,15 @@ pub async fn download_model_file(
 
 #[tauri::command]
 pub async fn search_hf_models(model_id: String) -> Result<huggingface::HfModelInfo, String> {
-    let token = secrets::get_api_key("huggingface").map_err(|e| {
-        println!("Keyring access warning: {}", e);
-        "HF API Key not found. Please set it in Models Hub.".to_string()
-    })?;
+    let token = match secrets::get_api_key("huggingface") {
+        Ok(t) => Some(t),
+        Err(e) => {
+            println!("Keyring access warning: {}", e);
+            None
+        }
+    };
 
-    huggingface::fetch_hf_model_size(&model_id, Some(token)).await
+    huggingface::fetch_hf_model_size(&model_id, token).await
 }
 
 pub fn assess_model_fit_internal(

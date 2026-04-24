@@ -19,17 +19,18 @@ pub struct DiskInfo {
     pub filesystem: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
 pub enum PartitionAction {
-    #[serde(rename = "check", alias = "Check")]
+    #[serde(alias = "Check", alias = "check")]
     Check,
-    #[serde(rename = "mount", alias = "Mount")]
+    #[serde(alias = "Mount", alias = "mount")]
     Mount,
-    #[serde(rename = "unmount", alias = "Unmount")]
+    #[serde(alias = "Unmount", alias = "unmount")]
     Unmount,
-    #[serde(rename = "format", alias = "Format")]
+    #[serde(alias = "Format", alias = "format")]
     Format,
-    #[serde(rename = "resize", alias = "Resize")]
+    #[serde(alias = "Resize", alias = "resize")]
     Resize,
 }
 
