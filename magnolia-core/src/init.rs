@@ -1,3 +1,4 @@
+use log::{info, error, warn};
 use std::fs;
 use std::process::Command;
 use nix::mount::{mount, MsFlags};
@@ -8,7 +9,7 @@ use std::path::Path;
 /// Magnolia System Initialization (PID 1 Logic)
 /// This is the entry point for the Magnolia Core when running as the OS Init process.
 pub fn initialize_system() -> Result<(), String> {
-    println!("[Magnolia] Initializing Sovereign OS Supervisor (PID 1)");
+    info!("Initializing Sovereign OS Supervisor (PID 1)");
 
     // 1. Mount virtual filesystems (/proc, /sys, /dev, /tmp, /run)
     mount_virt_fs()?;
@@ -23,10 +24,10 @@ pub fn initialize_system() -> Result<(), String> {
     }
 
     // 4. Secure Partition Orchestration
-    println!("[Magnolia] Orchestrating secure partitions...");
+    info!("Orchestrating secure partitions...");
 
     // 5. Handover to Supervisor Loop
-    println!("[Magnolia] Starting Magnolia supervisor loop...");
+    info!("Starting Magnolia supervisor loop...");
     
     let mut retry_count = 0;
     const MAX_RETRIES: u32 = 5;
@@ -34,7 +35,7 @@ pub fn initialize_system() -> Result<(), String> {
     loop {
         match start_graphical_session() {
             Ok(mut child) => {
-                println!("[Magnolia] Graphical session established (PID: {}).", child.id());
+                info!("Graphical session established (PID: {}).", child.id());
                 
                 // Supervise the child process
                 loop {
@@ -43,7 +44,7 @@ pub fn initialize_system() -> Result<(), String> {
                     // Check if our main UI child is still alive
                     match child.try_wait() {
                         Ok(Some(status)) => {
-                            eprintln!("[Magnolia WARNING] Graphical session exited with status: {}", status);
+                            warn!("Graphical session exited with status: {}", status);
                             break; // Break supervision to restart
                         }
                         Ok(None) => {
@@ -51,33 +52,33 @@ pub fn initialize_system() -> Result<(), String> {
                             std::thread::sleep(std::time::Duration::from_secs(2));
                         }
                         Err(e) => {
-                            eprintln!("[Magnolia ERROR] Failed to wait on child: {}", e);
+                            error!("Failed to wait on child: {}", e);
                             break;
                         }
                     }
                 }
             },
             Err(e) => {
-                eprintln!("[Magnolia ERROR] Failed to start UI: {}.", e);
+                error!("Failed to start UI: {}.", e);
             }
         }
 
         retry_count += 1;
         if retry_count >= MAX_RETRIES {
-            eprintln!("[Magnolia FATAL] UI failed too many times. Falling back to recovery shell.");
+            error!("UI failed too many times. Falling back to recovery shell.");
             break;
         }
 
-        println!("[Magnolia] Restarting UI (Attempt {}/{})...", retry_count + 1, MAX_RETRIES);
+        info!("Restarting UI (Attempt {}/{})...", retry_count + 1, MAX_RETRIES);
         std::thread::sleep(std::time::Duration::from_secs(2));
     }
 
     // Fallback Recovery Shell
     loop {
         match Command::new("/bin/sh").status() {
-            Ok(s) => println!("[Magnolia] Recovery shell exited with status {}. Restarting...", s),
+            Ok(s) => info!("Recovery shell exited with status {}. Restarting...", s),
             Err(e) => {
-                eprintln!("[Magnolia FATAL] Failed to launch /bin/sh: {}. System Halted.", e);
+                error!("FATAL: Failed to launch /bin/sh: {}. System Halted.", e);
                 loop { std::thread::sleep(std::time::Duration::from_secs(3600)); }
             }
         }
@@ -98,7 +99,7 @@ fn start_graphical_session() -> Result<std::process::Child, String> {
 }
 
 fn mount_virt_fs() -> Result<(), String> {
-    println!("[Magnolia] Mounting virtual filesystems...");
+    info!("Mounting virtual filesystems...");
     
     let mounts = [
         ("proc", "/proc", "proc", MsFlags::empty()),
@@ -124,7 +125,7 @@ fn mount_virt_fs() -> Result<(), String> {
 }
 
 fn setup_loopback() -> Result<(), String> {
-    println!("[Magnolia] Configuring networking...");
+    info!("Configuring networking...");
     // ip link set up dev lo
     Command::new("ip")
         .args(["link", "set", "up", "dev", "lo"])
@@ -155,10 +156,10 @@ pub fn reap_zombies() {
     loop {
         match waitpid(None, Some(WaitPidFlag::WNOHANG)) {
             Ok(WaitStatus::Exited(pid, status)) => {
-                println!("[Magnolia] Reaped process {} (status {})", pid, status);
+                info!("Reaped process {} (status {})", pid, status);
             }
             Ok(WaitStatus::Signaled(pid, sig, _)) => {
-                println!("[Magnolia] Reaped process {} (signaled by {})", pid, sig);
+                info!("Reaped process {} (signaled by {})", pid, sig);
             }
             Ok(WaitStatus::StillAlive) | Err(_) => break,
             _ => break,
