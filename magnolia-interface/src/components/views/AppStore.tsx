@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Package, Download, Play, CheckCircle2, AlertCircle, ShieldCheck, Zap, Globe, Archive } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/core';
@@ -64,8 +64,18 @@ interface DiskInfo {
 type InstallState = 'idle' | 'downloading' | 'verifying' | 'installed' | 'error';
 
 export const AppStore: React.FC = () => {
+
   const { translate } = useLanguage();
   const [appStates, setAppStates] = useState<Record<string, { state: InstallState; progress: number }>>({});
+  const diskInfoCache = useRef<DiskInfo[] | null>(null);
+
+  useEffect(() => {
+    // Pre-fetch disk info to avoid blocking UI during install
+    invoke<DiskInfo[]>('get_disk_info')
+      .then(info => { diskInfoCache.current = info; })
+      .catch(err => console.warn('Failed to pre-fetch disk info:', err));
+  }, []);
+
 
   const handleArchive = async (appId: string) => {
     try {
@@ -80,7 +90,7 @@ export const AppStore: React.FC = () => {
   const handleInstall = async (app: AppItem) => {
     // 1. Verify available space for future-proofing
     try {
-      const disks = await invoke<DiskInfo[]>('get_disk_info');
+      const disks = diskInfoCache.current || await invoke<DiskInfo[]>('get_disk_info');
       const dataPartition = disks.find((d) => d.name === 'data' || d.label === 'Sovereign_Apps');
       
       // Minimal space requirement: 2GB (2,147,483,648 bytes)
@@ -97,10 +107,8 @@ export const AppStore: React.FC = () => {
     setAppStates(prev => ({ ...prev, [app.id]: { state: 'downloading', progress: 0 } }));
 
     // Log the permission request to the audit trail
-    if (app.permissions) {
-      for (const p of app.permissions) {
-        invoke('log_permission_event', { appId: app.name, permission: p, status: 'Requested' });
-      }
+    if (app.permissions && app.permissions.length > 0) {
+      invoke('log_permission_events', { appId: app.name, permissions: app.permissions, status: 'Requested' });
     }
 
     // Mock progress since download_app is currently a flat async call

@@ -24,6 +24,15 @@ export function CalendarApp() {
   const year = currentDate.getFullYear();
   const calendarDays = Array.from({ length: 35 }, (_, i) => i - 3); 
 
+  const groupedEvents = useMemo(() => {
+    const map: Record<number, CalendarEvent[]> = {};
+    for (const e of events) {
+      if (!map[e.day]) map[e.day] = [];
+      map[e.day].push(e);
+    }
+    return map;
+  }, [events]);
+
   const updateEvent = () => {
     if (editingEvent) {
       setEvents(prev => prev.map(e => e.id === editingEvent.id ? editingEvent : e));
@@ -35,15 +44,6 @@ export function CalendarApp() {
     setEvents(prev => prev.filter(e => e.id !== id));
     setEditingEvent(null);
   };
-
-  const eventsByDay = useMemo(() => {
-    const map = new Map<number, CalendarEvent[]>();
-    events.forEach(e => {
-      if (!map.has(e.day)) map.set(e.day, []);
-      map.get(e.day)!.push(e);
-    });
-    return map;
-  }, [events]);
 
   return (
     <div style={{ display: 'flex', height: '100%', background: 'var(--schemes-surface-container-lowest)', position: 'relative' }}>
@@ -96,7 +96,7 @@ export function CalendarApp() {
                 <div key={i} style={{ background: 'white', border: '0.1px solid var(--schemes-outline-variant)', padding: '4px', position: 'relative', minHeight: '120px' }}>
                   <span style={{ fontSize: '12px', padding: '4px', fontWeight: (d > 0 && d < 32) ? 600 : 300, opacity: (d > 0 && d < 32) ? 1 : 0.3 }}>{d > 0 && d < 32 ? d : d <= 0 ? 30 + d : d - 31}</span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
-                    {(eventsByDay.get(d) || []).map(e => (
+                    {(groupedEvents[d] || []).map(e => (
                       <div key={e.id} onClick={() => setEditingEvent(e)} style={{ padding: '4px 8px', borderRadius: '4px', background: e.color, color: e.textColor, fontSize: '10px', fontWeight: 600, cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
                     ))}
                   </div>

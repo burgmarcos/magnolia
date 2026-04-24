@@ -178,3 +178,25 @@
   transition: opacity 0.2s;
 }
 .primaryButton:hover { opacity: 0.9; }
+
+.inputRow {
+  padding: 0 24px 16px 24px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--schemes-outline-variant);
+  background: var(--schemes-surface-container-low);
+  color: var(--schemes-on-surface);
+  font-family: var(--body-large-font);
+  font-size: var(--body-large-size);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: var(--schemes-primary);
+}

@@ -14,12 +14,15 @@ pub async fn download_model_file(
 
 #[tauri::command]
 pub async fn search_hf_models(model_id: String) -> Result<huggingface::HfModelInfo, String> {
-    let token = secrets::get_api_key("huggingface").map_err(|e| {
-        println!("Keyring access warning: {}", e);
-        "HF API Key not found. Please set it in Models Hub.".to_string()
-    })?;
+    let token = match secrets::get_api_key("huggingface") {
+        Ok(t) => Some(t),
+        Err(e) => {
+            println!("Keyring access warning: {}", e);
+            None
+        }
+    };
 
-    huggingface::fetch_hf_model_size(&model_id, Some(token)).await
+    huggingface::fetch_hf_model_size(&model_id, token).await
 }
 
 pub fn assess_model_fit_internal(
@@ -52,12 +55,7 @@ pub struct LocalModelInfo {
     pub fit_status: String,
 }
 
-#[tauri::command]
-pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
-    use tauri::Manager;
-    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    let models_dir = app_data_dir.join("models");
-
+pub fn get_local_models_internal(models_dir: &std::path::Path) -> Result<Vec<String>, String> {
     let mut models = Vec::new();
 
     if models_dir.exists() && models_dir.is_dir() {
@@ -66,7 +64,7 @@ pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
                 let path = entry.path();
                 if path.is_file() {
                     if let Some(ext) = path.extension() {
-                        if ext == "gguf" {
+                        if ext == "gguf" || ext == "bin" {
                             if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                                 models.push(name.to_string());
                             }
@@ -76,10 +74,18 @@ pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
             }
         }
     } else {
-        let _ = std::fs::create_dir_all(&models_dir);
+        let _ = std::fs::create_dir_all(models_dir);
     }
 
     Ok(models)
+}
+
+#[tauri::command]
+pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+    use tauri::Manager;
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_dir = app_data_dir.join("models");
+    get_local_models_internal(&models_dir)
 }
 
 #[tauri::command]
@@ -206,5 +212,26 @@ mod tests {
 
         // Clear the mock
         set_mock_hardware_specs(None);
+    }
+
+    #[test]
+    fn test_get_local_models_internal() {
+        use tempfile::tempdir;
+
+        let dir = tempdir().unwrap();
+        let models_dir = dir.path().join("models");
+
+        let models = super::get_local_models_internal(&models_dir).unwrap();
+        assert!(models.is_empty());
+
+        std::fs::write(models_dir.join("model1.gguf"), "dummy").unwrap();
+        std::fs::write(models_dir.join("model2.bin"), "dummy").unwrap();
+        std::fs::write(models_dir.join("not_a_model.txt"), "dummy").unwrap();
+        std::fs::create_dir(models_dir.join("subdir.gguf")).unwrap();
+
+        let mut models = super::get_local_models_internal(&models_dir).unwrap();
+        models.sort();
+
+        assert_eq!(models, vec!["model1.gguf", "model2.bin"]);
     }
 }

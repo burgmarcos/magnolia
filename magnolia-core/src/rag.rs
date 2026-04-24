@@ -95,24 +95,30 @@ pub async fn generate_document_embeddings(conn: &mut Connection) -> Result<usize
             if !document_chunks_to_insert.is_empty() {
                 let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-                for (idx, chunk, emb_json) in document_chunks_to_insert {
-                    // Insert to physical table
-                    tx.execute(
-                        "INSERT INTO nodes (document_id, chunk_index, content) VALUES (?1, ?2, ?3)",
-                        params![doc_id, idx, chunk],
-                    )
-                    .map_err(|e| e.to_string())?;
+                {
+                    let mut stmt_nodes = tx.prepare(
+                        "INSERT INTO nodes (document_id, chunk_index, content) VALUES (?1, ?2, ?3)"
+                    ).map_err(|e| e.to_string())?;
 
-                    let new_rowid = tx.last_insert_rowid();
+                    let mut stmt_vecs = tx
+                        .prepare("INSERT INTO vec_nodes(rowid, embedding) VALUES (?1, ?2)")
+                        .map_err(|e| e.to_string())?;
 
-                    // Insert to virtual sqlite-vec table binding rowid
-                    tx.execute(
-                        "INSERT INTO vec_nodes(rowid, embedding) VALUES (?1, ?2)",
-                        params![new_rowid, emb_json],
-                    )
-                    .map_err(|e| e.to_string())?;
+                    for (idx, chunk, emb_json) in document_chunks_to_insert {
+                        // Insert to physical table
+                        stmt_nodes
+                            .execute(params![doc_id, idx, chunk])
+                            .map_err(|e| e.to_string())?;
 
-                    total_chunks_embedded += 1;
+                        let new_rowid = tx.last_insert_rowid();
+
+                        // Insert to virtual sqlite-vec table binding rowid
+                        stmt_vecs
+                            .execute(params![new_rowid, emb_json])
+                            .map_err(|e| e.to_string())?;
+
+                        total_chunks_embedded += 1;
+                    }
                 }
                 tx.commit().map_err(|e| e.to_string())?;
             }

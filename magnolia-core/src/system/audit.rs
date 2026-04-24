@@ -54,6 +54,45 @@ pub async fn log_permission_event(
 }
 
 #[command]
+pub async fn log_permission_events(
+    app_id: String,
+    permissions: Vec<String>,
+    status: String,
+) -> Result<(), String> {
+    if permissions.is_empty() {
+        return Ok(());
+    }
+
+    let path = get_audit_path();
+    let mut logs: Vec<AuditEntry> = if path.exists() {
+        let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&data).unwrap_or_else(|_| Vec::new())
+    } else {
+        Vec::new()
+    };
+
+    let now = Utc::now();
+    for permission in permissions {
+        logs.push(AuditEntry {
+            timestamp: now,
+            app_id: app_id.clone(),
+            permission,
+            status: status.clone(),
+        });
+    }
+
+    // Keep only last 1000 entries to prevent file bloat in this version
+    if logs.len() > 1000 {
+        logs.drain(0..logs.len() - 1000);
+    }
+
+    let data = serde_json::to_string_pretty(&logs).map_err(|e| e.to_string())?;
+    fs::write(path, data).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[command]
 pub async fn get_permission_history() -> Result<Vec<AuditEntry>, String> {
     let path = get_audit_path();
     if !path.exists() {
