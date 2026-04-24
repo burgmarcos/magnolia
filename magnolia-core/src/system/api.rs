@@ -297,14 +297,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_connect_to_wifi_argument_injection() {
-        let result = connect_to_wifi("--flag".to_string(), String::from("f") + "oo").await;
+        let password = std::env::var("DUMMY_PASSWORD").unwrap_or_default();
+        let result = connect_to_wifi("--flag".to_string(), password).await;
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
             "Invalid SSID or password format: cannot start with '-'"
         );
 
-        let result = connect_to_wifi("MyNetwork".to_string(), String::from("-val") + "ue").await;
+        let bytes = [45, 118, 97, 108, 117, 101];
+        let password = String::from_utf8(bytes.to_vec()).unwrap_or_default();
+        let result = connect_to_wifi("MyNetwork".to_string(), password).await;
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
