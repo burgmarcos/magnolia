@@ -221,8 +221,21 @@ fn main() {
     let _ = fs::write("/proc/sys/kernel/hostname", hostname);
 
     // 3. Environment Preparation
+    // HOME and XDG_DATA_HOME must be set BEFORE we spawn magnolia-hub so Tauri's
+    // `app_data_dir()` resolves correctly. Without them, Tauri returns
+    // `/.local/share/com.magnolia.desktop` (literal — $HOME is empty), which
+    // means the SQLite DB and sync watcher get parked at filesystem root.
+    let user_home = "/home/sovereign";
+    let _ = fs::create_dir_all(user_home);
+    let _ = fs::create_dir_all(format!("{}/.local/share", user_home));
     unsafe {
         std::env::set_var("PATH", "/usr/sbin:/usr/bin:/sbin:/bin");
+        std::env::set_var("HOME", user_home);
+        std::env::set_var("USER", "sovereign");
+        std::env::set_var("LOGNAME", "sovereign");
+        std::env::set_var("XDG_DATA_HOME", format!("{}/.local/share", user_home));
+        std::env::set_var("XDG_CONFIG_HOME", format!("{}/.config", user_home));
+        std::env::set_var("XDG_CACHE_HOME", format!("{}/.cache", user_home));
     }
 
     // Create XDG_RUNTIME_DIR for Wayland/Cage
@@ -247,11 +260,12 @@ fn main() {
         std::env::set_var("CAGE_STARTUP_DELAY", "1");
     }
 
-    // Only disable WebKit sandbox in VM environments — on real hardware the sandbox stays on
+    // Only disable WebKit sandbox in VM environments — on real hardware the sandbox stays on.
+    // WEBKIT_FORCE_SANDBOX is deprecated (WebKitGTK >= 2.40 ignores it and warns); we now
+    // only set the actively-honored opt-out variable.
     if is_running_in_vm() {
         println!("[Magnolia] VM detected — disabling WebKit sandbox for DRM/env access");
         unsafe {
-            std::env::set_var("WEBKIT_FORCE_SANDBOX", "0");
             std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1");
         }
     }
