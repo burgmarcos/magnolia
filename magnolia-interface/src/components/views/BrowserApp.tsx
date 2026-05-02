@@ -158,11 +158,11 @@ export function BrowserApp({ initialUrl }: BrowserProps) {
         zIndex: 10
       }}>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button style={{ ...toolbarBtn, opacity: historyIndex > 0 ? 1 : 0.3 }} onClick={goBack} disabled={historyIndex <= 0}><ArrowLeft size={18} /></button>
-          <button style={{ ...toolbarBtn, opacity: historyIndex < history.length - 1 ? 1 : 0.3 }} onClick={goForward} disabled={historyIndex >= history.length - 1}><ArrowRight size={18} /></button>
+          <button title="Go Back" style={{ ...toolbarBtn, opacity: historyIndex > 0 ? 1 : 0.3 }} onClick={goBack} disabled={historyIndex <= 0}><ArrowLeft size={18} /></button>
+          <button title="Go Forward" style={{ ...toolbarBtn, opacity: historyIndex < history.length - 1 ? 1 : 0.3 }} onClick={goForward} disabled={historyIndex >= history.length - 1}><ArrowRight size={18} /></button>
           <button style={toolbarBtn} title="Open in System Browser" onClick={() => invoke('open_external_url', { url })}><Globe size={18} color="var(--schemes-primary)" /></button>
-          <button style={toolbarBtn} onClick={reload}><RotateCw size={18} className={isLoading ? 'animate-spin' : ''} /></button>
-          <button style={toolbarBtn} onClick={() => {setUrl('about:blank'); setInputValue(''); setHistory([]); setHistoryIndex(-1);}}><Home size={18} /></button>
+          <button title="Reload" style={toolbarBtn} onClick={reload}><RotateCw size={18} className={isLoading ? 'animate-spin' : ''} /></button>
+          <button title="Home" style={toolbarBtn} onClick={() => {setUrl('about:blank'); setInputValue(''); setHistory([]); setHistoryIndex(-1);}}><Home size={18} /></button>
         </div>
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--schemes-surface-container-low)', borderRadius: '12px', padding: '8px 16px', gap: '12px', border: '1px solid var(--schemes-outline-variant)' }}>

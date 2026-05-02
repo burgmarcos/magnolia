@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BrowserApp } from '../BrowserApp';
 import * as tauriApiCore from '@tauri-apps/api/core';
 
@@ -15,8 +15,12 @@ describe('BrowserApp', () => {
     localStorage.clear();
   });
 
-  it('renders initial about:blank state correctly', () => {
-    // We expect the search engine selector first if not configured
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('renders initial about:blank state correctly when configured', () => {
+    // We expect the search engine selector not to show if already configured
     localStorage.setItem('Magnolia-search-engine', 'duckduckgo');
 
     render(<BrowserApp />);
@@ -63,7 +67,7 @@ describe('BrowserApp', () => {
   it('handles navigation history back and forward', () => {
     localStorage.setItem('Magnolia-search-engine', 'duckduckgo');
 
-    const { container } = render(<BrowserApp />);
+    render(<BrowserApp />);
     const input = screen.getByPlaceholderText('Search or enter URL');
 
     // Initial state is about:blank, but history only includes successful safe navigations
@@ -78,16 +82,13 @@ describe('BrowserApp', () => {
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
     expect(input).toHaveValue('https://test.com/');
 
-    // The buttons don't have good a11y labels, so we select them by order in the DOM
-    const buttons = container.querySelectorAll('button');
-    const backBtn = buttons[0];
-    const forwardBtn = buttons[1];
-
     // Go back
+    const backBtn = screen.getByTitle('Go Back');
     fireEvent.click(backBtn);
     expect(input).toHaveValue('https://example.com/');
 
     // Go forward
+    const forwardBtn = screen.getByTitle('Go Forward');
     fireEvent.click(forwardBtn);
     expect(input).toHaveValue('https://test.com/');
   });
@@ -107,9 +108,7 @@ describe('BrowserApp', () => {
     localStorage.setItem('Magnolia-search-engine', 'duckduckgo');
 
     const { container } = render(<BrowserApp />);
-    const buttons = container.querySelectorAll('button');
-    // reload button is the 4th button in the toolbar
-    const reloadBtn = buttons[3];
+    const reloadBtn = screen.getByTitle('Reload');
 
     fireEvent.click(reloadBtn);
 
@@ -122,14 +121,12 @@ describe('BrowserApp', () => {
 
     // Check if loading state is removed
     expect(container.querySelector('.animate-spin')).not.toBeInTheDocument();
-
-    vi.useRealTimers();
   });
 
   it('handles home button correctly', () => {
     localStorage.setItem('Magnolia-search-engine', 'duckduckgo');
 
-    const { container } = render(<BrowserApp />);
+    render(<BrowserApp />);
     const input = screen.getByPlaceholderText('Search or enter URL');
 
     // Go to first site
@@ -137,10 +134,7 @@ describe('BrowserApp', () => {
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
     expect(input).toHaveValue('https://example.com/');
 
-    const buttons = container.querySelectorAll('button');
-    // home button is the 5th button in the toolbar
-    const homeBtn = buttons[4];
-
+    const homeBtn = screen.getByTitle('Home');
     fireEvent.click(homeBtn);
 
     expect(input).toHaveValue('');
