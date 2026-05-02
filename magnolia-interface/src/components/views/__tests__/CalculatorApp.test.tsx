@@ -5,10 +5,12 @@ import { CalculatorApp } from '../CalculatorApp.tsx';
 // Mock framer-motion to avoid exit animations causing duplicate elements in the DOM
 vi.mock('framer-motion', () => ({
   motion: {
-    h1: ({ children, ...props }: unknown) => {
+    h1: (props: unknown) => {
       // Remove animation props
       const typedProps = props as Record<string, unknown>;
+      const children = typedProps.children;
       const { ...rest } = typedProps;
+      delete rest.children;
       delete rest.initial;
       delete rest.animate;
       delete rest.exit;
