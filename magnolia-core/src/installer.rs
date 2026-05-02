@@ -19,7 +19,8 @@ const UNINSTALL_REG_KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\U
 pub fn get_install_dir() -> PathBuf {
     // Falls back to current directory if LocalAppData is not found (unlikely on Windows)
     dirs::data_local_dir()
-        .unwrap_or_else(|| env::current_dir().unwrap())
+        .or_else(|| env::current_dir().ok())
+        .unwrap_or_else(|| PathBuf::from("."))
         .join("Magnolia")
 }
 
@@ -87,7 +88,12 @@ fn create_shortcut(target: &std::path::Path, location: &str) -> Result<(), Strin
             fs::create_dir_all(&shortcut_dir).map_err(|e| e.to_string())?;
         }
         let lnk_path = shortcut_dir.join("Magnolia.lnk");
-        let sl = ShellLink::new(target.to_str().unwrap()).map_err(|e| e.to_string())?;
+        let sl = ShellLink::new(
+            target
+                .to_str()
+                .ok_or_else(|| "Invalid target path".to_string())?,
+        )
+        .map_err(|e| e.to_string())?;
         sl.create_lnk(&lnk_path).map_err(|e| e.to_string())?;
     }
 
@@ -100,9 +106,12 @@ fn register_uninstaller(target: &std::path::Path) -> Result<(), std::io::Error> 
     let (key, _) = hkcu.create_subkey(UNINSTALL_REG_KEY)?;
 
     key.set_value("DisplayName", &APP_NAME)?;
-    key.set_value("DisplayIcon", &target.to_str().unwrap())?;
+    let target_str = target.to_str().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid target path")
+    })?;
+    key.set_value("DisplayIcon", &target_str)?;
 
-    let uninstall_cmd = format!("\"{}\" --uninstall", target.to_str().unwrap());
+    let uninstall_cmd = format!("\"{}\" --uninstall", target_str);
     key.set_value("UninstallString", &uninstall_cmd)?;
 
     key.set_value("Publisher", &"Magnolia Sovereign Team")?;
@@ -134,16 +143,24 @@ pub fn perform_uninstallation(#[allow(unused_variables)] delete_data: bool) -> R
         let install_dir = get_install_dir();
 
         let cmd = if delete_data {
-            let app_data = dirs::data_local_dir().unwrap().join("com.Magnolia.desktop");
+            let app_data = dirs::data_local_dir()
+                .ok_or_else(|| "Failed to get local data dir".to_string())?
+                .join("com.Magnolia.desktop");
             format!(
                 "timeout /t 2 /nobreak > NUL && rmdir /s /q \"{}\" && rmdir /s /q \"{}\"",
-                install_dir.to_str().unwrap(),
-                app_data.to_str().unwrap()
+                install_dir
+                    .to_str()
+                    .ok_or_else(|| "Invalid path".to_string())?,
+                app_data
+                    .to_str()
+                    .ok_or_else(|| "Invalid path".to_string())?
             )
         } else {
             format!(
                 "timeout /t 2 /nobreak > NUL && rmdir /s /q \"{}\"",
-                install_dir.to_str().unwrap()
+                install_dir
+                    .to_str()
+                    .ok_or_else(|| "Invalid path".to_string())?
             )
         };
 
