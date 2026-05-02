@@ -28,77 +28,94 @@ function forceLayout(
   height = 600,
   iterations = 50
 ): Map<string, { x: number; y: number }> {
-  const positions = new Map<string, { x: number; y: number }>();
   const n = nodeIds.length;
+  const positions = new Map<string, { x: number; y: number }>();
   if (n === 0) return positions;
 
-  // Initialize on a circle
-  nodeIds.forEach((id, i) => {
+  const posX = new Float64Array(n);
+  const posY = new Float64Array(n);
+  const velX = new Float64Array(n);
+  const velY = new Float64Array(n);
+
+  const idToIndex = new Map<string, number>();
+
+  for (let i = 0; i < n; i++) {
+    const id = nodeIds[i];
+    idToIndex.set(id, i);
     const angle = (2 * Math.PI * i) / n;
-    positions.set(id, {
-      x: width / 2 + (width / 3) * Math.cos(angle),
-      y: height / 2 + (height / 3) * Math.sin(angle),
-    });
-  });
+    posX[i] = width / 2 + (width / 3) * Math.cos(angle);
+    posY[i] = height / 2 + (height / 3) * Math.sin(angle);
+  }
+
+  const edgesSource = new Int32Array(edgePairs.length);
+  const edgesTarget = new Int32Array(edgePairs.length);
+  let validEdgesCount = 0;
+
+  for (let i = 0; i < edgePairs.length; i++) {
+    const s = idToIndex.get(edgePairs[i].source);
+    const t = idToIndex.get(edgePairs[i].target);
+    if (s !== undefined && t !== undefined) {
+      edgesSource[validEdgesCount] = s;
+      edgesTarget[validEdgesCount] = t;
+      validEdgesCount++;
+    }
+  }
 
   const repulsion = 4000;
   const attraction = 0.05;
   const damping = 0.85;
-  const velocities = new Map(nodeIds.map(id => [id, { vx: 0, vy: 0 }]));
-
-  // Pre-resolve object references to avoid map lookups in the simulation loop
-  const resolvedNodes = nodeIds.map(id => ({
-    p: positions.get(id)!,
-    v: velocities.get(id)!
-  }));
-
-  const resolvedEdges = edgePairs.map(edge => {
-    const a = positions.get(edge.source);
-    const b = positions.get(edge.target);
-    const vA = velocities.get(edge.source);
-    const vB = velocities.get(edge.target);
-    return { a, b, vA, vB };
-  }).filter((e): e is {
-    a: { x: number; y: number };
-    b: { x: number; y: number };
-    vA: { vx: number; vy: number };
-    vB: { vx: number; vy: number }
-  } => !!(e.a && e.b && e.vA && e.vB));
 
   for (let iter = 0; iter < iterations; iter++) {
-    // Repulsion between all pairs
     for (let i = 0; i < n; i++) {
+      const pxA = posX[i];
+      const pyA = posY[i];
+      let vxA = velX[i];
+      let vyA = velY[i];
+
       for (let j = i + 1; j < n; j++) {
-        const a = resolvedNodes[i].p;
-        const b = resolvedNodes[j].p;
-        const dx = a.x - b.x;
-        const dy = a.y - b.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const force = repulsion / (dist * dist);
-        const vA = resolvedNodes[i].v;
-        const vB = resolvedNodes[j].v;
-        vA.vx += (dx / dist) * force;
-        vA.vy += (dy / dist) * force;
-        vB.vx -= (dx / dist) * force;
-        vB.vy -= (dy / dist) * force;
+        const dx = pxA - posX[j];
+        const dy = pyA - posY[j];
+        const distSq = dx * dx + dy * dy;
+        const dist = Math.sqrt(distSq) || 1;
+        const force = repulsion / (distSq * dist);
+
+        const fx = dx * force;
+        const fy = dy * force;
+
+        vxA += fx;
+        vyA += fy;
+        velX[j] -= fx;
+        velY[j] -= fy;
       }
+      velX[i] = vxA;
+      velY[i] = vyA;
     }
-    // Attraction along edges
-    for (const { a, b, vA, vB } of resolvedEdges) {
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      vA.vx += dx * attraction;
-      vA.vy += dy * attraction;
-      vB.vx -= dx * attraction;
-      vB.vy -= dy * attraction;
+
+    for (let e = 0; e < validEdgesCount; e++) {
+      const s = edgesSource[e];
+      const t = edgesTarget[e];
+      const dx = posX[t] - posX[s];
+      const dy = posY[t] - posY[s];
+      const fx = dx * attraction;
+      const fy = dy * attraction;
+      velX[s] += fx;
+      velY[s] += fy;
+      velX[t] -= fx;
+      velY[t] -= fy;
     }
-    // Apply velocities with damping
-    for (const { p, v } of resolvedNodes) {
-      v.vx *= damping;
-      v.vy *= damping;
-      p.x = Math.max(50, Math.min(width - 50, p.x + v.vx));
-      p.y = Math.max(50, Math.min(height - 50, p.y + v.vy));
+
+    for (let i = 0; i < n; i++) {
+      const vx = velX[i] * damping;
+      const vy = velY[i] * damping;
+      velX[i] = vx;
+      velY[i] = vy;
+      posX[i] = Math.max(50, Math.min(width - 50, posX[i] + vx));
+      posY[i] = Math.max(50, Math.min(height - 50, posY[i] + vy));
     }
+  }
+
+  for (let i = 0; i < n; i++) {
+    positions.set(nodeIds[i], { x: posX[i], y: posY[i] });
   }
 
   return positions;
