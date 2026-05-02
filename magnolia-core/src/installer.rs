@@ -87,7 +87,7 @@ fn create_shortcut(target: &std::path::Path, location: &str) -> Result<(), Strin
             fs::create_dir_all(&shortcut_dir).map_err(|e| e.to_string())?;
         }
         let lnk_path = shortcut_dir.join("Magnolia.lnk");
-        let sl = ShellLink::new(target.to_str().unwrap()).map_err(|e| e.to_string())?;
+        let sl = ShellLink::new(target.to_string_lossy().as_ref()).map_err(|e| e.to_string())?;
         sl.create_lnk(&lnk_path).map_err(|e| e.to_string())?;
     }
 
@@ -100,9 +100,9 @@ fn register_uninstaller(target: &std::path::Path) -> Result<(), std::io::Error> 
     let (key, _) = hkcu.create_subkey(UNINSTALL_REG_KEY)?;
 
     key.set_value("DisplayName", &APP_NAME)?;
-    key.set_value("DisplayIcon", &target.to_str().unwrap())?;
+    key.set_value("DisplayIcon", &target.to_string_lossy().as_ref())?;
 
-    let uninstall_cmd = format!("\"{}\" --uninstall", target.to_str().unwrap());
+    let uninstall_cmd = format!("\"{}\" --uninstall", target.to_string_lossy().as_ref());
     key.set_value("UninstallString", &uninstall_cmd)?;
 
     key.set_value("Publisher", &"Magnolia Sovereign Team")?;
