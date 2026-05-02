@@ -56,21 +56,22 @@ pub async fn download_app(url: String, app_id: String) -> Result<String, String>
     let target_path = app_dir.join(format!("{}.pkg", app_id));
     fs::write(&target_path, bytes).map_err(|e| format!("Disk write error: {}", e))?;
 
-    // Extraction logic: Actually unpack the package (tar) to extract the manifest
+    // Extraction logic: Unpack the package using native tar/flate2.
+    // The tar crate automatically prevents path traversal vulnerabilities.
     println!("[Magnolia AppManager] Extracting payload for verification...");
-    let status = Command::new("tar")
-        .args([
-            "-zxf",
-            &target_path.to_string_lossy(),
-            "-C",
-            &app_dir.to_string_lossy(),
-        ])
-        .status()
-        .map_err(|e| format!("Extraction failed (tar not found?): {}", e))?;
 
-    if !status.success() {
-        return Err("Failed to extract application package".into());
-    }
+    // Open the tarball
+    let tar_gz = std::fs::File::open(&target_path)
+        .map_err(|e| format!("Failed to open package file: {}", e))?;
+
+    // Decompress
+    let tar = flate2::read::GzDecoder::new(tar_gz);
+
+    // Read and extract archive
+    let mut archive = tar::Archive::new(tar);
+    archive
+        .unpack(&app_dir)
+        .map_err(|e| format!("Failed to extract application package: {}", e))?;
 
     let manifest_path = app_dir.join("manifest.bos");
 

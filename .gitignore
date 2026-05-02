@@ -36,6 +36,13 @@ node_modules/
 dist/
 build/
 
+# QEMU local-test runtime files (OVMF NVRAM + serial captures)
+OVMF_VARS.fd
+serial*.log
+debug*.log
+qemu*.stdout
+qemu*.stderr
+
 # Temporary files from previous agents
 fix.patch
 fix2.patch

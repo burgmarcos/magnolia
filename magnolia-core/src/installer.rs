@@ -134,16 +134,23 @@ pub fn perform_uninstallation(#[allow(unused_variables)] delete_data: bool) -> R
         let install_dir = get_install_dir();
 
         let cmd = if delete_data {
-            let app_data = dirs::data_local_dir().unwrap().join("com.Magnolia.desktop");
-            format!(
-                "timeout /t 2 /nobreak > NUL && rmdir /s /q \"{}\" && rmdir /s /q \"{}\"",
-                install_dir.to_string_lossy().as_ref(),
-                app_data.to_string_lossy().as_ref()
-            )
+            if let Some(data_dir) = dirs::data_local_dir() {
+                let app_data = data_dir.join("com.Magnolia.desktop");
+                format!(
+                    "timeout /t 2 /nobreak > NUL && rmdir /s /q \"{}\" && rmdir /s /q \"{}\"",
+                    install_dir.to_string_lossy(),
+                    app_data.to_string_lossy()
+                )
+            } else {
+                format!(
+                    "timeout /t 2 /nobreak > NUL && rmdir /s /q \"{}\"",
+                    install_dir.to_string_lossy()
+                )
+            }
         } else {
             format!(
                 "timeout /t 2 /nobreak > NUL && rmdir /s /q \"{}\"",
-                install_dir.to_string_lossy().as_ref()
+                install_dir.to_string_lossy()
             )
         };
 
