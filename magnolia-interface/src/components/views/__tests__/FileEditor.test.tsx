@@ -45,9 +45,11 @@ vi.mock('codemirror', () => {
   return {
     EditorView: class {
       static theme() { return {}; }
-      state = { doc: { toString: () => 'mock content' } };
       destroy = vi.fn();
-      constructor() {}
+      constructor(config: unknown) {
+        // @ts-expect-error Mock implementation
+        this.state = (config as { state?: { doc: { toString: () => string } } })?.state || { doc: { toString: () => 'mock content' } };
+      }
     },
     basicSetup: []
   };
@@ -55,7 +57,7 @@ vi.mock('codemirror', () => {
 
 vi.mock('@codemirror/state', () => ({
   EditorState: {
-    create: vi.fn()
+    create: (config: unknown) => ({ doc: { toString: () => (config as { doc?: string })?.doc || 'mock content' } })
   }
 }));
 
@@ -102,7 +104,7 @@ describe('FileEditor', () => {
     });
 
     // Find the close button by looking for the one with no text but with an icon
-    const closeButton = screen.getByRole('button', { name: '' });
+    const closeButton = screen.getByRole('button', { name: 'Close' });
 
     await act(async () => {
       fireEvent.click(closeButton);
@@ -125,7 +127,7 @@ describe('FileEditor', () => {
       fireEvent.click(saveButton);
     });
 
-    expect(onSave).toHaveBeenCalledWith('mock content');
+    expect(onSave).toHaveBeenCalledWith('Hello World');
   });
 
   it('handles Save As correctly when path is selected', async () => {
@@ -156,7 +158,7 @@ describe('FileEditor', () => {
       });
       expect(mockInvoke).toHaveBeenCalledWith('write_text_file', {
         path: '/path/to/save/test.md',
-        content: 'mock content'
+        content: 'Hello World'
       });
       expect(mockToastSuccess).toHaveBeenCalledWith('File saved');
     });
@@ -187,7 +189,7 @@ describe('FileEditor', () => {
     });
   });
 
-  it('handles Save As correctly when an error occurs', async () => {
+  it('handles Save As correctly when an error occurs opening dialog', async () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
 
@@ -206,6 +208,35 @@ describe('FileEditor', () => {
 
     await waitFor(() => {
       expect(mockSave).toHaveBeenCalled();
+      expect(mockToastError).toHaveBeenCalledWith('Save As failed');
+    });
+  });
+
+  it('handles Save As correctly when an error occurs writing file', async () => {
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+
+    // Mock save dialog returning a path
+    mockSave.mockResolvedValue('/path/to/save/test.md');
+    // Mock invoke throwing an error
+    mockInvoke.mockRejectedValue(new Error('Permission denied'));
+
+    await act(async () => {
+      render(<FileEditor filename="test.md" content="Hello World" onSave={onSave} onClose={onClose} />);
+    });
+
+    const saveAsButton = screen.getByText('Save As');
+
+    await act(async () => {
+      fireEvent.click(saveAsButton);
+    });
+
+    await waitFor(() => {
+      expect(mockSave).toHaveBeenCalled();
+      expect(mockInvoke).toHaveBeenCalledWith('write_text_file', {
+        path: '/path/to/save/test.md',
+        content: 'Hello World'
+      });
       expect(mockToastError).toHaveBeenCalledWith('Save As failed');
     });
   });

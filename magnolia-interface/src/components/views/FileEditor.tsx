@@ -139,6 +139,7 @@ export function FileEditor({ filename, content, onSave, onClose }: Props) {
             <Download size={16} /> Save As
           </button>
           <button 
+            aria-label="Close"
             onClick={onClose}
             style={{
               padding: '8px',
