@@ -10,6 +10,7 @@ use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
 
@@ -160,19 +161,23 @@ impl SyncWatcher {
                 Ok(e) => e,
                 Err(_) => return,
             };
+            let encrypter = Arc::new(encrypter);
 
             while let Some(event) = rx.recv().await {
                 if event.kind.is_modify() || event.kind.is_create() {
                     for path in event.paths {
-                        if path.is_file() {
-                            if path.extension().and_then(|s| s.to_str()) == Some("age") {
-                                continue;
-                            }
-                            tokio::time::sleep(Duration::from_secs(2)).await;
+                        let enc = Arc::clone(&encrypter);
+                        tauri::async_runtime::spawn(async move {
+                            if path.is_file() {
+                                if path.extension().and_then(|s| s.to_str()) == Some("age") {
+                                    return;
+                                }
+                                tokio::time::sleep(Duration::from_secs(2)).await;
 
-                            let target = path.with_extension("age");
-                            let _ = encrypter.encrypt_file(&path, &target);
-                        }
+                                let target = path.with_extension("age");
+                                let _ = enc.encrypt_file(&path, &target);
+                            }
+                        });
                     }
                 }
             }
