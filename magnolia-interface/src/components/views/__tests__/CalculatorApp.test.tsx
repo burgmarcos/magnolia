@@ -1,14 +1,18 @@
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { CalculatorApp } from '../CalculatorApp.tsx';
 
 // Mock framer-motion to avoid exit animations causing duplicate elements in the DOM
 vi.mock('framer-motion', () => ({
   motion: {
-    h1: ({ children, ...props }: any) => {
+    h1: ({ children, ...props }: unknown) => {
       // Remove animation props
-      const { initial, animate, exit, ...rest } = props;
-      return <h1 {...rest}>{children}</h1>;
+      const typedProps = props as Record<string, unknown>;
+      const { ...rest } = typedProps;
+      delete rest.initial;
+      delete rest.animate;
+      delete rest.exit;
+      return <h1 {...rest}>{children as React.ReactNode}</h1>;
     }
   }
 }));
