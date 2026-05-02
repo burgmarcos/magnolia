@@ -106,6 +106,7 @@ describe('SecurityManager', () => {
     fireEvent.click(screen.getByText('Unlock'));
 
     // Type password
+    vi.spyOn(toast, "success");
     const passwordInput = screen.getByPlaceholderText('Master Partition Key');
     fireEvent.change(passwordInput, { target: { value: 'correct-password' } });
 
@@ -125,10 +126,68 @@ describe('SecurityManager', () => {
       fireEvent.click(screen.getByText('Mount Partition'));
     });
 
-    expect(toast.success).toHaveBeenCalledWith('Data Partition unlocked and mounted');
     // Verify it changed to unlocked state
     await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith('Data Partition unlocked and mounted');
         expect(screen.getByText('Live')).toBeInTheDocument();
+    });
+  });
+
+  it('handles fetchStatus error correctly', async () => {
+    const consoleSpy = vi.spyOn(console, 'error');
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === 'get_security_status') {
+        return Promise.reject('Failed to load status');
+      }
+      return Promise.resolve();
+    });
+
+    await act(async () => {
+      render(<SecurityManager />);
+    });
+
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch security status:', 'Failed to load status');
+  });
+
+  it('handles cancel unlock', async () => {
+    await act(async () => {
+      render(<SecurityManager />);
+    });
+
+    fireEvent.click(screen.getByText('Unlock'));
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Cancel'));
+
+    // Give time for AnimatePresence exit animation
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Master Partition Key')).not.toBeInTheDocument();
+    });
+  });
+
+  it('submits password on Enter key press', async () => {
+    await act(async () => {
+      render(<SecurityManager />);
+    });
+
+    fireEvent.click(screen.getByText('Unlock'));
+
+    const passwordInput = screen.getByPlaceholderText('Master Partition Key');
+    fireEvent.change(passwordInput, { target: { value: 'correct-password' } });
+
+    invokeMock.mockImplementation((cmd: string) => {
+      if (cmd === 'get_security_status') {
+        return Promise.resolve([{ label: 'Data Partition', is_encrypted: true, is_locked: false, mount_point: '/data' }]);
+      }
+      return Promise.resolve();
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(passwordInput, { key: 'Enter', code: 'Enter' });
+    });
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("Data Partition unlocked and mounted");
+      expect(screen.getByText("Live")).toBeInTheDocument();
     });
   });
 });

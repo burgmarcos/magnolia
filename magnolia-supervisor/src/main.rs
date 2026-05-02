@@ -17,6 +17,29 @@ extern "C" fn handle_sigint(_: i32) {
     println!("[Magnolia] Received SIGINT. Re-initializing graphics...");
 }
 
+/// Check whether a target path is already an active mount point of the
+/// expected filesystem type. Used to skip filesystems the kernel may have
+/// auto-mounted (e.g. devtmpfs when CONFIG_DEVTMPFS_MOUNT=y).
+fn is_already_mounted(target: &str, fstype: Option<&str>) -> bool {
+    let mounts = match fs::read_to_string("/proc/mounts") {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    for line in mounts.lines() {
+        let fields: Vec<&str> = line.split_whitespace().collect();
+        if fields.len() < 3 {
+            continue;
+        }
+        if fields[1] == target {
+            return match fstype {
+                Some(t) => fields[2] == t,
+                None => true,
+            };
+        }
+    }
+    false
+}
+
 /// Detect if we are running inside a virtual machine (QEMU, KVM, etc.)
 /// by inspecting DMI product name and CPU flags.
 fn is_running_in_vm() -> bool {
@@ -86,6 +109,17 @@ fn main() {
     ];
 
     for entry in mounts {
+        // Skip if filesystem already mounted (kernel may auto-mount devtmpfs
+        // when CONFIG_DEVTMPFS_MOUNT=y, in which case our mount call would
+        // return EBUSY).
+        if is_already_mounted(entry.target, entry.fstype) {
+            println!(
+                "[Magnolia] {} already mounted at {} (skipping)",
+                entry.fstype.unwrap_or("?"),
+                entry.target
+            );
+            continue;
+        }
         println!(
             "[Magnolia] Syscall Mounting {} to {}...",
             entry.fstype.unwrap_or("none"),
@@ -106,29 +140,15 @@ fn main() {
         }
     }
 
-    // 1.1 Mount Persistent Partitions (Steel Implementation)
-    // Dynamic detection of boot media (vda for Virtio, sda for SATA/SCSI)
-    let mut boot_disk = "/dev/vda";
-    if fs::metadata("/dev/vda").is_err() {
-        if fs::metadata("/dev/sda").is_ok() {
-            println!("[Magnolia] Virtio disk not found. Falling back to /dev/sda.");
-            boot_disk = "/dev/sda";
-        } else {
-            println!(
-                "[Magnolia WARNING] No primary boot disk (vda/sda) detected. Persistence may fail."
-            );
-        }
-    }
-
-    // According to genimage.cfg:
-    // Partition 4: appdata
-    // Partition 5: userdata
-    let apps_dev = format!("{}4", boot_disk);
-    let user_dev = format!("{}5", boot_disk);
-
-    let persistent_mounts = [
-        (apps_dev.as_str(), "/data", "ext4"),
-        (user_dev.as_str(), "/home/sovereign", "ext4"),
+    // 1.1 Mount Persistent Partitions
+    // We mount by GPT partition LABEL (set in magnolia-distro/board/.../genimage.cfg)
+    // so this works regardless of disk bus (virtio, sata, nvme) and partition order.
+    // The kernel populates /dev/disk/by-partlabel/* automatically once udev runs;
+    // we do an early udev settle before this point would be ideal, but in practice
+    // the symlinks exist by the time we reach this code on QEMU.
+    let persistent_mounts: [(&str, &str, &str); 2] = [
+        ("/dev/disk/by-partlabel/appdata", "/data", "ext4"),
+        ("/dev/disk/by-partlabel/userdata", "/home/sovereign", "ext4"),
     ];
 
     for (dev, target, fstype) in persistent_mounts {
@@ -137,32 +157,68 @@ fn main() {
             dev, target
         );
         let _ = fs::create_dir_all(target);
-        // Retry loop for disk readiness
+
+        // Wait briefly for the by-partlabel symlink to appear (udev race on cold boot).
+        for _ in 0..10 {
+            if fs::metadata(dev).is_ok() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(200));
+        }
+
         let mut attempts = 0;
-        while attempts < 5 {
-            if mount(
+        let mut mounted = false;
+        while attempts < 3 {
+            match mount(
                 Some(dev),
                 target,
                 Some(fstype),
                 MsFlags::empty(),
                 None::<&str>,
-            )
-            .is_ok()
-            {
-                println!(
-                    "[Magnolia] Successfully mounted persistence layer: {}",
-                    target
-                );
-                break;
+            ) {
+                Ok(_) => {
+                    println!(
+                        "[Magnolia] Successfully mounted persistence layer: {}",
+                        target
+                    );
+                    mounted = true;
+                    break;
+                }
+                Err(e) => {
+                    eprintln!("[Magnolia] mount({}) attempt {} failed: {}", dev, attempts + 1, e);
+                }
             }
             attempts += 1;
             thread::sleep(Duration::from_millis(500 * attempts));
         }
+
+        // First-boot bootstrap: if mount kept failing, the partition is likely
+        // raw-blank (genimage reserves the slot but doesn't preformat). mkfs and
+        // retry once. This makes the OS self-heal on a fresh image.
+        if !mounted && fs::metadata(dev).is_ok() {
+            println!("[Magnolia] {} unmountable; running mkfs.{} (first-boot)...", dev, fstype);
+            let mkfs = Command::new(format!("/usr/sbin/mkfs.{}", fstype))
+                .args(["-F", "-q", "-L", target.trim_start_matches('/')])
+                .arg(dev)
+                .status();
+            match mkfs {
+                Ok(s) if s.success() => {
+                    if mount(Some(dev), target, Some(fstype), MsFlags::empty(), None::<&str>).is_ok() {
+                        println!("[Magnolia] mkfs+mount succeeded: {}", target);
+                    } else {
+                        eprintln!("[Magnolia ERROR] mount still failing after mkfs on {}", dev);
+                    }
+                }
+                Ok(s) => eprintln!("[Magnolia ERROR] mkfs.{} on {} exited {}", fstype, dev, s),
+                Err(e) => eprintln!("[Magnolia ERROR] could not exec mkfs.{}: {}", fstype, e),
+            }
+        }
     }
 
     // 2. Set Hostname
-    println!("[Magnolia] Setting hostname to 'burg'...");
-    let _ = fs::write("/proc/sys/kernel/hostname", "burg");
+    let hostname = "magnolia";
+    println!("[Magnolia] Setting hostname to '{}'...", hostname);
+    let _ = fs::write("/proc/sys/kernel/hostname", hostname);
 
     // 3. Environment Preparation
     unsafe {
