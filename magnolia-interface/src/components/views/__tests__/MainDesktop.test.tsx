@@ -31,6 +31,16 @@ vi.mock('react-hot-toast', () => ({
 describe('MainDesktop', () => {
   let invokeMock: Mock;
 
+  it('renders successfully', async () => {
+    const mockOnLogout = vi.fn();
+    await renderDesktop(mockOnLogout);
+
+    // Check if basic structure is there (e.g. by looking for something that is always rendered)
+    // The component has Toaster which has a data-testid
+    expect(screen.getByTestId('toaster')).toBeInTheDocument();
+  });
+
+
   beforeEach(async () => {
     vi.clearAllMocks();
     const tauriApi = await import('@tauri-apps/api/core');
