@@ -83,10 +83,14 @@ pub async fn generate_document_embeddings(conn: &mut Connection) -> Result<usize
 
             let mut document_chunks_to_insert = Vec::new();
 
-            for (idx, chunk) in chunks.iter().enumerate() {
-                // Get vector from local API
-                if let Ok(emb) = fetch_embedding(chunk).await {
-                    // sqlite-vec directly accepts a JSON string format containing floats `[0.1, 0.2, ...]`!
+            let futures_list = chunks.iter().enumerate().map(|(idx, chunk)| async move {
+                let emb_result = fetch_embedding(chunk).await;
+                (idx, chunk, emb_result)
+            });
+            let results = futures_util::future::join_all(futures_list).await;
+
+            for (idx, chunk, emb_result) in results {
+                if let Ok(emb) = emb_result {
                     let emb_json = serde_json::to_string(&emb).map_err(|e| e.to_string())?;
                     document_chunks_to_insert.push((idx as u32, chunk.to_string(), emb_json));
                 }
