@@ -36,7 +36,7 @@ describe('SecurityManager', () => {
 
     // Default mock implementation for mount
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_security_status') {
+      if (cmd === 'get_partition_security_status') {
         return Promise.resolve([
           {
             label: 'Data Partition',
@@ -64,7 +64,7 @@ describe('SecurityManager', () => {
 
     // Mock unlock failure
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_security_status') {
+      if (cmd === 'get_partition_security_status') {
         return Promise.resolve([{ label: 'Data Partition', is_encrypted: true, is_locked: true, mount_point: '/data' }]);
       }
       if (cmd === 'unlock_partition') {
@@ -111,7 +111,7 @@ describe('SecurityManager', () => {
 
     // Mock unlock success
     invokeMock.mockImplementation((cmd: string) => {
-      if (cmd === 'get_security_status') {
+      if (cmd === 'get_partition_security_status') {
         return Promise.resolve([{ label: 'Data Partition', is_encrypted: true, is_locked: false, mount_point: '/data' }]);
       }
       if (cmd === 'unlock_partition') {

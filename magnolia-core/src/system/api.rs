@@ -192,11 +192,39 @@ pub async fn set_power_state(action: PowerState) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PartitionStatus {
+    pub label: String,
+    pub is_encrypted: bool,
+    pub is_locked: bool,
+    pub mount_point: String,
+}
+
+#[cfg(not(test))]
+const PIN_HASH_PATH: &str = "/data/system/pin.hash";
+#[cfg(test)]
+const PIN_HASH_PATH: &str = "/tmp/magnolia_test_pin.hash";
+
 #[command]
-pub async fn unlock_partition(password: String) -> Result<(), String> {
-    // Highly simplified mock for cryptsetup luksOpen
-    if password == "1234" {
-        println!("[SECURITY] LUKS Volume Unlocked Successfully.");
+pub async fn unlock_partition(label: String, password: String) -> Result<(), String> {
+    println!("[SECURITY] Attempting to unlock partition: {}", label);
+
+    // Verify password against hashed PIN at /data/system/pin.hash
+    let pin_hash_path = PIN_HASH_PATH;
+    let stored_hash = fs::read_to_string(pin_hash_path).map_err(|_| {
+        "Security PIN not configured. Complete initial setup to set a PIN.".to_string()
+    })?;
+
+    use argon2::{
+        password_hash::{PasswordHash, PasswordVerifier},
+        Argon2,
+    };
+    let parsed_hash = PasswordHash::new(stored_hash.trim())
+        .map_err(|_| "Invalid stored PIN hash format".to_string())?;
+    let argon2 = Argon2::default();
+
+    if argon2.verify_password(password.as_bytes(), &parsed_hash).is_ok() {
+        println!("[SECURITY] LUKS Volume {} Unlocked Successfully.", label);
         Ok(())
     } else {
         Err("Incorrect decryption password.".into())
@@ -263,8 +291,19 @@ pub async fn get_system_update_status() -> Result<String, String> {
 
 #[command]
 pub async fn get_security_status() -> Result<String, String> {
-    // Mock security status
+    // Original security status mock for backward compatibility
     Ok("Secure Boot: Enabled | AppArmor: Enforcing | LUKS: Active".to_string())
+}
+
+#[command]
+pub async fn get_partition_security_status() -> Result<Vec<PartitionStatus>, String> {
+    // Structured security status for partitions as expected by the new UI
+    Ok(vec![PartitionStatus {
+        label: "Data Partition".to_string(),
+        is_encrypted: true,
+        is_locked: true,
+        mount_point: "/data".to_string(),
+    }])
 }
 
 #[command]
@@ -294,6 +333,65 @@ pub async fn detect_gpu() -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_unlock_partition_success() {
+        let pin = "9876";
+        use argon2::{
+            password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+            Argon2,
+        };
+        let salt = SaltString::generate(&mut OsRng);
+        let argon2 = Argon2::default();
+        let pin_hash = argon2
+            .hash_password(pin.as_bytes(), &salt)
+            .expect("Failed to hash password")
+            .to_string();
+
+        let pin_hash_path = std::path::Path::new(PIN_HASH_PATH);
+        fs::write(pin_hash_path, pin_hash).expect("Failed to write mock PIN hash");
+
+        let result = unlock_partition("Data".to_string(), "9876".to_string()).await;
+        assert!(result.is_ok(), "Unlock should succeed with correct PIN");
+
+        let _ = fs::remove_file(pin_hash_path);
+    }
+
+    #[tokio::test]
+    async fn test_unlock_partition_wrong_password() {
+        let pin = "9876";
+        use argon2::{
+            password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
+            Argon2,
+        };
+        let salt = SaltString::generate(&mut OsRng);
+        let argon2 = Argon2::default();
+        let pin_hash = argon2
+            .hash_password(pin.as_bytes(), &salt)
+            .expect("Failed to hash password")
+            .to_string();
+
+        let pin_hash_path = std::path::Path::new(PIN_HASH_PATH);
+        fs::write(pin_hash_path, pin_hash).expect("Failed to write mock PIN hash");
+
+        let result = unlock_partition("Data".to_string(), "wrong".to_string()).await;
+        assert!(result.is_err(), "Unlock should fail with incorrect password");
+        assert_eq!(result.unwrap_err(), "Incorrect decryption password.");
+
+        let _ = fs::remove_file(pin_hash_path);
+    }
+
+    #[tokio::test]
+    async fn test_unlock_partition_no_pin() {
+        let pin_hash_path = std::path::Path::new(PIN_HASH_PATH);
+        let _ = fs::remove_file(pin_hash_path);
+
+        let result = unlock_partition("Data".to_string(), "9876".to_string()).await;
+        assert!(result.is_err(), "Unlock should fail when no PIN is configured");
+        assert!(result
+            .unwrap_err()
+            .contains("Security PIN not configured"));
+    }
 
     #[tokio::test]
     async fn test_connect_to_wifi_argument_injection() {

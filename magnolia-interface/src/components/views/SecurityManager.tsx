@@ -19,7 +19,7 @@ export const SecurityManager = () => {
 
   const fetchStatus = async () => {
     try {
-      const data = await invoke<PartitionStatus[]>('get_security_status');
+      const data = await invoke<PartitionStatus[]>('get_partition_security_status');
       setPartitions(data);
     } catch (error) {
       console.error('Failed to fetch security status:', error);

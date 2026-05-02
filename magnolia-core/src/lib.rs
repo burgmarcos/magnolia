@@ -99,6 +99,7 @@ pub fn run() {
             system::api::commit_identity,
             system::api::get_system_update_status,
             system::api::get_security_status,
+            system::api::get_partition_security_status,
             system::api::detect_gpu,
             // App manager
             app_manager::download_app,
