@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'react-hot-toast';
 
 export type WindowType = 'settings' | 'chat' | 'about' | 'weather' | 'calendar' | 'calculator' | 'browser' | 'files' | 'editor' | 'appstore' | 'clock' | 'media' | 'pdf';
 
@@ -51,14 +52,36 @@ export const WindowProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!isHydrated) return;
 
+    let isCancelled = false;
+
+    const attemptSave = async (retryCount = 0) => {
+      if (isCancelled) return;
+      try {
+        await invoke('save_session', {
+          userId: 'default_user',
+          state: { windows: activeWindows, configs: windowConfigs }
+        });
+      } catch (error) {
+        if (isCancelled) return;
+        if (retryCount < 3) {
+          setTimeout(() => {
+            attemptSave(retryCount + 1);
+          }, 3000);
+        } else {
+          console.error('Failed to save session after 3 retries:', error);
+          toast.error('Failed to save session');
+        }
+      }
+    };
+
     const timer = setTimeout(() => {
-      invoke('save_session', { 
-        userId: 'default_user', 
-        state: { windows: activeWindows, configs: windowConfigs } 
-      }).catch(console.error);
+      attemptSave();
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, [activeWindows, windowConfigs, isHydrated]);
 
   const openWindow = useCallback((type: WindowType, title: string, config?: Record<string, unknown>) => {
