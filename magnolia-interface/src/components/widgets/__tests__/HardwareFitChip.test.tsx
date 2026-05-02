@@ -49,7 +49,34 @@ describe('HardwareFitChip', () => {
     expect(screen.queryByText('Fits Perfectly')).not.toBeInTheDocument();
   });
 
+  it('renders custom label when provided for offload state', () => {
+    render(<HardwareFitChip fitState="offload" label="Custom Offload Label" />);
+    expect(screen.getByText('Custom Offload Label')).toBeInTheDocument();
+    expect(screen.queryByText('Needs Offload')).not.toBeInTheDocument();
+  });
+
+  it('renders custom label when provided for cannot-run state', () => {
+    render(<HardwareFitChip fitState="cannot-run" label="Custom Cannot Run Label" />);
+    expect(screen.getByText('Custom Cannot Run Label')).toBeInTheDocument();
+    expect(screen.queryByText('Does Not Run')).not.toBeInTheDocument();
+  });
+
+  it('renders with default config for unknown fitState', () => {
+    // @ts-expect-error Testing invalid runtime value
+    const { container } = render(<HardwareFitChip fitState="unknown-state" />);
+
+    // The default config text is empty string, so no text should be present
+    const textSpan = container.querySelector('.chipText');
+    expect(textSpan).toBeInTheDocument();
+    expect(textSpan?.textContent).toBe('');
+
+    const chipBase = container.firstChild as HTMLElement;
+    expect(chipBase).toHaveClass('chipBase');
+    expect(chipBase).toHaveClass('chipPerfect'); // default config uses chipPerfect
+  });
+
   it('contains the icon element and wrappers', () => {
+
     const { container } = render(<HardwareFitChip fitState="perfect" />);
 
     // Check that the icon wrapper exists
