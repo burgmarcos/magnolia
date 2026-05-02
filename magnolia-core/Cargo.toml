@@ -49,6 +49,8 @@ bip39 = { version = "2.1.0", features = ["rand"] }
 sqlite-vec = "0.1.9"
 argon2 = { version = "0.5.3", features = ["std", "password-hash"] }
 rayon = "1.10.0"
+tar = "0.4.45"
+flate2 = "1.1.9"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.56.0"
