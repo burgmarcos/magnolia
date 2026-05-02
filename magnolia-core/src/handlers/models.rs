@@ -55,18 +55,22 @@ pub struct LocalModelInfo {
     pub fit_status: String,
 }
 
-pub fn get_local_models_internal(models_dir: &std::path::Path) -> Result<Vec<String>, String> {
+pub fn get_local_models_internal(
+    models_dir: &std::path::Path,
+) -> Result<Vec<(String, u64)>, String> {
     let mut models = Vec::new();
 
     if models_dir.exists() && models_dir.is_dir() {
         if let Ok(entries) = std::fs::read_dir(models_dir) {
             for entry in entries.filter_map(|e| e.ok()) {
                 let path = entry.path();
-                if path.is_file() {
-                    if let Some(ext) = path.extension() {
-                        if ext == "gguf" || ext == "bin" {
-                            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                                models.push(name.to_string());
+                if let Ok(metadata) = entry.metadata() {
+                    if metadata.is_file() {
+                        if let Some(ext) = path.extension() {
+                            if ext == "gguf" || ext == "bin" {
+                                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                                    models.push((name.to_string(), metadata.len()));
+                                }
                             }
                         }
                     }
@@ -85,20 +89,22 @@ pub fn get_local_models(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     use tauri::Manager;
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let models_dir = app_data_dir.join("models");
-    get_local_models_internal(&models_dir)
+    let models = get_local_models_internal(&models_dir)?;
+    Ok(models.into_iter().map(|(name, _size)| name).collect())
 }
 
 #[tauri::command]
 pub fn get_all_local_models_info(app: tauri::AppHandle) -> Result<Vec<LocalModelInfo>, String> {
-    let models = get_local_models(app.clone())?;
+    use tauri::Manager;
+    let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_dir = app_data_dir.join("models");
+    let models = get_local_models_internal(&models_dir)?;
+
     let mut infos = Vec::with_capacity(models.len());
     let specs = crate::telemetry::get_system_specs();
 
-    for name in models {
-        let fit_status = match get_local_model_size_bytes(app.clone(), name.clone()) {
-            Ok(size_bytes) => assess_model_fit_internal(size_bytes, &specs),
-            Err(_) => "Does Not Run".to_string(),
-        };
+    for (name, size_bytes) in models {
+        let fit_status = assess_model_fit_internal(size_bytes, &specs);
         infos.push(LocalModelInfo { name, fit_status });
     }
     Ok(infos)
@@ -229,7 +235,11 @@ mod tests {
         std::fs::write(models_dir.join("not_a_model.txt"), "dummy").unwrap();
         std::fs::create_dir(models_dir.join("subdir.gguf")).unwrap();
 
-        let mut models = super::get_local_models_internal(&models_dir).unwrap();
+        let mut models: Vec<String> = super::get_local_models_internal(&models_dir)
+            .unwrap()
+            .into_iter()
+            .map(|(n, _)| n)
+            .collect();
         models.sort();
 
         assert_eq!(models, vec!["model1.gguf", "model2.bin"]);
