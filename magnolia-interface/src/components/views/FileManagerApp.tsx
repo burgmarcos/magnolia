@@ -52,10 +52,16 @@ export function FileManagerApp() {
           window.dispatchEvent(event);
         } catch {
           toast.error("Failed to read file.");
-          invoke('open_file', { path: newPath }).catch(console.error);
+          invoke('open_file', { path: newPath }).catch((err) => {
+            console.error(err);
+            toast.error("Failed to open file.");
+          });
         }
       } else {
-        invoke('open_file', { path: newPath }).catch(console.error);
+        invoke('open_file', { path: newPath }).catch((err) => {
+          console.error(err);
+          toast.error("Failed to open file.");
+        });
       }
     }
   };
