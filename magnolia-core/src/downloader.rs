@@ -11,7 +11,7 @@ pub struct DownloadPayload {
     pub filename: String,
     pub percentage: f64,
     pub bytes_downloaded: u64,
-    pub total_bytes: u64,
+    pub total_bytes: Option<u64>,
 }
 
 pub async fn download_model(app: AppHandle, url: String, filename: String) -> Result<(), String> {
@@ -42,7 +42,7 @@ pub async fn download_model(app: AppHandle, url: String, filename: String) -> Re
         return Err(format!("Download failed with status: {}", res.status()));
     }
 
-    let total_size = res.content_length().unwrap_or(1).max(1); // Default to 1 to prevent division by 0 UI bugs
+    let total_size = res.content_length();
 
     let mut file = File::create(&file_path)
         .await
@@ -51,6 +51,7 @@ pub async fn download_model(app: AppHandle, url: String, filename: String) -> Re
     let mut downloaded: u64 = 0;
 
     let mut last_percentage_emit: f64 = 0.0;
+    let mut last_bytes_emit: u64 = 0;
 
     // Safely pipe bytes off RAM and onto disk in steady chunks
     while let Some(chunk_result) = stream.next().await {
@@ -60,10 +61,20 @@ pub async fn download_model(app: AppHandle, url: String, filename: String) -> Re
             .map_err(|e| format!("File write error: {}", e))?;
 
         downloaded += chunk.len() as u64;
-        let percentage = ((downloaded as f64 / total_size as f64) * 100.0).min(100.0);
+        let percentage = total_size
+            .filter(|&total| total > 0)
+            .map(|total| (downloaded as f64 / total as f64 * 100.0).min(100.0))
+            .unwrap_or(0.0);
 
         // Emit events back to the UI, throttle to only emit on > 1% changes to avoid UI thread spam
-        if percentage - last_percentage_emit > 1.0 || downloaded == total_size {
+        // If total_size is unknown, emit every 10MB to avoid spam
+        let should_emit = if let Some(total) = total_size {
+            (percentage - last_percentage_emit > 1.0) || downloaded == total
+        } else {
+            downloaded - last_bytes_emit > 10 * 1024 * 1024
+        };
+
+        if should_emit {
             let payload = DownloadPayload {
                 filename: filename.clone(),
                 percentage,
@@ -74,7 +85,19 @@ pub async fn download_model(app: AppHandle, url: String, filename: String) -> Re
             // Emit directly bypassing invoke channel limits
             let _ = app.emit("download-progress", payload);
             last_percentage_emit = percentage;
+            last_bytes_emit = downloaded;
         }
+    }
+
+    // Final emission for unknown size to ensure UI gets final state
+    if total_size.is_none() && downloaded > last_bytes_emit {
+        let payload = DownloadPayload {
+            filename: filename.clone(),
+            percentage: 100.0,
+            bytes_downloaded: downloaded,
+            total_bytes: total_size,
+        };
+        let _ = app.emit("download-progress", payload);
     }
 
     Ok(())

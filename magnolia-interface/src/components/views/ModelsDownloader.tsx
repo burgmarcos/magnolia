@@ -38,6 +38,29 @@ export function ModelsDownloader() {
   const [showKeyInput, setShowKeyInput] = useState(false);
 
   useEffect(() => {
+    let unlistenFn: (() => void) | undefined;
+
+    const setupListener = async () => {
+      const { listen } = await import('@tauri-apps/api/event');
+      unlistenFn = await listen<{ filename: string; percentage: number }>('download-progress', (event) => {
+        setModels(prev => prev.map(m => {
+          const modelFilename = `${m.id.replace('/', '_')}.gguf`;
+          if (modelFilename === event.payload.filename) {
+            return { ...m, status: 'downloading', progress: event.payload.percentage };
+          }
+          return m;
+        }));
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (unlistenFn) unlistenFn();
+    };
+  }, []);
+
+  useEffect(() => {
     // Load HF Token and local models
     import('@tauri-apps/api/core').then(({ invoke }) => {
       invoke<string>('get_api_key', { service: 'huggingface' })
